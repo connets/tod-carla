@@ -1,10 +1,10 @@
-from unittest import mock
-import pytest
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/')))
 
-from NetworkTeleWorld import NetworkTeleWorld
-from tele_context import TeleContext
-from unittest.mock import MagicMock, Mock, PropertyMock
-
+from unittest.mock import MagicMock, PropertyMock
+from src.network_tele_world import NetworkTeleWorld
+from src.tele_context import TeleContext
 
 
 def create_empty_event(time):
@@ -34,7 +34,7 @@ def test_time_pass():
     assert tele_context.current_timestamp == tele_context.end_timestamp - tele_context.time_step
 
 
-    #event = create_empty_event(2 * 1000)
-    #world = NetworkTeleWorld()
-    #context.exec_next_event()
-    #assert context.simulation_time == event.time
+    # event = create_empty_event(2 * 1000)
+    # world = NetworkTeleWorld()
+    # context.exec_next_event()
+    # assert context.simulation_time == event.time
