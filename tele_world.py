@@ -10,7 +10,6 @@ class TeleWorld(ABC):
         self._queue = PriorityQueue()
         self._current_time_step = None
 
-    @staticmethod
     def proceed(self, ms: int):
         ...
 

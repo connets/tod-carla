@@ -5,7 +5,6 @@ from NetworkTeleWorld import NetworkTeleWorld
 from tele_context import TeleContext
 from unittest.mock import MagicMock, Mock, PropertyMock
 
-pytest.context = TeleContext(100)
 
 
 def create_empty_event(time):
@@ -17,9 +16,10 @@ def create_empty_event(time):
 
 
 def test_add_event_to_world():
-    context = pytest.context
+    tele_context = TeleContext(100, 200, 10)
+
     world = NetworkTeleWorld()
-    context.add_world(world)
+    tele_context.add_world(world)
 
     assert not world.has_events()
     event = create_empty_event(2 * 1000)
@@ -29,9 +29,12 @@ def test_add_event_to_world():
 
 
 def test_time_pass():
-    context = pytest.context
-    event = create_empty_event(2 * 1000)
-    world = NetworkTeleWorld()
+    tele_context = TeleContext(100, 200, 10)
+    tele_context.start()
+    assert tele_context.current_timestamp == tele_context.end_timestamp - tele_context.time_step
 
-    context.exec_next_event()
+
+    #event = create_empty_event(2 * 1000)
+    #world = NetworkTeleWorld()
+    #context.exec_next_event()
     #assert context.simulation_time == event.time

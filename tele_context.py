@@ -8,11 +8,12 @@ from tele_event import TeleEvent
 from tele_world import TeleWorld
 
 
-@Singleton
 class TeleContext:
-    def __init__(self, time_step: int):
+    def __init__(self, start_timestamp: int, end_timestamp: int, time_step: int):
         self._last_event = None
-        self._current_time_step = 0
+        self._current_timestamp = 0
+        self._start_timestamp = start_timestamp
+        self._end_timestamp = end_timestamp
         self._time_step = time_step
         self._worlds = []
 
@@ -21,10 +22,23 @@ class TeleContext:
         self._worlds.append(world)
 
     def start(self):
-        for world in self._worlds:
-            world.proceed(self._current_time_step)
-        self._current_time_step += self._time_step
+        for current_timestamp in range(self._start_timestamp, self._end_timestamp, self._time_step):
+            self._current_timestamp = current_timestamp
+            for world in self._worlds:
+                world.proceed(current_timestamp)
 
     @property
-    def simulation_time(self):
-        return self._last_event.time
+    def current_timestamp(self):
+        return self._current_timestamp
+
+    @property
+    def start_timestamp(self):
+        return self._start_timestamp
+
+    @property
+    def end_timestamp(self):
+        return self._end_timestamp
+
+    @property
+    def time_step(self):
+        return self._time_step
