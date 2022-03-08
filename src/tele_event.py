@@ -1,14 +1,10 @@
-from abc import ABC
+from abc import ABC, abstractmethod
+
+from src.tele_world import TeleWorld
 
 
 class TeleEvent(ABC):
 
-    def __init__(self, time):
-        self._time = time
-
-    @property
-    def time(self) -> float:
-        return self._time
-
-    def __lt__(self, e):
-        return self._time < e.time
+    @abstractmethod
+    def exec(self, world: TeleWorld):
+        ...

@@ -1,10 +1,3 @@
-from multiprocessing import Event
-from typing import List
-
-from my_singleton import Singleton
-from queue import PriorityQueue
-
-from tele_event import TeleEvent
 from tele_world import TeleWorld
 
 
@@ -18,7 +11,6 @@ class TeleContext:
         self._worlds = []
 
     def add_world(self, world: TeleWorld):
-        world.init(self._time_step)
         self._worlds.append(world)
 
     def start(self):
@@ -42,3 +34,4 @@ class TeleContext:
     @property
     def time_step(self):
         return self._time_step
+
