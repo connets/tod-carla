@@ -2,7 +2,7 @@ from abc import ABC
 
 
 class TeleEvent(ABC):
-    
+
     def __init__(self, time):
         self._time = time
 
