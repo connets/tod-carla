@@ -1,6 +1,8 @@
+from src.my_singleton import Singleton
 from tele_world import TeleWorld
 
 
+@Singleton
 class TeleContext:
     def __init__(self, start_timestamp: int, end_timestamp: int, time_step: int):
         self._last_event = None
@@ -19,6 +21,11 @@ class TeleContext:
             for world in self._worlds:
                 world.proceed(current_timestamp)
 
+    def get_world(self, world_name: str) -> TeleWorld:
+        for world in self._worlds:
+            if world.world_name == world_name: return world
+        raise Exception(f"There isn't any associated {world_name} world")
+
     @property
     def current_timestamp(self):
         return self._current_timestamp
@@ -34,4 +41,3 @@ class TeleContext:
     @property
     def time_step(self):
         return self._time_step
-

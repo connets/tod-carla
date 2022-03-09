@@ -1,12 +1,11 @@
 from abc import ABC
 from queue import PriorityQueue
 
-from utils import need_member
 
+class TeleWorld:
 
-class TeleWorld(ABC):
-
-    def __init__(self, start_timestamp):
+    def __init__(self, world_name, start_timestamp):
+        self._world_name = world_name
         self._queue = PriorityQueue()
         self._current_timestamp = start_timestamp
 
@@ -14,6 +13,10 @@ class TeleWorld(ABC):
         self._current_timestamp = current_timestamp
         if not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._current_timestamp:
             self._queue.get().event.exec(self)
+
+    @property
+    def world_name(self):
+        return self._world_name
 
     def schedule_event_from_now(self, e, time_from_now: int):
         self._queue.put(self.TimingEvent(e, self._current_timestamp + time_from_now))
