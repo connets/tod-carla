@@ -1,13 +1,8 @@
-from multiprocessing import Event
-from typing import List
-
-from my_singleton import Singleton
-from queue import PriorityQueue
-
-from tele_event import TeleEvent
-from tele_world import TeleWorld
+from src.my_singleton import Singleton
+from src.tele_world import TeleWorld
 
 
+@Singleton
 class TeleContext:
     def __init__(self, start_timestamp: int, end_timestamp: int, time_step: int):
         self._last_event = None
@@ -18,7 +13,6 @@ class TeleContext:
         self._worlds = []
 
     def add_world(self, world: TeleWorld):
-        world.init(self._time_step)
         self._worlds.append(world)
 
     def start(self):
@@ -26,6 +20,11 @@ class TeleContext:
             self._current_timestamp = current_timestamp
             for world in self._worlds:
                 world.proceed(current_timestamp)
+
+    def get_world(self, world_name: str) -> TeleWorld:
+        for world in self._worlds:
+            if world.world_name == world_name: return world
+        raise Exception(f"There isn't any associated {world_name} world")
 
     @property
     def current_timestamp(self):

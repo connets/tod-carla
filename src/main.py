@@ -1,5 +1,4 @@
-from src.network_tele_world import NetworkTeleWorld
+from src.tele_world import TeleWorld
 
-n = NetworkTeleWorld()
-
-print(n)
+tele = TeleWorld("prova", 100)
+print("hello!!!")
