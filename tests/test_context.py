@@ -75,7 +75,7 @@ def test_worlds_communication():
     mars_event = MagicMock()
     mars_event.exec = MagicMock()
 
-    def schedule_mars_event(current_world):
+    def schedule_mars_event(_):
         mars2 = TeleContext.instance.get_world("Mars")
         mars2.schedule_event_from_now(mars_event, 100)
 
