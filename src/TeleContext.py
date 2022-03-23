@@ -1,5 +1,5 @@
 from src.MySingleton import Singleton
-from src.tele_world import TeleWorld
+from src.TeleWorld import TeleWorld
 
 
 @Singleton

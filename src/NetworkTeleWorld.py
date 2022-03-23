@@ -1,4 +1,4 @@
-from src.tele_world import TeleWorld
+from src.TeleWorld import TeleWorld
 
 
 class NetworkTeleWorld(TeleWorld):

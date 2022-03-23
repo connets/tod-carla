@@ -4,7 +4,6 @@ argon2-cffi==21.3.0
 argon2-cffi-bindings==21.2.0
 asttokens==2.0.5
 attrs==21.4.0
-auditwheel==5.1.2
 Babel==2.9.1
 backcall==0.2.0
 beautifulsoup4==4.10.0
@@ -12,6 +11,7 @@ bleach==4.1.0
 certifi==2021.10.8
 cffi==1.15.0
 charset-normalizer==2.0.12
+coverage==6.3.2
 cycler==0.11.0
 debugpy==1.5.1
 decorator==5.1.1
@@ -20,7 +20,7 @@ deprecation==2.1.0
 distro==1.7.0
 entrypoints==0.4
 executing==0.8.3
-fonttools==4.30.0
+fonttools==4.31.1
 future==0.18.2
 idna==3.3
 importlib-resources==5.4.0
@@ -53,6 +53,7 @@ nbconvert==6.4.4
 nbformat==5.2.0
 nest-asyncio==1.5.4
 networkx==2.7.1
+nose2==0.11.0
 notebook==6.4.10
 notebook-shim==0.1.0
 numpy==1.18.4
@@ -72,21 +73,20 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 py==1.11.0
 pycparser==2.21
-pyelftools==0.28
 pygame==2.1.2
 Pygments==2.11.2
 pyparsing==3.0.7
 pyrsistent==0.18.1
-pytest==7.0.1
+pytest==7.1.1
 python-dateutil==2.8.2
-pytz==2021.3
+pytz==2022.1
 PyYAML==6.0
 pyzmq==22.3.0
 requests==2.27.1
 scikit-learn==1.0.2
 scipy==1.8.0
 Send2Trash==1.8.0
-Shapely==1.8.1.post1
+Shapely==1.6.4
 six==1.16.0
 sniffio==1.2.0
 soupsieve==2.3.1

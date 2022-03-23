@@ -1,9 +1,9 @@
-from src.tele_world import TeleWorld
+from src.TeleWorld import TeleWorld
 
 
 from unittest.mock import MagicMock, call
-from src.network_tele_world import NetworkTeleWorld
-from src.tele_context import TeleContext
+from src.NetworkTeleWorld import NetworkTeleWorld
+from src.TeleContext import TeleContext
 
 
 def test_add_event_to_world():

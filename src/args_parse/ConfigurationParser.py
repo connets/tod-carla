@@ -16,16 +16,12 @@ class ConfigurationParser:
             args = sys.argv[1:]
 
         conf_parser = argparse.ArgumentParser(add_help=False)
-        conf_parser.add_argument("-c", "--config",
-                                 default=self.config_file,
-                                 help="where to load YAML configuration",
-                                 metavar="FILE")
 
-        res, remaining_argv = conf_parser.parse_known_args(args)
+
 
         config_vars = {}
-        if res.config is not None:
-            with open(res.config, 'r') as stream:
+        if self.config_file is not None:
+            with open(self.config_file, 'r') as stream:
                 config_vars = yaml.load(stream, Loader=yaml.FullLoader)
                 if config_vars is None: config_vars = {}
 
@@ -54,4 +50,4 @@ class ConfigurationParser:
         if config_vars:
             parser.error(f'Unexpected configuration entries: {config_vars}')
 
-        return parser.parse_args(remaining_argv)
+        return parser.parse_args(args)

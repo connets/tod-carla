@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.tele_world import TeleWorld
+from src.TeleWorld import TeleWorld
 
 
 class TeleEvent(ABC):
