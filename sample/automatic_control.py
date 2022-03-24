@@ -50,8 +50,8 @@ print("**** => ", os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + 
 import carla
 from carla import ColorConverter as cc
 
-from libs.agents.navigation.behavior_agent import BehaviorAgent  # pylint: disable=import-error
-from libs.agents.navigation.basic_agent import BasicAgent  # pylint: disable=import-error
+from lib.agents.navigation.behavior_agent import BehaviorAgent  # pylint: disable=import-error
+from lib.agents.navigation.basic_agent import BasicAgent  # pylint: disable=import-error
 
 
 # ==============================================================================
