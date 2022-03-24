@@ -4,14 +4,15 @@ from src.args_parse.ConfigurationParser import ConfigurationParser
 from src.folder_path import CONFIGURATION_FILE_PATH
 
 
-def parse_configuration_files():
+def parse_configuration_files(args=None):
+
     parser = ConfigurationParser()
     parser.add('--carla_server_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
-    return parser.parse()
+    return parser.parse(args=args)
 
 
-def parse_carla_args(configuration_path):
+def parse_carla_args(configuration_path, args=None):
     parser = ConfigurationParser(configuration_path)
     parser.add('--host', metavar='H', help='IP of the host server', required=True)
     parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to')
@@ -35,7 +36,7 @@ def parse_carla_args(configuration_path):
     parser.add('--respawn', help='Automatically respawn dormant vehicles (only in large maps)')
     parser.add('--no-rendering', help='Activate no rendering mode')
 
-    return parser.parse(description=__doc__, argument_default=argparse.SUPPRESS)
+    return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
 
 if __name__ == '__main__':
