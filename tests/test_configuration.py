@@ -1,4 +1,4 @@
-from src.args_parsing.ConfigurationParser import ConfigurationParser
+from src.args_parse.ConfigurationParser import ConfigurationParser
 
 
 def test_configuration_server():
