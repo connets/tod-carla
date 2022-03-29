@@ -53,18 +53,18 @@ def main():
     argparser.add_argument(
         '--host',
         metavar='H',
-        default='127.0.0.1',
+        default='ubiquity',
         help='IP of the host server (default: 127.0.0.1)')
     argparser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=3000,
         type=int,
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(
         '-n', '--number-of-vehicles',
         metavar='N',
-        default=30,
+        default=100,
         type=int,
         help='Number of vehicles (default: 30)')
     argparser.add_argument(

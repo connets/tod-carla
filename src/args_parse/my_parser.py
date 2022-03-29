@@ -15,8 +15,11 @@ def parse_configuration_files(args=None):
 def parse_carla_args(configuration_path, args=None):
     parser = ConfigurationParser(configuration_path)
     parser.add('--host', metavar='H', help='IP of the host server', required=True)
-    parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to')
+    parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
+    parser.add('--vehicle', metavar='V', help='vehicle to drive', required=True)
     parser.add('-n', '--number-of-vehicles', metavar='N', type=int, help='Number of vehicles')
+    parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
+    parser.add('--world', metavar='W', help='Using world')
     parser.add('-w', '--number-of-walkers', metavar='W', type=int, help='Number of walkers (default: 10)')
     parser.add('--safe', help='Avoid spawning vehicles prone to accidents')
     parser.add('--filterv', metavar='PATTERN', help='Filter vehicle model')

@@ -1,2 +1,6 @@
 host: ubiquity
 port: 3000
+timeout: 3
+world: Town01_Opt
+vehicle: vehicle.tesla.model3
+

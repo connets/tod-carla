@@ -13,11 +13,9 @@ class ConfigurationParser:
 
     def parse(self, *pargs, args=None, **kwpargs):
         if args is None:
-            args = sys.argv[1:]
+            args = sys.argv[1:].copy()
 
         conf_parser = argparse.ArgumentParser(add_help=False)
-
-
 
         config_vars = {}
         if self.config_file is not None:
@@ -50,4 +48,6 @@ class ConfigurationParser:
         if config_vars:
             parser.error(f'Unexpected configuration entries: {config_vars}')
 
-        return parser.parse_args(args)
+        res, unknown = parser.parse_known_args(args)
+
+        return res
