@@ -3,6 +3,7 @@ import random
 
 import carla
 
+from src.CarlaVehicle import CarlaVehicle
 from src.sensors.CameraManager import CameraManager
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member, get_actor_display_name
@@ -42,8 +43,9 @@ class TeleActuatorWorld(TeleWorld):
         """Constructor method"""
         super().__init__("Actuator_World")
         self._carla_conf = carla_conf
-        self.world : World = carla_world
         self._controller = controller
+
+        self.world: World = carla_world
         try:
             self.map = self.world.get_map()
         except RuntimeError as error:
@@ -52,21 +54,27 @@ class TeleActuatorWorld(TeleWorld):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
 
+
         self.hud = hud
         self.player = None
-        self.collision_sensor = None
-        self.lane_invasion_sensor = None
-        self.gnss_sensor = None
-        self.imu_sensor = None
-        self.radar_sensor = None
+        self.vehicles = []
+
+        self.world.on_tick(self.hud.on_world_tick)
+
+        # self.collision_sensor = None
+        # self.lane_invasion_sensor = None
+        # self.gnss_sensor = None
+        # self.imu_sensor = None
+        # self.radar_sensor = None
         self.camera_manager = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
         # self._actor_filter = args.filter
         # self._actor_generation = args.generation
-        self._gamma = 2.2
+
         self.restart()
-        self.world.on_tick(hud.on_world_tick)
+
+
         self.recording_enabled = False
         self.recording_start = 0
         self.constant_velocity_enabled = False
@@ -87,46 +95,54 @@ class TeleActuatorWorld(TeleWorld):
             carla.MapLayer.All
         ]
 
+        self._sensors = []
+
+
+    def add_sensor(self, sensor):
+        self._sensors.append(sensor)
+
+    def start(self, player_controller):
+        ...
+
     def restart(self):
+        ...
         """Restart the world"""
         # Keep same camera config if the camera manager exists.
-        cam_index = self.camera_manager.index if self.camera_manager is not None else 0
-        cam_pos_id = self.camera_manager.transform_index if self.camera_manager is not None else 0
+        # cam_index = self.camera_manager.index if self.camera_manager is not None else 0
+        # cam_pos_id = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
         # Get a random blueprint.
-        blueprint = random.choice(self.world.get_blueprint_library().filter(self._carla_conf.vehicle))
-        blueprint.set_attribute('role_name', 'hero')
-        if blueprint.has_attribute('color'):
-            color = random.choice(blueprint.get_attribute('color').recommended_values)
-            blueprint.set_attribute('color', color)
+        # blueprint = random.choice(self.world.get_blueprint_library().filter(self._carla_conf.vehicle))
+        # blueprint.set_attribute('role_name', 'hero')
+        # if blueprint.has_attribute('color'):
+        #     color = random.choice(blueprint.get_attribute('color').recommended_values)
+        #     blueprint.set_attribute('color', color)
 
-        if blueprint.has_attribute('speed'):
-            self.player_max_speed = float(blueprint.get_attribute('speed').recommended_values[1])
-            self.player_max_speed_fast = float(blueprint.get_attribute('speed').recommended_values[2])
+        # if blueprint.has_attribute('speed'):
+        #     self.player_max_speed = float(blueprint.get_attribute('speed').recommended_values[1])
+        #     self.player_max_speed_fast = float(blueprint.get_attribute('speed').recommended_values[2])
 
         # Spawn the player.
-        if self.player is not None:
-            spawn_point = self.player.get_transform()
-            spawn_point.location.z += 2.0
-            spawn_point.rotation.roll = 0.0
-            spawn_point.rotation.pitch = 0.0
-            self.destroy()
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-            self.show_vehicle_telemetry = False
-
-            self.modify_vehicle_physics(self.player)
-        while self.player is None:
-            if not self.map.get_spawn_points():
-                print('There are no spawn points available in your map/town.')
-                print('Please add some Vehicle Spawn Point to your UE4 scene.')
-                sys.exit(1)
-            spawn_points = self.map.get_spawn_points()
-            spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
-            self.player = self.world.try_spawn_actor(blueprint, spawn_point)
-            self.show_vehicle_telemetry = False
-            self.modify_vehicle_physics(self.player)
-
-        self.player.set_light_state(carla.VehicleLightState.All)
+        # if self.player is not None:
+        #     spawn_point = self.player.get_transform()
+        #     spawn_point.location.z += 2.0
+        #     spawn_point.rotation.roll = 0.0
+        #     spawn_point.rotation.pitch = 0.0
+        #     self.destroy()
+        #     self.player = self.world.try_spawn_actor(blueprint, spawn_point)
+        #     self.show_vehicle_telemetry = False
+        #
+        #     self.modify_vehicle_physics(self.player)
+        # while self.player is None:
+        #     if not self.map.get_spawn_points():
+        #         print('There are no spawn points available in your map/town.')
+        #         print('Please add some Vehicle Spawn Point to your UE4 scene.')
+        #         sys.exit(1)
+        #     spawn_points = self.map.get_spawn_points()
+        #     spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+        #     self.player = self.world.try_spawn_actor(blueprint, spawn_point)
+        #     self.show_vehicle_telemetry = False
+        #     self.modify_vehicle_physics(self.player)
 
 
         # self.world.wait_for_tick() #TODO usefull
@@ -135,43 +151,47 @@ class TeleActuatorWorld(TeleWorld):
         # self.collision_sensor = CollisionSensor(self.player, self.hud)
         # self.lane_invasion_sensor = LaneInvasionSensor(self.player, self.hud)
         # self.gnss_sensor = GnssSensor(self.player)
-        self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
-        self.camera_manager.transform_index = cam_pos_id
-        self.camera_manager.set_sensor(cam_index, notify=False)
-        actor_type = get_actor_display_name(self.player)
+        # self.camera_manager = CameraManager(self.player, self.hud, self._gamma)
+
+        # self.camera_manager.restart()
+        # self.camera_manager.transform_index = cam_pos_id
+        # self.camera_manager.set_sensor(cam_index, notify=False)
+        # actor_type = get_actor_display_name(self.player)
         # self.hud.notification(actor_type)
 
-    def next_weather(self, reverse=False):
-        """Get next weather setting"""
-        self._weather_index += -1 if reverse else 1
-        self._weather_index %= len(self._weather_presets)
-        preset = self._weather_presets[self._weather_index]
-        # self.hud.notification('Weather: %s' % preset[1])
-        self.player.get_world().set_weather(preset[0])
+    # def next_weather(self, reverse=False):
+    #     """Get next weather setting"""
+    #     self._weather_index += -1 if reverse else 1
+    #     self._weather_index %= len(self._weather_presets)
+    #     preset = self._weather_presets[self._weather_index]
+    #     # self.hud.notification('Weather: %s' % preset[1])
+    #     self.player.get_world().set_weather(preset[0])
 
+    #
+    # def next_map_layer(self, reverse=False):
+    #     self.current_map_layer += -1 if reverse else 1
+    #     self.current_map_layer %= len(self.map_layer_names)
+    #     selected = self.map_layer_names[self.current_map_layer]
 
+    # def load_map_layer(self, unload=False):
+    #     selected = self.map_layer_names[self.current_map_layer]
+    #     if unload:
+    #         self.world.unload_map_layer(selected)
+    #     else:
+    #         self.world.load_map_layer(selected)
 
-    def next_map_layer(self, reverse=False):
-        self.current_map_layer += -1 if reverse else 1
-        self.current_map_layer %= len(self.map_layer_names)
-        selected = self.map_layer_names[self.current_map_layer]
+    def add_vehicle_player(self, vehicle: CarlaVehicle):
+        self.player = vehicle
+        self.player.spawn_in_world(self.map, self.world, modify_vehicle_physics=True)
+        #
+        # try:
+        #     physics_control = player.get_physics_control()
+        #     physics_control.use_sweep_wheel_collision = True
+        #     player.apply_physics_control(physics_control)
+        # except Exception:
+        #     pass
 
-    def load_map_layer(self, unload=False):
-        selected = self.map_layer_names[self.current_map_layer]
-        if unload:
-            self.world.unload_map_layer(selected)
-        else:
-            self.world.load_map_layer(selected)
-
-    def modify_vehicle_physics(self, actor):
-        # If actor is not a vehicle, we cannot use the physics control
-        try:
-            physics_control = actor.get_physics_control()
-            physics_control.use_sweep_wheel_collision = True
-            actor.apply_physics_control(physics_control)
-        except Exception:
-            pass
-
+    @need_member('player')
     def tick(self, clock):
         """Method for every tick"""
         command = self._controller.do_action(self, clock)

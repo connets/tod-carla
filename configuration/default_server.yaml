@@ -1,6 +1,6 @@
 host: ubiquity
 port: 3000
-timeout: 3
+timeout: 8
 world: Town01_Opt
-vehicle: vehicle.tesla.model3
-
+vehicle_player: vehicle.tesla.model3
+vehicle_bot: vehicle.tesla.model3 #TODO insert this
