@@ -126,6 +126,8 @@ class TeleActuatorWorld(TeleWorld):
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
 
+        self.player.set_light_state(carla.VehicleLightState.All)
+
 
         # self.world.wait_for_tick() #TODO usefull
 
@@ -172,10 +174,12 @@ class TeleActuatorWorld(TeleWorld):
 
     def tick(self, clock):
         """Method for every tick"""
-        command = self._controller.calc_command(clock)
+        command = self._controller.do_action(self, clock)
+        if command is None:
+            return -1
         self.player.apply_control(command)
-        # self.hud.tick(self, clock)
-        ...
+        self.hud.tick(self, clock)
+        return 0
 
     def render(self, display):
         """Render world"""

@@ -1,15 +1,11 @@
-import argparse
-
 import carla
-import numpy.random as random
 import pygame
 from carla import libcarla
-from carla.libcarla import World, BlueprintLibrary
 
 from src.args_parse import my_parser
-from src.TeleWorld import TeleWorld, TeleActuatorWorld
+from src.TeleWorld import TeleActuatorWorld
 from src.utils.Hud import HUD
-from src.utils.KeyboardController import KeyboardController
+from src.CarlaWorldController import KeyboardCarlaWorldController
 
 
 def main():
@@ -30,16 +26,21 @@ def main():
     pygame.display.flip()
 
     hud = HUD(1280, 720)
-    controller = KeyboardController()
+    controller = KeyboardCarlaWorldController(None) #TODO remove from here
     world = TeleActuatorWorld(sim_world, carla_conf, controller, hud)
     sim_world.wait_for_tick()
     clock = pygame.time.Clock()
-    while True:
+
+    exit = False
+    while not exit:
         clock.tick_busy_loop(60)
-        world.tick(clock)
+        exit = world.tick(clock) != 0
         world.render(display)
         pygame.display.flip()
 
+    #TODO destroy everything
+    pygame.quit()
+    world.destroy()
 
 if __name__ == '__main__':
     main()
