@@ -3,8 +3,8 @@ import random
 
 import carla
 
-from src.CarlaVehicle import CarlaVehicle
-from src.sensors.CameraManager import CameraManager
+from src.TeleActor import TeleVehicle
+from src.sensors.CameraManager import CameraManager, CarlaRenderSensor, CarlaSensor
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member, get_actor_display_name
 from carla.libcarla import World
@@ -98,7 +98,8 @@ class TeleActuatorWorld(TeleWorld):
         self._sensors = []
 
 
-    def add_sensor(self, sensor):
+    def add_sensor(self, sensor: CarlaSensor, parent):
+        sensor.spawn_in_world(parent)
         self._sensors.append(sensor)
 
     def start(self, player_controller):
@@ -180,9 +181,9 @@ class TeleActuatorWorld(TeleWorld):
     #     else:
     #         self.world.load_map_layer(selected)
 
-    def add_vehicle_player(self, vehicle: CarlaVehicle):
+    def add_vehicle_player(self, vehicle: TeleVehicle):
         self.player = vehicle
-        self.player.spawn_in_world(self.map, self.world, modify_vehicle_physics=True)
+        self.player.spawn_in_world(self.map, self.world)
         #
         # try:
         #     physics_control = player.get_physics_control()
@@ -203,7 +204,11 @@ class TeleActuatorWorld(TeleWorld):
 
     def render(self, display):
         """Render world"""
-        self.camera_manager.render(display)
+        for sensor in self._sensors:
+            if isinstance(sensor, CarlaRenderSensor):
+                sensor.render(display)
+
+        # self.camera_manager.render(display)
         # self.hud.render(display)
 
     def destroy_sensors(self):

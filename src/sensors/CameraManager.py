@@ -1,4 +1,6 @@
+import abc
 import weakref
+from abc import ABC, abstractmethod
 
 import carla
 import numpy as np
@@ -6,7 +8,19 @@ import pygame
 from carla import ColorConverter as cc
 
 
-class CameraManager(object):
+class CarlaSensor(ABC):
+    @abstractmethod
+    def spawn_in_world(self, parent_actor):
+        ...
+
+
+class CarlaRenderSensor(CarlaSensor):
+    @abstractmethod
+    def render(self, display):
+        ...
+
+
+class CameraManager(CarlaRenderSensor):
 
     def __init__(self, gamma_correction, hud):
         self._gamma_correction = gamma_correction
@@ -16,7 +30,6 @@ class CameraManager(object):
         self._parent = None
         self.recording = False
         self.lidar_range = None
-
 
         self._camera_transforms = None
         self.transform_index = 0
@@ -58,10 +71,13 @@ class CameraManager(object):
 
         Attachment = carla.AttachmentType
         self._camera_transforms = [
-            (carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z), carla.Rotation(pitch=8.0)), Attachment.SpringArm),
+            (carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
+                             carla.Rotation(pitch=8.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=+0.8 * bound_x, y=+0.0 * bound_y, z=1.3 * bound_z)), Attachment.Rigid),
-            (carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y, z=4.6 * bound_z), carla.Rotation(pitch=6.0)), Attachment.SpringArm),
+            (
+            carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)), Attachment.SpringArm),
+            (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y, z=4.6 * bound_z),
+                             carla.Rotation(pitch=6.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-1.0, y=-1.0 * bound_y, z=0.4 * bound_z)), Attachment.Rigid)]
 
         # self._camera_transforms = [
@@ -114,7 +130,6 @@ class CameraManager(object):
 
         self.set_sensor(0, notify=False)
 
-
     def restart(self):
         self.set_sensor(self.index if self.index is not None else 0, notify=False)
 
@@ -135,7 +150,7 @@ class CameraManager(object):
             self.sensor = self._parent.get_world().spawn_actor(
                 self.sensors[index][-1],
                 self._camera_transforms[self.transform_index][0],
-                attach_to=self._parent.vehicle,
+                attach_to=self._parent.model,
                 attachment_type=self._camera_transforms[self.transform_index][1])
 
             # We need to pass the lambda a weak reference to

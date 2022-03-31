@@ -2,7 +2,7 @@ import carla
 import pygame
 from carla import libcarla
 
-from src.CarlaVehicle import CarlaVehicle
+from src.TeleActor import TeleVehicle
 from src.args_parse import my_parser
 from src.TeleWorld import TeleActuatorWorld
 from src.sensors.CameraManager import CameraManager
@@ -27,7 +27,7 @@ def main():
     pygame.display.flip()
 
     player_attrs = {'role_name': 'hero'}
-    player = CarlaVehicle(carla_conf.vehicle_player, '1', player_attrs)
+    player = TeleVehicle(carla_conf.vehicle_player, '1', player_attrs, modify_vehicle_physics=True)
 
     hud = HUD(1280, 720)
     controller = KeyboardCarlaWorldController(None)  # TODO remove from here
@@ -36,8 +36,9 @@ def main():
 
     print(player.get_world(), sim_world)
     camera_manager = CameraManager(hud, 2.2)
-    camera_manager.spawn_in_world(player) #TODO remove from here and add to TeleWorld class
-    tele_world.camera_manager = camera_manager
+    # camera_manager.spawn_in_world(player) #TODO remove from here and add to TeleWorld class
+    # tele_world.camera_manager = camera_manager
+    tele_world.add_sensor(camera_manager, player)
     sim_world.wait_for_tick()
     clock = pygame.time.Clock()
 
