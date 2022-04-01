@@ -8,19 +8,25 @@ import pygame
 from carla import ColorConverter as cc
 
 
-class CarlaSensor(ABC):
+class TeleSensor(ABC):
     @abstractmethod
     def spawn_in_world(self, parent_actor):
         ...
 
+    def stop(self):
+        ...
 
-class CarlaRenderSensor(CarlaSensor):
+    def destroy(self):
+        ...
+
+
+class TeleRenderingSensor(TeleSensor):
     @abstractmethod
     def render(self, display):
         ...
 
 
-class CameraManager(CarlaRenderSensor):
+class CameraManager(TeleRenderingSensor):
 
     def __init__(self, gamma_correction, hud):
         self._gamma_correction = gamma_correction
@@ -75,7 +81,8 @@ class CameraManager(CarlaRenderSensor):
                              carla.Rotation(pitch=8.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=+0.8 * bound_x, y=+0.0 * bound_y, z=1.3 * bound_z)), Attachment.Rigid),
             (
-            carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)), Attachment.SpringArm),
+                carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)),
+                Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y, z=4.6 * bound_z),
                              carla.Rotation(pitch=6.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-1.0, y=-1.0 * bound_y, z=0.4 * bound_z)), Attachment.Rigid)]

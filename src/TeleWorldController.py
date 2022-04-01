@@ -41,10 +41,10 @@ from pygame.locals import KMOD_CTRL, KMOD_SHIFT, K_0, K_9, K_BACKQUOTE, K_BACKSP
 from enum import Enum
 
 
-class CarlaController:
+class TeleController:
     ...
 
-class KeyboardCarlaWorldController(CarlaController):
+class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
 
     def __init__(self, camera_manager):
@@ -188,9 +188,9 @@ class KeyboardCarlaWorldController(CarlaController):
                 #     current_lights ^= carla.VehicleLightState.RightBlinker
 
         # if not self._autopilot_enabled:
-        if isinstance(self._control, carla.VehicleControl):
-            self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
-            self._control.reverse = self._control.gear < 0
+        # if isinstance(self._control, carla.VehicleControl):
+        self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
+        self._control.reverse = self._control.gear < 0
             # Set automatic control-related vehicle lights
             # if self._control.brake:
             #     current_lights |= carla.VehicleLightState.Brake

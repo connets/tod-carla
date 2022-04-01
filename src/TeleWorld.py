@@ -4,7 +4,7 @@ import random
 import carla
 
 from src.TeleActor import TeleVehicle
-from src.sensors.CameraManager import CameraManager, CarlaRenderSensor, CarlaSensor
+from src.TeleSensor.CameraManager import TeleSensor, TeleRenderingSensor
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member, get_actor_display_name
 from carla.libcarla import World
@@ -98,7 +98,7 @@ class TeleActuatorWorld(TeleWorld):
         self._sensors = []
 
 
-    def add_sensor(self, sensor: CarlaSensor, parent):
+    def add_sensor(self, sensor: TeleSensor, parent):
         sensor.spawn_in_world(parent)
         self._sensors.append(sensor)
 
@@ -205,7 +205,7 @@ class TeleActuatorWorld(TeleWorld):
     def render(self, display):
         """Render world"""
         for sensor in self._sensors:
-            if isinstance(sensor, CarlaRenderSensor):
+            if isinstance(sensor, TeleRenderingSensor):
                 sensor.render(display)
 
         # self.camera_manager.render(display)
@@ -218,15 +218,15 @@ class TeleActuatorWorld(TeleWorld):
         self.camera_manager.index = None
 
     def destroy(self):
-        if self.radar_sensor is not None:
-            self.toggle_radar()
-        sensors = [
-            self.camera_manager.sensor,
-            self.collision_sensor.sensor,
-            self.lane_invasion_sensor.sensor,
-            self.gnss_sensor.sensor,
-            self.imu_sensor.sensor]
-        for sensor in sensors:
+        # if self.radar_sensor is not None:
+        #     self.toggle_radar()
+        # sensors = [
+        #     self.camera_manager.sensor,
+        #     self.collision_sensor.sensor,
+        #     self.lane_invasion_sensor.sensor,
+        #     self.gnss_sensor.sensor,
+        #     self.imu_sensor.sensor]
+        for sensor in self._sensors:
             if sensor is not None:
                 sensor.stop()
                 sensor.destroy()

@@ -1,16 +1,21 @@
+import inspect
+import sys
+import time
+
 import carla
 import pygame
 from carla import libcarla
 
 from src.TeleActor import TeleVehicle
+from src.TeleSensor.CameraManager import CameraManager
 from src.args_parse import my_parser
 from src.TeleWorld import TeleActuatorWorld
-from src.sensors.CameraManager import CameraManager
 from src.utils.Hud import HUD
-from src.CarlaWorldController import KeyboardCarlaWorldController
+from src.TeleWorldController import KeyboardTeleWorldController
 
 
 def main():
+
     conf_files = my_parser.parse_configuration_files()
     carla_conf = my_parser.parse_carla_args(conf_files.carla_server_file)
     client: libcarla.Client = carla.Client(carla_conf.host, carla_conf.port)
@@ -30,25 +35,27 @@ def main():
     player = TeleVehicle(carla_conf.vehicle_player, '1', player_attrs, modify_vehicle_physics=True)
 
     hud = HUD(1280, 720)
-    controller = KeyboardCarlaWorldController(None)  # TODO remove from here
+    controller = KeyboardTeleWorldController(None)  # TODO remove from here
     tele_world = TeleActuatorWorld(sim_world, carla_conf, controller, hud)
     tele_world.add_vehicle_player(player)
 
     print(player.get_world(), sim_world)
     camera_manager = CameraManager(hud, 2.2)
-    # camera_manager.spawn_in_world(player) #TODO remove from here and add to TeleWorld class
-    # tele_world.camera_manager = camera_manager
     tele_world.add_sensor(camera_manager, player)
     sim_world.wait_for_tick()
     clock = pygame.time.Clock()
 
     exit = False
+    i = 0
     while not exit:
+        print(i, time.time())
         clock.tick_busy_loop(60)
+        print(i, time.time())
         exit = tele_world.tick(clock) != 0
         tele_world.render(display)
         pygame.display.flip()
-
+        i += 1
+        # exit = i == 1000 | exit
     # TODO destroy everything
     pygame.quit()
     tele_world.destroy()
