@@ -196,10 +196,6 @@ class World(object):
             print('  The server could not send the OpenDRIVE (.xodr) file:')
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
-
-        #TODO REMOVE
-        self.world.unload_map_layer(carla.MapLayer.Buildings)
-
         self.hud = hud
         self.player = None
         self.collision_sensor = None
@@ -1188,8 +1184,7 @@ def game_loop(args):
         client = carla.Client("ubiquity", 3000)
         client.set_timeout(20.0)
 
-        sim_world : World = client.load_world('Town01_Opt', carla.MapLayer.Buildings)
-
+        sim_world = client.get_world()
         if args.sync:
             original_settings = sim_world.get_settings()
             settings = sim_world.get_settings()

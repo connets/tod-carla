@@ -11,7 +11,19 @@ def need_member(member):
     return wrapper_method
 
 
-def get_actor_display_name(actor, truncate=250):
-    """Method to get actor display name"""
-    name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
-    return (name[:truncate - 1] + u'\u2026') if len(name) > truncate else name
+def flat_dict(d, keys_sep='.'):
+    def flat_dict_aux(d_p):
+        if not isinstance(d_p, dict):
+            return [('', d_p)]
+        res = []
+        for k_p, v_p in d_p.items():
+            res = res + [(f'{k_p}{keys_sep if item[0] != "" else ""}{item[0]}', item[1]) for item in flat_dict_aux(v_p)]
+        return res
+
+    return dict(flat_dict_aux(d))
+
+
+if __name__ == '__main__':
+    d = {'a': {'b': 2, 'd': 2}, 'c': 1, 'd': {'e': {'f': 3}}}
+    print(flat_dict(d))
+# flat_dictionary()

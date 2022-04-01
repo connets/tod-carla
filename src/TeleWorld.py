@@ -6,7 +6,7 @@ import carla
 from src.TeleActor import TeleVehicle
 from src.TeleSensor.CameraManager import TeleSensor, TeleRenderingSensor
 from src.utils.carla_utils import find_weather_presets
-from src.utils.utils import need_member, get_actor_display_name
+from src.utils.utils import need_member
 from carla.libcarla import World
 
 

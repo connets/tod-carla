@@ -38,6 +38,10 @@ class TeleVehicle(TeleActor):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
             blueprint.set_attribute('color', color)
 
+        if blueprint.has_attribute('speed'):
+            self.player_max_speed = float(blueprint.get_attribute('speed').recommended_values[1])
+            self.player_max_speed_fast = float(blueprint.get_attribute('speed').recommended_values[2])
+
         for key, value in self._attrs.items():
             blueprint.set_attribute(key, value)
 
@@ -50,8 +54,8 @@ class TeleVehicle(TeleActor):
             spawn_points = map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
             self.model = world.try_spawn_actor(blueprint, spawn_point)
-        if self._modify_vehicle_physics:
-            self.modify_vehicle_physics()
+            if self._modify_vehicle_physics:
+                self.modify_vehicle_physics()
         self.set_light_state(carla.VehicleLightState.Position)
 
     def modify_vehicle_physics(self):

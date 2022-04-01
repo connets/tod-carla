@@ -28,9 +28,11 @@ class TeleRenderingSensor(TeleSensor):
 
 class CameraManager(TeleRenderingSensor):
 
-    def __init__(self, gamma_correction, hud):
+    def __init__(self, gamma_correction, hud, width, height):
         self._gamma_correction = gamma_correction
         self.hud = hud
+        self.width = width
+        self.height = height
         self.sensor = None
         self.surface = None
         self._parent = None
@@ -81,8 +83,7 @@ class CameraManager(TeleRenderingSensor):
                              carla.Rotation(pitch=8.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=+0.8 * bound_x, y=+0.0 * bound_y, z=1.3 * bound_z)), Attachment.Rigid),
             (
-                carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)),
-                Attachment.SpringArm),
+            carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y, z=4.6 * bound_z),
                              carla.Rotation(pitch=6.0)), Attachment.SpringArm),
             (carla.Transform(carla.Location(x=-1.0, y=-1.0 * bound_y, z=0.4 * bound_z)), Attachment.Rigid)]
@@ -118,6 +119,9 @@ class CameraManager(TeleRenderingSensor):
         for item in self.sensors:
             bp = bp_library.find(item[0])
             if item[0].startswith('sensor.camera'):
+
+                bp.set_attribute('image_size_x', str(self.width))
+                bp.set_attribute('image_size_y', str(self.height))
                 # bp.set_attribute('image_size_x', str(hud.dim[0]))
                 # bp.set_attribute('image_size_y', str(hud.dim[1]))
                 if bp.has_attribute('gamma'):

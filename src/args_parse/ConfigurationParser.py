@@ -2,6 +2,8 @@ import sys
 import yaml
 import argparse
 
+from src.utils.utils import flat_dict
+
 
 class ConfigurationParser:
     def __init__(self, config_file=None):
@@ -22,7 +24,7 @@ class ConfigurationParser:
             with open(self.config_file, 'r') as stream:
                 config_vars = yaml.load(stream, Loader=yaml.FullLoader)
                 if config_vars is None: config_vars = {}
-
+        config_vars = flat_dict(config_vars)
         parser = argparse.ArgumentParser(
             *pargs,
             # Inherit options from config_parser
