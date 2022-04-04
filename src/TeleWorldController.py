@@ -278,14 +278,16 @@ class BasicAgentTeleWorldController(TeleController):
 
 class BehaviorAgentTeleWorldController(TeleController):
 
-    def __init__(self, behavior):
+    def __init__(self, behavior, destination_position):
         self._behavior = behavior
+        self._destination_position = destination_position
         self._player = None
         self.carla_agent = None
 
     def add_player_in_world(self, player):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
+        self.carla_agent.set_destination(self._destination_position)
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))

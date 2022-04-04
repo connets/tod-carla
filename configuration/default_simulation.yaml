@@ -1,0 +1,19 @@
+world: Town01_Opt
+vehicle_player: vehicle.tesla.model3
+bot:
+  vehicle_model: vehicle.tesla.model3 #TODO change this
+camera:
+  width: 1280
+  height: 720
+route:
+    start:
+        x: 300.
+        y: 129.750000
+        z: 0.3
+        pitch: 0.
+        yaw: 180.
+        roll: 0.
+    end:
+        x: 115.
+        y: 129.750000
+        z: 0.3

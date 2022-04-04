@@ -35,7 +35,9 @@ class ConfigurationParser:
         )
 
         for opt_args, opt_kwargs in self.options:
+
             parser_arg = parser.add_argument(*opt_args, **opt_kwargs)
+
             if parser_arg.dest in config_vars:
                 config_default = config_vars.pop(parser_arg.dest)
                 expected_type = str

@@ -9,11 +9,11 @@ from src.utils.utils import need_member
 
 
 class TeleActor(ABC):
-    def __init__(self, actor_filter, actor_id, attrs, spawn_position):
+    def __init__(self, actor_filter, actor_id, attrs, start_position):
         self._actor_filter = actor_filter
         self._actor_id = actor_id
         self._attrs = attrs
-        self._spawn_position = spawn_position
+        self._start_position = start_position
         self.model = None
 
     @abstractmethod
@@ -23,8 +23,8 @@ class TeleActor(ABC):
 
 class TeleVehicle(TeleActor):
 
-    def __init__(self, actor_filter, actor_id, attrs, spawn_position=None, modify_vehicle_physics=False):
-        super().__init__(actor_filter, actor_id, attrs, spawn_position)
+    def __init__(self, actor_filter, actor_id, attrs, start_position=None, modify_vehicle_physics=False):
+        super().__init__(actor_filter, actor_id, attrs, start_position)
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
 
@@ -47,8 +47,8 @@ class TeleVehicle(TeleActor):
             blueprint.set_attribute(key, value)
 
         self.model = None
-        if self._spawn_position is not None:
-            self.model = world.try_spawn_actor(blueprint, self._spawn_position)
+        if self._start_position is not None:
+            self.model = world.try_spawn_actor(blueprint, self._start_position)
 
         while self.model is None:
             if not map.get_spawn_points():

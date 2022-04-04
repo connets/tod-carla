@@ -9,21 +9,42 @@ def parse_configuration_files(args=None):
     parser = ConfigurationParser()
     parser.add('--carla_server_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
+    parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for simulation',
+               default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
     return vars(parser.parse(args=args))
 
 
-def parse_carla_args(configuration_path, args=None):
+def parse_carla_server_args(configuration_path, args=None):
     parser = ConfigurationParser(configuration_path)
     parser.add('--host', metavar='H', help='IP of the host server', required=True)
     parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
+    parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
+
+    return vars(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+
+
+def parse_carla_simulation_args(configuration_path, args=None):
+    parser = ConfigurationParser(configuration_path)
+    parser.add('--world', metavar='W', help='Using world')
     parser.add('--vehicle_player', metavar='V', help='model vehicle to drive', required=True)
     parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
-    parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1920)
+    parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
     parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
 
+    parser.add('--route.start.x', metavar='X', type=float, help='x of starting position', required=True)
+    parser.add('--route.start.y', metavar='Y', type=float, help='y of starting position', required=True)
+    parser.add('--route.start.z', metavar='Z', type=float, help='z of starting position', required=True)
+
+    parser.add('--route.start.pitch', metavar='P', type=float, help='pitch of starting rotation', required=True)
+    parser.add('--route.start.yaw', metavar='Y', type=float, help='yaw of starting rotation', required=True)
+    parser.add('--route.start.roll', metavar='R', type=float, help='roll of starting rotation', required=True)
+
+    parser.add('--route.end.x', metavar='X', type=float, help='x of ending position', required=True)
+    parser.add('--route.end.y', metavar='Y', type=float, help='y of ending position', required=True)
+    parser.add('--route.end.z', metavar='Z', type=float, help='z of ending position', required=True)
+
+
     parser.add('-n', '--number-of-vehicles', metavar='N', type=int, help='Number of vehicles')
-    parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
-    parser.add('--world', metavar='W', help='Using world')
     parser.add('-w', '--number-of-walkers', metavar='W', type=int, help='Number of walkers (default: 10)')
     parser.add('--safe', help='Avoid spawning vehicles prone to accidents')
     parser.add('--filterv', metavar='PATTERN', help='Filter vehicle model')
