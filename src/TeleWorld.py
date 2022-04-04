@@ -1,10 +1,9 @@
 import sys
-import random
 
 import carla
 
 from src.TeleActor import TeleVehicle
-from src.TeleSensor.CameraManager import TeleSensor, TeleRenderingSensor
+from src.TeleSensor import TeleSensor, TeleRenderingSensor
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member
 from carla.libcarla import World
@@ -39,11 +38,13 @@ class TeleWorld:
 class TeleActuatorWorld(TeleWorld):
     """ Class representing the surrounding environment """
 
-    def __init__(self, carla_world: World, carla_conf, controller, hud):
+    def __init__(self, carla_world: World, vehicle, carla_conf, hud):
         """Constructor method"""
         super().__init__("Actuator_World")
         self._carla_conf = carla_conf
-        self._controller = controller
+        self._controller = None
+
+
 
         self.world: World = carla_world
         try:
@@ -54,9 +55,10 @@ class TeleActuatorWorld(TeleWorld):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
 
+        self.player = vehicle
+        self.player.spawn_in_world(self.map, self.world)
 
         self.hud = hud
-        self.player = None
         self.vehicles = []
 
         self.world.on_tick(self.hud.on_world_tick)
@@ -73,7 +75,6 @@ class TeleActuatorWorld(TeleWorld):
         # self._actor_generation = args.generation
 
         self.restart()
-
 
         self.recording_enabled = False
         self.recording_start = 0
@@ -97,13 +98,13 @@ class TeleActuatorWorld(TeleWorld):
 
         self._sensors = []
 
+    def add_controller(self, controller):
+        self._controller = controller
+        self._controller.add_player_in_world(self.player)
 
     def add_sensor(self, sensor: TeleSensor, parent):
         sensor.spawn_in_world(parent)
         self._sensors.append(sensor)
-
-    def start(self, player_controller):
-        ...
 
     def restart(self):
         ...
@@ -145,7 +146,6 @@ class TeleActuatorWorld(TeleWorld):
         #     self.show_vehicle_telemetry = False
         #     self.modify_vehicle_physics(self.player)
 
-
         # self.world.wait_for_tick() #TODO usefull
 
         # Set up the sensors.
@@ -181,9 +181,6 @@ class TeleActuatorWorld(TeleWorld):
     #     else:
     #         self.world.load_map_layer(selected)
 
-    def add_vehicle_player(self, vehicle: TeleVehicle):
-        self.player = vehicle
-        self.player.spawn_in_world(self.map, self.world)
         #
         # try:
         #     physics_control = player.get_physics_control()
@@ -192,10 +189,10 @@ class TeleActuatorWorld(TeleWorld):
         # except Exception:
         #     pass
 
-    @need_member('player')
+    @need_member('player', '_controller')
     def tick(self, clock):
         """Method for every tick"""
-        command = self._controller.do_action(self, clock)
+        command = self._controller.do_action(clock)
         if command is None:
             return -1
         self.player.apply_control(command)

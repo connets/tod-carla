@@ -899,7 +899,6 @@ class GnssSensor(object):
         # reference.
         weak_self = weakref.ref(self)
         self.sensor.listen(lambda event: GnssSensor._on_gnss_event(weak_self, event))
-
     @staticmethod
     def _on_gnss_event(weak_self, event):
         self = weak_self()

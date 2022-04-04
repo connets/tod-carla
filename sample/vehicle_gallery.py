@@ -25,7 +25,7 @@ def get_transform(vehicle_location, angle, d=6.4):
 
 
 def main():
-    client = carla.Client('localhost', 2000)
+    client = carla.Client('ubiquity', 3000)
     client.set_timeout(2.0)
     world = client.get_world()
     spectator = world.get_spectator()

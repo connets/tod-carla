@@ -53,6 +53,8 @@ class TeleVehicle(TeleActor):
                 sys.exit(1)
             spawn_points = map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            #x=29.911945, y=-2.026154, z=0.000000
+            print("****", map.get_waypoint(spawn_point.location))
             self.model = world.try_spawn_actor(blueprint, spawn_point)
             if self._modify_vehicle_physics:
                 self.modify_vehicle_physics()
