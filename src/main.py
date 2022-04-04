@@ -57,6 +57,7 @@ def main():
         exit = tele_world.tick(clock) != 0
         tele_world.render(display)
         pygame.display.flip()
+        print(player.get_location())
         # exit = i == 1000 | exit
     # TODO destroy everything
     pygame.quit()

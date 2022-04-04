@@ -58,6 +58,11 @@ class TeleController(ABC):
     def do_action(self, clock):
         ...
 
+    @staticmethod
+    def _is_quit_shortcut(key):
+        return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
+
+
 
 class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
@@ -253,9 +258,6 @@ class KeyboardTeleWorldController(TeleController):
         self._control.steer = round(self._steer_cache, 1)
         self._control.hand_brake = keys[K_SPACE]
 
-    @staticmethod
-    def _is_quit_shortcut(key):
-        return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
 
 
 class BasicAgentTeleWorldController(TeleController):
@@ -285,7 +287,13 @@ class BehaviorAgentTeleWorldController(TeleController):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
 
+    def _quit(self, event):
+        return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
+
     def do_action(self, clock):
+        if any(self._quit(e) for e in pygame.event.get()):
+            return None
+
         control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control

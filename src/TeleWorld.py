@@ -208,12 +208,6 @@ class TeleActuatorWorld(TeleWorld):
         # self.camera_manager.render(display)
         # self.hud.render(display)
 
-    def destroy_sensors(self):
-        """Destroy sensors"""
-        self.camera_manager.sensor.destroy()
-        self.camera_manager.sensor = None
-        self.camera_manager.index = None
-
     def destroy(self):
         # if self.radar_sensor is not None:
         #     self.toggle_radar()

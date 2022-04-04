@@ -206,6 +206,7 @@ class KeyboardControl(object):
     def __init__(self, world):
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
 
+
     def parse_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

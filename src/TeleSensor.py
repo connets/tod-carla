@@ -236,10 +236,12 @@ class GnssSensor(TeleSensor):
         self.sensor.listen(lambda event: GnssSensor._on_gnss_event(weak_self, event))
 
     def stop(self):
-        super().stop()
+        self.sensor.stop()
 
     def destroy(self):
-        super().destroy()
+        self.sensor.destroy()
+        self.sensor = None
+        self.index = None
 
     @staticmethod
     def _on_gnss_event(weak_self, event):
