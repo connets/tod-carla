@@ -56,6 +56,7 @@ def main():
     tele_world.add_sensor(camera_manager, player)
 
     controller = BehaviorAgentTeleWorldController('aggressive', destination_position)  # TODO change here
+    # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
     tele_world.add_controller(controller)
 
     gnss_sensor = GnssSensor()
@@ -64,21 +65,26 @@ def main():
     sim_world.wait_for_tick()
     clock = pygame.time.Clock()
 
-
     data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
-                                           {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 4),
-                                            'speed_x': lambda: round(player.get_velocity().x, 4),
-                                            'speed_y': lambda: round(player.get_velocity().y, 4),
-                                            'speed_z': lambda: round(player.get_velocity().z, 4),
-                                            'acceleration_x': lambda: round(player.get_acceleration().x, 4),
-                                            'acceleration_y': lambda: round(player.get_acceleration().y, 4),
-                                            'acceleration_z': lambda: round(player.get_acceleration().z, 4)
+                                           {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+                                            'velocity_x': lambda: round(player.get_velocity().x,  5),
+                                            'velocity_y': lambda: round(player.get_velocity().y,  5),
+                                            'velocity_z': lambda: round(player.get_velocity().z,  5),
+                                            'acceleration_x': lambda: round(player.get_acceleration().x,  5),
+                                            'acceleration_y': lambda: round(player.get_acceleration().y,  5),
+                                            'acceleration_z': lambda: round(player.get_acceleration().z, 5),
+                                            'altitude': lambda: round(gnss_sensor.altitude, 5),
+                                            'longitude': lambda: round(gnss_sensor.longitude, 5),
+                                            'latitude': lambda: round(gnss_sensor.latitude, 5),
+                                            'Throttle': lambda: round(player.get_control().throttle, 5),
+                                            'Steer': lambda: round(player.get_control().steer, 5),
+                                            'Brake': lambda: round(player.get_control().brake, 5)
                                             })
-
 
     data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     exit = False
     while not exit:
+        print(player.get_transform())
         clock.tick_busy_loop(60)
         exit = tele_world.tick(clock) != 0
         tele_world.render(display)

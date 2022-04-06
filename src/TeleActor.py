@@ -49,6 +49,8 @@ class TeleVehicle(TeleActor):
         self.model = None
         if self._start_position is not None:
             self.model = world.try_spawn_actor(blueprint, self._start_position)
+            if self.model is None:
+                print("Error in spawning car in:", self._start_position)
 
         while self.model is None:
             if not map.get_spawn_points():

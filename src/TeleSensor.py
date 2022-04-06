@@ -221,8 +221,9 @@ class GnssSensor(TeleSensor):
     def __init__(self):
         self.sensor = None
         self._parent = None
-        self.lat = 0.0
-        self.lon = 0.0
+        self.altitude = 0.0
+        self.latitude = 0.0
+        self.longitude = 0.0
 
     def spawn_in_world(self, parent_actor):
         self._parent = parent_actor
@@ -245,10 +246,10 @@ class GnssSensor(TeleSensor):
 
     @staticmethod
     def _on_gnss_event(weak_self, event):
-        # print(event.timestamp)
         self = weak_self()
         if not self:
             return
-        self.lat = event.latitude
-        self.lon = event.longitude
+        self.altitude = event.altitude
+        self.latitude = event.latitude
+        self.longitude = event.longitude
         # print("**** =", self.lat, self.lon)
