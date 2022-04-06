@@ -1,0 +1,3 @@
+class NetworkManager:
+    def add_delay(self, distr):
+        ...
