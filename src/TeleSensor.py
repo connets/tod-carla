@@ -245,6 +245,7 @@ class GnssSensor(TeleSensor):
 
     @staticmethod
     def _on_gnss_event(weak_self, event):
+        # print(event.timestamp)
         self = weak_self()
         if not self:
             return

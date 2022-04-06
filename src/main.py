@@ -6,6 +6,8 @@ from src.TeleActor import TeleVehicle
 from src.TeleSensor import CameraManager, GnssSensor
 from src.args_parse import my_parser
 from src.TeleWorld import TeleActuatorWorld
+from src.folder_path import OUT_PATH
+from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import KeyboardTeleWorldController, BasicAgentTeleWorldController, \
     BehaviorAgentTeleWorldController
@@ -22,7 +24,7 @@ def main():
     client: libcarla.Client = carla.Client(carla_server_conf['host'], carla_server_conf['port'])
     client.set_timeout(carla_server_conf['timeout'])
 
-    sim_world = client.load_world(carla_simulation_conf['world'])
+    sim_world: carla.World = client.load_world(carla_simulation_conf['world'])
 
     builds = sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
     objects_to_toggle = {build.id for build in builds}
@@ -48,7 +50,7 @@ def main():
                          modify_vehicle_physics=True)
 
     hud = HUD(carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height'])
-    tele_world = TeleActuatorWorld(sim_world, player, carla_simulation_conf, hud)
+    tele_world: TeleActuatorWorld = TeleActuatorWorld(sim_world, player, carla_simulation_conf, hud)
 
     camera_manager = CameraManager(hud, 2.2, 1280, 720)
     tele_world.add_sensor(camera_manager, player)
@@ -62,13 +64,28 @@ def main():
     sim_world.wait_for_tick()
     clock = pygame.time.Clock()
 
+
+    data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
+                                           {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 4),
+                                            'speed_x': lambda: round(player.get_velocity().x, 4),
+                                            'speed_y': lambda: round(player.get_velocity().y, 4),
+                                            'speed_z': lambda: round(player.get_velocity().z, 4),
+                                            'acceleration_x': lambda: round(player.get_acceleration().x, 4),
+                                            'acceleration_y': lambda: round(player.get_acceleration().y, 4),
+                                            'acceleration_z': lambda: round(player.get_acceleration().z, 4)
+                                            })
+
+
+    data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     exit = False
     while not exit:
         clock.tick_busy_loop(60)
         exit = tele_world.tick(clock) != 0
         tele_world.render(display)
         pygame.display.flip()
-        # exit = i == 1000 | exit
+        data_collector.tick()
+    # exit = i == 1000 | exit
+
     # TODO destroy everything
     pygame.quit()
     tele_world.destroy()

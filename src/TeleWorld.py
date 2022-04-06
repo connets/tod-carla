@@ -43,8 +43,7 @@ class TeleActuatorWorld(TeleWorld):
         super().__init__("Actuator_World")
         self._carla_conf = carla_conf
         self._controller = None
-
-
+        self._last_snapshot: carla.WorldSnapshot = carla_world.get_snapshot()
 
         self.world: World = carla_world
         try:
@@ -181,17 +180,18 @@ class TeleActuatorWorld(TeleWorld):
     #     else:
     #         self.world.load_map_layer(selected)
 
-        #
-        # try:
-        #     physics_control = player.get_physics_control()
-        #     physics_control.use_sweep_wheel_collision = True
-        #     player.apply_physics_control(physics_control)
-        # except Exception:
-        #     pass
+    #
+    # try:
+    #     physics_control = player.get_physics_control()
+    #     physics_control.use_sweep_wheel_collision = True
+    #     player.apply_physics_control(physics_control)
+    # except Exception:
+    #     pass
 
     @need_member('player', '_controller')
     def tick(self, clock):
         """Method for every tick"""
+        self._last_snapshot = self.world.get_snapshot()
         command = self._controller.do_action(clock)
         if command is None:
             return -1
@@ -223,3 +223,7 @@ class TeleActuatorWorld(TeleWorld):
                 sensor.destroy()
         if self.player is not None:
             self.player.destroy()
+
+    @property
+    def timestamp(self):
+        return self._last_snapshot.timestamp
