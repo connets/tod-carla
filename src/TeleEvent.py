@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
 
-from src.TeleWorld import TeleWorld
-
 
 class TeleEvent(ABC):
 
     @abstractmethod
-    def exec(self, world: TeleWorld):
-        ...
+    def exec(self, world):
+        pass
+
+    def __call__(self, *args, **kwargs):
+        print("*******", args, kwargs)
+        self.exec(args[0])

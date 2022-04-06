@@ -112,7 +112,7 @@ class World(object):
         cam_pos_id = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
         # Get a random blueprint.
-        blueprint = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
+        blueprint = random.choice(self.world.get_blueprint_library().filter("vehicle.tesla.model3"))
         blueprint.set_attribute('role_name', 'hero')
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
@@ -171,8 +171,8 @@ class World(object):
 
     def tick(self, clock):
         """Method for every tick"""
-        self.hud.tick(self, clock)
-
+        # self.hud.tick(self, clock)
+        ...
     def render(self, display):
         """Render world"""
         self.camera_manager.render(display)
@@ -205,6 +205,7 @@ class World(object):
 class KeyboardControl(object):
     def __init__(self, world):
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
+
 
     def parse_events(self):
         for event in pygame.event.get():
@@ -269,7 +270,7 @@ class HUD(object):
         collision = [colhist[x + self.frame - 200] for x in range(0, 200)]
         max_col = max(1.0, max(collision))
         collision = [x / max_col for x in collision]
-        vehicles = world.world.get_actors().filter('vehicle.*')
+        vehicles = world.world.get_actors().filter('vehicle.AudiA2/AudiA2.AudiA2_C')
 
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,

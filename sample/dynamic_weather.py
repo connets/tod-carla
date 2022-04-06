@@ -24,6 +24,8 @@ import carla
 import argparse
 import math
 
+import pygame
+
 
 def clamp(value, minimum=0.0, maximum=100.0):
     return max(minimum, min(value, maximum))
@@ -104,20 +106,22 @@ def main():
     argparser.add_argument(
         '--host',
         metavar='H',
-        default='127.0.0.1',
-        help='IP of the host server (default: 127.0.0.1)')
+        default='ubiquity',
+        help='IP of the host server (default: ubiquity)')
     argparser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=3000,
         type=int,
-        help='TCP port to listen to (default: 2000)')
+        help='TCP port to listen to (default: 3000)')
     argparser.add_argument(
         '-s', '--speed',
         metavar='FACTOR',
         default=1.0,
         type=float,
         help='rate at which the weather changes (default: 1.0)')
+
+
     args = argparser.parse_args()
 
     speed_factor = args.speed
@@ -126,9 +130,7 @@ def main():
     client = carla.Client(args.host, args.port)
     client.set_timeout(2.0)
     world = client.get_world()
-
     weather = Weather(world.get_weather())
-
     elapsed_time = 0.0
 
     while True:

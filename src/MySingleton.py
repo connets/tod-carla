@@ -1,4 +1,4 @@
-from src.utils import need_member
+from src.utils.utils import need_member
 
 
 class Singleton:

@@ -2,6 +2,8 @@ import sys
 import yaml
 import argparse
 
+from src.utils.utils import flat_dict
+
 
 class ConfigurationParser:
     def __init__(self, config_file=None):
@@ -13,18 +15,16 @@ class ConfigurationParser:
 
     def parse(self, *pargs, args=None, **kwpargs):
         if args is None:
-            args = sys.argv[1:]
+            args = sys.argv[1:].copy()
 
         conf_parser = argparse.ArgumentParser(add_help=False)
-
-
 
         config_vars = {}
         if self.config_file is not None:
             with open(self.config_file, 'r') as stream:
                 config_vars = yaml.load(stream, Loader=yaml.FullLoader)
                 if config_vars is None: config_vars = {}
-
+        config_vars = flat_dict(config_vars)
         parser = argparse.ArgumentParser(
             *pargs,
             # Inherit options from config_parser
@@ -35,7 +35,9 @@ class ConfigurationParser:
         )
 
         for opt_args, opt_kwargs in self.options:
+
             parser_arg = parser.add_argument(*opt_args, **opt_kwargs)
+
             if parser_arg.dest in config_vars:
                 config_default = config_vars.pop(parser_arg.dest)
                 expected_type = str
@@ -50,4 +52,6 @@ class ConfigurationParser:
         if config_vars:
             parser.error(f'Unexpected configuration entries: {config_vars}')
 
-        return parser.parse_args(args)
+        res, unknown = parser.parse_known_args(args)
+
+        return res
