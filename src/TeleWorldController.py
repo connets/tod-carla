@@ -93,14 +93,14 @@ class KeyboardTeleWorldController(TeleController):
                     #         world.player.set_autopilot(True)
                     #     else:
                     self._world.restart()
-                elif event.key == K_TAB:
-                    self._world.camera_manager.toggle_camera()
-                elif event.key == K_g:
-                    self._world.toggle_radar()
-                elif event.key == K_BACKQUOTE:
-                    self._world.camera_manager.next_sensor()
-                elif event.key == K_n:
-                    self._world.camera_manager.next_sensor()
+                # elif event.key == K_TAB:
+                #     self._world.camera_manager.toggle_camera()
+                # elif event.key == K_g:
+                #     self._world.toggle_radar()
+                # elif event.key == K_BACKQUOTE:
+                #     self._world.camera_manager.next_sensor()
+                # elif event.key == K_n:
+                #     self._world.camera_manager.next_sensor()
                 # elif event.key == K_w and (pygame.key.get_mods() & KMOD_CTRL):
                 #     if self._world.constant_velocity_enabled:
                 #         self._world.player.disable_constant_velocity()

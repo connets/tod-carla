@@ -11,6 +11,8 @@ def parse_configuration_files(args=None):
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
     parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for simulation',
                default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
+    parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
+               required=True)
     return vars(parser.parse(args=args))
 
 
