@@ -54,11 +54,10 @@ class TeleActuatorWorld(TeleWorld):
             print('  Make sure it exists, has the same name of your town, and is correct.')
             sys.exit(1)
 
-        for spawn_point in self.map.get_spawn_points():
-            if abs(396.984039 - spawn_point.location.x) < 6:
-                print(spawn_point)
+        # for spawn_point in self.map.get_spawn_points():
+        #     if abs(396.984039 - spawn_point.location.x) < 6:
+        #         print(spawn_point)
 
-        print('****')
         self.player = vehicle
         self.player.spawn_in_world(self.map, self.world)
 

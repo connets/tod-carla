@@ -20,3 +20,4 @@ class PeriodicDataCollector:
         if current_timestamp is None or current_timestamp >= self._last_timestamp + self._interval:
             self._writer.writerow(func() for func in self._items.values())
             self._last_timestamp = current_timestamp
+

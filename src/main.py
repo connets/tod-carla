@@ -2,6 +2,7 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
+from src.PhysycNetworkDelayManager import TcNetworkDelayManager
 from src.TeleActor import TeleVehicle
 from src.TeleSensor import CameraManager, GnssSensor
 from src.args_parse import my_parser
@@ -11,6 +12,7 @@ from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import KeyboardTeleWorldController, BasicAgentTeleWorldController, \
     BehaviorAgentTeleWorldController
+from src.utils.distribution_utils import _constant_family
 
 
 def main():
@@ -55,8 +57,8 @@ def main():
     camera_manager = CameraManager(hud, 2.2, 1280, 720)
     tele_world.add_sensor(camera_manager, player)
 
-    controller = BehaviorAgentTeleWorldController('aggressive', destination_position)  # TODO change here
-    # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
+    # controller = BehaviorAgentTeleWorldController('aggressive', destination_position)  # TODO change here
+    controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
     tele_world.add_controller(controller)
 
     gnss_sensor = GnssSensor()
@@ -67,11 +69,11 @@ def main():
 
     data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
                                            {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
-                                            'velocity_x': lambda: round(player.get_velocity().x,  5),
-                                            'velocity_y': lambda: round(player.get_velocity().y,  5),
-                                            'velocity_z': lambda: round(player.get_velocity().z,  5),
-                                            'acceleration_x': lambda: round(player.get_acceleration().x,  5),
-                                            'acceleration_y': lambda: round(player.get_acceleration().y,  5),
+                                            'velocity_x': lambda: round(player.get_velocity().x, 5),
+                                            'velocity_y': lambda: round(player.get_velocity().y, 5),
+                                            'velocity_z': lambda: round(player.get_velocity().z, 5),
+                                            'acceleration_x': lambda: round(player.get_acceleration().x, 5),
+                                            'acceleration_y': lambda: round(player.get_acceleration().y, 5),
                                             'acceleration_z': lambda: round(player.get_acceleration().z, 5),
                                             'altitude': lambda: round(gnss_sensor.altitude, 5),
                                             'longitude': lambda: round(gnss_sensor.longitude, 5),
@@ -82,19 +84,27 @@ def main():
                                             })
 
     data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
+    network_delay = TcNetworkDelayManager(_constant_family(5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+                                          1, 'valecislavale')
+
     exit = False
-    while not exit:
-        print(player.get_transform())
-        clock.tick_busy_loop(60)
-        exit = tele_world.tick(clock) != 0
-        tele_world.render(display)
-        pygame.display.flip()
-        data_collector.tick()
+    network_delay.start()
+
+    try:
+        while not exit:
+            network_delay.tick()
+            clock.tick_busy_loop(60)
+            exit = tele_world.tick(clock) != 0
+            tele_world.render(display)
+            pygame.display.flip()
+            data_collector.tick()
     # exit = i == 1000 | exit
 
     # TODO destroy everything
-    pygame.quit()
-    tele_world.destroy()
+    finally:
+        network_delay.finish()
+        pygame.quit()
+        tele_world.destroy()
 
 
 if __name__ == '__main__':
