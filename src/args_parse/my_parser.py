@@ -1,7 +1,7 @@
 import argparse
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
-from src.folder_path import CONFIGURATION_FILE_PATH
+from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_ROUTE_PATH
 
 
 def parse_configuration_files(args=None):
@@ -10,7 +10,7 @@ def parse_configuration_files(args=None):
     parser.add('--carla_server_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
     parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for simulation',
-               default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
+               default=CONFIGURATION_ROUTE_PATH + 'default_simulation_curve.yaml')
     parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
                required=True)
     return vars(parser.parse(args=args))

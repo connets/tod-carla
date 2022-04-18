@@ -12,10 +12,15 @@ from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import KeyboardTeleWorldController, BasicAgentTeleWorldController, \
     BehaviorAgentTeleWorldController
-from src.utils.distribution_utils import _constant_family
+from src.utils.distribution_utils import delay_family_to_func, _constant_family
 
 
 def main():
+    """
+    get configurations for simulation:
+    - carla_server_file (default: configuration/default_server.yaml),
+    - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
+    """
     conf_files = my_parser.parse_configuration_files()
     carla_server_conf = my_parser.parse_carla_server_args(conf_files['carla_server_file'])
     carla_simulation_conf = my_parser.parse_carla_simulation_args(conf_files['carla_simulation_file'])
