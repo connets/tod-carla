@@ -1,12 +1,12 @@
 # from src.TeleEventsScheduler import TeleEventsScheduler, TeleEventsSchedulerTime
 # from src.TeleWorld import TeleWorld
-#
-#
-# from unittest.mock import MagicMock, call
-# from src.NetworkTeleWorld import NetworkTeleWorld
+
+
+from unittest.mock import MagicMock, call
+from src.NetworkTeleWorld import NetworkTeleWorld
 # from src.TeleContext import TeleContext
-#
-#
+
+
 # def test_add_event_to_network_world():
 #     scheduler: TeleEventsScheduler = TeleEventsSchedulerTime()
 #     world = NetworkTeleWorld("Network")
@@ -19,40 +19,33 @@
 #
 #     TeleContext.destroy()
 #
-#
+from src.PhysycNetworkDelayManager import DiscreteNetworkDelayManager
+
+
 # def test_time_pass():
-#     tele_context = TeleContext(1000, 2000, 100)
-#     tele_context.start()
-#     assert tele_context.current_timestamp == tele_context.end_timestamp - tele_context.time_step
-#     TeleContext.destroy()
+#     ts = 0
+#     delay_manager = DiscreteNetworkDelayManager(lambda: ts)
+#     delay_manager.start()
+
+# assert delay_manager.current_timestamp == tele_context.end_timestamp - tele_context.time_step
+# TeleContext.destroy()
 #
+#d
 #
-# def test_world_is_called():
-#     tele_context = TeleContext(1000, 1500, 100)
-#     world = MagicMock()
-#     world.proceed = MagicMock()
-#
-#     tele_context.add_world(world)
-#     tele_context.start()
-#
-#     world.proceed.assert_has_calls([call(1000), call(1100), call(1200), call(1300), call(1400)])
-#     TeleContext.destroy()
-#
-#
-# def test_event_is_called():
-#     start_timestamp = 1000
-#     tele_context = TeleContext(start_timestamp, 1500, 100)
-#     world = NetworkTeleWorld("Network", start_timestamp)
-#     tele_context.add_world(world)
-#
-#     event = MagicMock()
-#     event.exec = MagicMock()
-#     world.schedule_event_from_now(event, 300)
-#
-#     tele_context.start()
-#
-#     event.exec.assert_called_once_with(world)
-#     TeleContext.destroy()
+def test_event_is_called():
+    timestamp = 0
+    delay_manager = DiscreteNetworkDelayManager(lambda: timestamp)
+
+    event = MagicMock()
+    delay_manager.schedule(event, 100)
+    delay_manager.start()
+    timestamp += 50
+    assert event.call_count == 0
+
+    timestamp += 50
+    delay_manager.tick()
+
+    event.assert_called_once()
 #
 #
 # def test_worlds_communication():
