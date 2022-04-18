@@ -22,6 +22,9 @@ import re
 import sys
 import weakref
 
+from lib.agents.navigation.basic_agent import BasicAgent
+from lib.agents.navigation.behavior_agent import BehaviorAgent
+
 try:
     import pygame
     from pygame.locals import KMOD_CTRL
@@ -39,19 +42,25 @@ except ImportError:
 # ==============================================================================
 # -- Find CARLA module ---------------------------------------------------------
 # ==============================================================================
-
+try:
+    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
 
 # ==============================================================================
 # -- Add PythonAPI for release mode --------------------------------------------
 # ==============================================================================
-
-print("**** => ", os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/carla')
+try:
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/carla')
+except IndexError:
+    pass
 
 import carla
 from carla import ColorConverter as cc
 
-from lib.agents.navigation.behavior_agent import BehaviorAgent  # pylint: disable=import-error
-from lib.agents.navigation.basic_agent import BasicAgent  # pylint: disable=import-error
 
 
 # ==============================================================================
@@ -112,7 +121,7 @@ class World(object):
         cam_pos_id = self.camera_manager.transform_index if self.camera_manager is not None else 0
 
         # Get a random blueprint.
-        blueprint = random.choice(self.world.get_blueprint_library().filter("vehicle.tesla.model3"))
+        blueprint = random.choice(self.world.get_blueprint_library().filter(self._actor_filter))
         blueprint.set_attribute('role_name', 'hero')
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
@@ -171,8 +180,8 @@ class World(object):
 
     def tick(self, clock):
         """Method for every tick"""
-        # self.hud.tick(self, clock)
-        ...
+        self.hud.tick(self, clock)
+
     def render(self, display):
         """Render world"""
         self.camera_manager.render(display)
@@ -205,7 +214,6 @@ class World(object):
 class KeyboardControl(object):
     def __init__(self, world):
         world.hud.notification("Press 'H' or '?' for help.", seconds=4.0)
-
 
     def parse_events(self):
         for event in pygame.event.get():
@@ -270,7 +278,7 @@ class HUD(object):
         collision = [colhist[x + self.frame - 200] for x in range(0, 200)]
         max_col = max(1.0, max(collision))
         collision = [x / max_col for x in collision]
-        vehicles = world.world.get_actors().filter('vehicle.AudiA2/AudiA2.AudiA2_C')
+        vehicles = world.world.get_actors().filter('vehicle.*')
 
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,
@@ -683,8 +691,8 @@ def game_loop(args):
         if args.seed:
             random.seed(args.seed)
 
-        client = carla.Client("ubiquity", 3000)
-        client.set_timeout(4.0)
+        client = carla.Client(args.host, args.port)
+        client.set_timeout(8.0)
 
         traffic_manager = client.get_trafficmanager()
         sim_world = client.get_world()
@@ -728,6 +736,7 @@ def game_loop(args):
             world.tick(clock)
             world.render(display)
             pygame.display.flip()
+            print("*** => ", sim_world.get_snapshot().timestamp)
 
             if agent.done():
                 if args.loop:
@@ -774,12 +783,12 @@ def main():
     argparser.add_argument(
         '--host',
         metavar='H',
-        default='127.0.0.1',
+        default='ubiquity',
         help='IP of the host server (default: 127.0.0.1)')
     argparser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=3000,
         type=int,
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(

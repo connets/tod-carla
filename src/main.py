@@ -12,7 +12,7 @@ from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import KeyboardTeleWorldController, BasicAgentTeleWorldController, \
     BehaviorAgentTeleWorldController
-from src.utils.distribution_utils import delay_family_to_func, _constant_family
+from src.utils.distribution_utils import delay_family_to_func
 
 
 def main():
@@ -62,14 +62,14 @@ def main():
     camera_manager = CameraManager(hud, 2.2, 1280, 720)
     tele_world.add_sensor(camera_manager, player)
 
-    # controller = BehaviorAgentTeleWorldController('aggressive', destination_position)  # TODO change here
-    controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
+    controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
     tele_world.add_controller(controller)
 
     gnss_sensor = GnssSensor()
     tele_world.add_sensor(gnss_sensor, player)
 
-    sim_world.wait_for_tick()
+    tele_world.start()
     clock = pygame.time.Clock()
 
     data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
@@ -89,7 +89,7 @@ def main():
                                             })
 
     data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
-    network_delay = TcNetworkDelayManager(_constant_family(5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+    network_delay = TcNetworkDelayManager(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
                                           1, 'valecislavale')
 
     exit = False
@@ -98,11 +98,12 @@ def main():
     try:
         while not exit:
             network_delay.tick()
-            clock.tick_busy_loop(60)
+            clock.tick()
             exit = tele_world.tick(clock) != 0
             tele_world.render(display)
             pygame.display.flip()
             data_collector.tick()
+            print(tele_world.timestamp)
     # exit = i == 1000 | exit
 
     # TODO destroy everything

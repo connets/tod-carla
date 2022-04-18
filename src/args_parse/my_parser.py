@@ -5,7 +5,6 @@ from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_ROUTE_PATH
 
 
 def parse_configuration_files(args=None):
-
     parser = ConfigurationParser()
     parser.add('--carla_server_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
@@ -29,6 +28,11 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser = ConfigurationParser(configuration_path)
     parser.add('--world', metavar='W', help='Using world')
     parser.add('--vehicle_player', metavar='V', help='model vehicle to drive', required=True)
+
+    parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
+               required=True)
+    parser.add('--time_step', metavar='T', type=float, help='time-step, mandatory for synchronicity simulation')
+
     parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
     parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
     parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
@@ -44,7 +48,6 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser.add('--route.end.x', metavar='X', type=float, help='x of ending position', required=True)
     parser.add('--route.end.y', metavar='Y', type=float, help='y of ending position', required=True)
     parser.add('--route.end.z', metavar='Z', type=float, help='z of ending position', required=True)
-
 
     parser.add('-n', '--number-of-vehicles', metavar='N', type=int, help='Number of vehicles')
     parser.add('-w', '--number-of-walkers', metavar='W', type=int, help='Number of walkers (default: 10)')
@@ -71,4 +74,4 @@ def parse_carla_simulation_args(configuration_path, args=None):
 
 if __name__ == '__main__':
     conf_files = parse_configuration_files()
-    carla_conf = parse_carla_args(conf_files.carla_server_file)
+    # carla_conf = parse_carla_args(conf_files.carla_server_file)

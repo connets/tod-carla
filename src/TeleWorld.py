@@ -20,8 +20,6 @@ class TeleWorld:
     def world_name(self):
         return self._world_name
 
-    def start(self, scheduler):
-        self._scheduler = scheduler
 
     @need_member("_scheduler")
     def schedule_event(self, event, ms: int):
@@ -45,9 +43,19 @@ class TeleActuatorWorld(TeleWorld):
         self._controller = None
         self._last_snapshot: carla.WorldSnapshot = carla_world.get_snapshot()
 
-        self.world: World = carla_world
+        self.sim_world: World = carla_world
+
+        if carla_conf['synchronicity']:
+            self.sync = True
+            settings = self.sim_world.get_settings()
+            settings.synchronous_mode = True
+            settings.fixed_delta_seconds = float(self._carla_conf['time_step'])
+            self.sim_world.apply_settings(settings)
+            # traffic_manager.set_synchronous_mode(True)
+        else:
+            self.sync = False
         try:
-            self.map = self.world.get_map()
+            self.map = self.sim_world.get_map()
         except RuntimeError as error:
             print('RuntimeError: {}'.format(error))
             print('  The server could not send the OpenDRIVE (.xodr) file:')
@@ -59,12 +67,12 @@ class TeleActuatorWorld(TeleWorld):
         #         print(spawn_point)
 
         self.player = vehicle
-        self.player.spawn_in_world(self.map, self.world)
+        self.player.spawn_in_world(self.map, self.sim_world)
 
         self.hud = hud
         self.vehicles = []
 
-        self.world.on_tick(self.hud.on_world_tick)
+        self.sim_world.on_tick(self.hud.on_world_tick)
 
         # self.collision_sensor = None
         # self.lane_invasion_sensor = None
@@ -100,6 +108,14 @@ class TeleActuatorWorld(TeleWorld):
         ]
 
         self._sensors = []
+
+
+    def start(self):
+        # self._scheduler = scheduler
+        if self.sync:
+            self.sim_world.tick()
+        else:
+            self.sim_world.wait_for_tick()
 
     def add_controller(self, controller):
         self._controller = controller
@@ -195,7 +211,12 @@ class TeleActuatorWorld(TeleWorld):
     @need_member('player', '_controller')
     def tick(self, clock):
         """Method for every tick"""
-        self._last_snapshot = self.world.get_snapshot()
+        if self.sync:
+            self.sim_world.tick()
+        else:
+            self.sim_world.wait_for_tick()
+
+        self._last_snapshot = self.sim_world.get_snapshot()
         command = self._controller.do_action(clock)
         if command is None:
             return -1

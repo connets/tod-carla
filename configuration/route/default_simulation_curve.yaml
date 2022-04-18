@@ -1,5 +1,8 @@
 world: Town01_Opt
 vehicle_player: vehicle.tesla.model3
+
+synchronicity: true
+time_step: 0.0005 #seconds
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
 camera:
