@@ -1,5 +1,7 @@
-tests/pytest_cache/**
-**/__pycache__/**
+tests/pytest_cache
+**/__pycache__
 .idea
-src/PythonAPI/**
-out/**
+src/PythonAPI
+out
+log
+analysis
