@@ -19,7 +19,7 @@ from src.NetworkTeleWorld import NetworkTeleWorld
 #
 #     TeleContext.destroy()
 #
-from src.PhysycNetworkDelayManager import DiscreteNetworkDelayManager
+from src.NetworkDelayManager import DiscreteNetworkDelayManager
 
 
 # def test_time_pass():

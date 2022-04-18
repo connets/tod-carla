@@ -2,7 +2,7 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
-from src.PhysycNetworkDelayManager import TcNetworkDelayManager
+from src.NetworkDelayManager import TcNetworkDelayManager
 from src.TeleActor import TeleVehicle
 from src.TeleSensor import CameraManager, GnssSensor
 from src.args_parse import my_parser

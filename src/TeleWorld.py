@@ -20,7 +20,6 @@ class TeleWorld:
     def world_name(self):
         return self._world_name
 
-
     @need_member("_scheduler")
     def schedule_event(self, event, ms: int):
         self._events.add(event)
@@ -108,7 +107,6 @@ class TeleActuatorWorld(TeleWorld):
         ]
 
         self._sensors = []
-
 
     def start(self):
         # self._scheduler = scheduler
@@ -209,7 +207,7 @@ class TeleActuatorWorld(TeleWorld):
     #     pass
 
     @need_member('player', '_controller')
-    def tick(self, clock):
+    def tick(self, clock, network_delay_manager):  # TODO change here, put NetworkNode
         """Method for every tick"""
         if self.sync:
             self.sim_world.tick()
@@ -220,7 +218,9 @@ class TeleActuatorWorld(TeleWorld):
         command = self._controller.do_action(clock)
         if command is None:
             return -1
-        self.player.apply_control(command)
+        network_delay_manager.schedule(lambda: self.player.apply_control(command),
+                                       0.01)  # TODO change delay hardcoded here
+
         self.hud.tick(self, clock)
         return 0
 
