@@ -2,14 +2,13 @@ import sys
 
 import carla
 
-from src.TeleActor import TeleVehicle
-from src.TeleSensor import TeleSensor, TeleRenderingSensor
+from src.carla_bridge.CarlaSensor import CarlaSensor, CarlaRenderingSensor
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member
 from carla.libcarla import World
 
 
-class TeleWorld:
+class CarlaWorld:
 
     def __init__(self, world_name):
         self._world_name = world_name
@@ -32,7 +31,7 @@ class TeleWorld:
         return call_event
 
 
-class TeleActuatorWorld(TeleWorld):
+class CarlaActuatorWorld(CarlaWorld):
     """ Class representing the surrounding environment """
 
     def __init__(self, carla_world: World, vehicle, carla_conf, hud):
@@ -109,7 +108,7 @@ class TeleActuatorWorld(TeleWorld):
         self._controller = controller
         self._controller.add_player_in_world(self.player)
 
-    def add_sensor(self, sensor: TeleSensor, parent):
+    def add_sensor(self, sensor: CarlaSensor, parent):
         sensor.spawn_in_world(parent)
         self._sensors.append(sensor)
 
@@ -127,6 +126,7 @@ class TeleActuatorWorld(TeleWorld):
             return -1
         # network_delay_manager.schedule(lambda: self.player.apply_control(command),
         #                                0.01)  # TODO change delay hardcoded here
+        self.player.apply_control(command)
 
         self.hud.tick(self, clock)
         return 0
@@ -134,7 +134,7 @@ class TeleActuatorWorld(TeleWorld):
     def render(self, display):
         """Render world"""
         for sensor in self._sensors:
-            if isinstance(sensor, TeleRenderingSensor):
+            if isinstance(sensor, CarlaRenderingSensor):
                 sensor.render(display)
 
         # self.camera_manager.render(display)

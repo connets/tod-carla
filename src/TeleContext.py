@@ -1,7 +1,3 @@
-from src.MySingleton import Singleton
-from src.TeleWorld import TeleWorld
-import sched, time
-
 # @Singleton
 # class TeleContext:
 #

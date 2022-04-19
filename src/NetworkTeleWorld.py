@@ -1,5 +1,5 @@
-from src.TeleWorld import TeleWorld
+from src.carla_bridge.CarlaWorld import CarlaWorld
 
 
-class NetworkTeleWorld(TeleWorld):
+class NetworkCarlaWorld(CarlaWorld):
     ...

@@ -18,7 +18,7 @@ from unittest.mock import MagicMock
 #
 #     TeleContext.destroy()
 #
-from src.network.NetworkDelayManager import DiscreteNetworkDelayManager
+from src.network.NetworkInterface import DiscreteNetworkInterface
 
 
 # def test_time_pass():
@@ -33,7 +33,7 @@ from src.network.NetworkDelayManager import DiscreteNetworkDelayManager
 #
 def test_event_is_called():
     timestamp = 0
-    delay_manager = DiscreteNetworkDelayManager(lambda: timestamp)
+    delay_manager = DiscreteNetworkInterface(lambda: timestamp)
 
     event = MagicMock()
     delay_manager.schedule(event, 100)

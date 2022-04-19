@@ -1,35 +1,60 @@
 import os
+import socket
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from queue import PriorityQueue
 
+from src.network.NetworkMessage import NetworkMessage
 from src.utils.distribution_utils import _constant_family
+from threading import Thread
 
 
-class NetworkDelayManager(ABC):
+class NetworkInterface(ABC):
     def __init__(self, timestamp_func, distr_func, interval):
         self._timestamp_func = timestamp_func
         self._distr_func = distr_func
         self._interval = interval
         self._last_timestamp = None
 
-    def start(self):
-        self.tick()
+    def bind(self, network_node):
+        ...
+        # self.tick()
 
     def tick(self):
         ...
 
-    def schedule(self, event):  # seconds
+    def send(self, msg, destination_node):
         ...
 
 
-class PhysicNetworkDelayManager(NetworkDelayManager):
+class PhysicNetworkInterface(NetworkInterface):
     def __init__(self, timestamp_func, distr_func, interval):
         super().__init__(timestamp_func, distr_func, interval)
+        self.network_node = None
+        self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # UDP socket
+
+    def start(self, network_node):
+        self.network_node = network_node
+        self._socket.bind((network_node.host, network_node.port))  # Bind to the port
+
+        def listen():
+            while True:
+                data, addr = self._socket.recvfrom(4096)
+                msg = NetworkMessage.from_bytes(data)
+                print('Got connection from', msg.timestamp)
+                self.network_node.receive_msg(msg)
+
+        Thread(target=listen)
 
     @abstractmethod
     def _apply_delay(self):
         ...
+
+    def send(self, msg, destination_node):
+        # self._socket.connect((destination_node.host, destination_node.port))
+        self._socket.sendto(msg.to_bytes(), (destination_node.host, destination_node.port))
+        # init_msg = NetworkMessage.from_bytes(s.recv(4096))
+        # print(datetime.datetime.now().timestamp() - init_msg.timestamp)
 
     def tick(self):
         current_timestamp = self._timestamp_func()
@@ -42,7 +67,7 @@ class PhysicNetworkDelayManager(NetworkDelayManager):
         ...
 
 
-class TcNetworkDelayManager(PhysicNetworkDelayManager):
+class TcNetworkChannel(PhysicNetworkInterface):
 
     def __init__(self, distr_funct, timestamp_func, interval, user_pw):
         super().__init__(distr_funct, timestamp_func, interval)
@@ -57,9 +82,7 @@ class TcNetworkDelayManager(PhysicNetworkDelayManager):
         os.system(f'echo {self._user_pw} | sudo -S tc qdisc del dev wlp2s0 root 2> /dev/null')
 
 
-
-
-class DiscreteNetworkDelayManager(NetworkDelayManager):
+class DiscreteNetworkInterface(NetworkInterface):
     def __init__(self, timestamp_func):
         super().__init__(timestamp_func)
         self._queue = PriorityQueue()
@@ -88,9 +111,7 @@ class DiscreteNetworkDelayManager(NetworkDelayManager):
             self._queue.get().event()
 
 
-
-
 if __name__ == '__main__':
-    network_delay = TcNetworkDelayManager(_constant_family(20), lambda: round(3), 0, 'valecislavale')
+    network_delay = TcNetworkChannel(_constant_family(20), lambda: round(3), 0, 'valecislavale')
     network_delay.start()
     network_delay.finish()

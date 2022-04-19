@@ -8,7 +8,7 @@ from carla import ActorBlueprint, Transform, Location, Rotation
 from src.utils.utils import need_member
 
 
-class TeleActor(ABC):
+class CarlaActor(ABC):
     def __init__(self, actor_filter, actor_id, attrs, start_position):
         self._actor_filter = actor_filter
         self._actor_id = actor_id
@@ -21,7 +21,7 @@ class TeleActor(ABC):
         ...
 
 
-class TeleVehicle(TeleActor):
+class CarlaVehicle(CarlaActor):
 
     def __init__(self, actor_filter, actor_id, attrs, start_position=None, modify_vehicle_physics=False):
         super().__init__(actor_filter, actor_id, attrs, start_position)
