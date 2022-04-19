@@ -2,7 +2,7 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
-from src.NetworkDelayManager import TcNetworkDelayManager
+from src.network.NetworkDelayManager import TcNetworkDelayManager
 from src.TeleActor import TeleVehicle
 from src.TeleSensor import CameraManager, GnssSensor
 from src.args_parse import my_parser
@@ -10,8 +10,7 @@ from src.TeleWorld import TeleActuatorWorld
 from src.folder_path import OUT_PATH
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
-from src.TeleWorldController import KeyboardTeleWorldController, BasicAgentTeleWorldController, \
-    BehaviorAgentTeleWorldController
+from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController
 from src.utils.distribution_utils import delay_family_to_func
 
 
@@ -93,17 +92,17 @@ def main():
                                           1, 'valecislavale')
 
     exit = False
-    network_delay.start()
+    # network_delay.start()
 
     try:
         while not exit:
-            network_delay.tick()
+            # network_delay.tick()
             clock.tick()
             exit = tele_world.tick(clock) != 0
             tele_world.render(display)
             pygame.display.flip()
             data_collector.tick()
-            print(tele_world.timestamp)
+            # print(tele_world.timestamp)
     # exit = i == 1000 | exit
 
     # TODO destroy everything

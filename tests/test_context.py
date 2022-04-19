@@ -2,8 +2,7 @@
 # from src.TeleWorld import TeleWorld
 
 
-from unittest.mock import MagicMock, call
-from src.NetworkTeleWorld import NetworkTeleWorld
+from unittest.mock import MagicMock
 # from src.TeleContext import TeleContext
 
 
@@ -19,7 +18,7 @@ from src.NetworkTeleWorld import NetworkTeleWorld
 #
 #     TeleContext.destroy()
 #
-from src.NetworkDelayManager import DiscreteNetworkDelayManager
+from src.network.NetworkDelayManager import DiscreteNetworkDelayManager
 
 
 # def test_time_pass():
