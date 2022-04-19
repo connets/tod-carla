@@ -2,34 +2,32 @@ import socket
 from abc import ABC
 from typing import List
 
-from src.network.NetworkInterface import NetworkInterface
+from src.network.NetworkChannel import NetworkChannel
+from src.utils.utils import need_member
 
 
 class NetworkNode(ABC):
 
-    def __init__(self, host, port, network_interface):
+    def __init__(self, host, port):
         self.host = host
         self.port = port
         # self._network_delay_manager = NetworkChannel()
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._next_steps: List[NetworkNode] = []
-        self._network_interface = network_interface
+        self._channels: List[NetworkChannel] = []
 
-    def start(self):
-        self._network_interface.bind(self)
+    def add_channel(self, channel):
+        channel.bind(self)
+        self._channels.append(channel)
 
-    def create_channel(self, network_node):
-        self._next_steps.append(network_node)  # Add next step, for building the network
+    def receive_msg(self, network_message):
+        ...
 
     def send_message(self, network_message):
-        for network_node in self._next_steps:
-            self._network_interface.send(network_message, network_node)
-
-    def bind(self, host, port):
-        self._socket.bind((host, port))  # Bind to the port
+        for channel in self._channels:
+            channel.send(network_message)
 
     def quit(self):
-        self._socket.close()
+        for channel in self._channels:
+            channel.quit()
 
 
 class OperatorNetworkNode(NetworkNode):

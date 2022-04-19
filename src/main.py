@@ -2,7 +2,7 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
-from src.network.NetworkInterface import TcNetworkChannel
+from src.network.NetworkChannel import TcNetworkInterface
 from src.carla_bridge.CarlaActor import CarlaVehicle
 from src.carla_bridge.CarlaSensor import CarlaCameraManager, CarlaGnssSensor
 from src.args_parse import my_parser
@@ -88,8 +88,8 @@ def main():
                                             })
 
     data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
-    network_delay = TcNetworkChannel(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
-                                     1, 'valecislavale')
+    network_delay = TcNetworkInterface(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+                                       1, 'valecislavale')
 
     exit = False
     # network_delay.start()
