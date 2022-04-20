@@ -62,7 +62,7 @@ class PhysicNetworkChannel(NetworkChannel):
                     try:
                         data, addr = self._socket.recvfrom(4096)
                         msg = NetworkMessage.from_bytes(data)
-                        print('Got connection from', msg.timestamp)
+                        print('Got connection', source_node.host, source_node.port)
                         source_node.receive_msg(msg)
                     except socket.timeout:
                         ...
@@ -141,6 +141,4 @@ class DiscreteNetworkChannel(NetworkChannel):
 
 
 if __name__ == '__main__':
-    network_delay = TcNetworkInterface(_constant_family(20), lambda: round(3), 0, 'valecislavale')
-    network_delay.start()
-    network_delay.finish()
+    ...
