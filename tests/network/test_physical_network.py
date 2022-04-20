@@ -8,11 +8,11 @@ from src.network.NetworkNode import NetworkNode
 
 
 def test_network_two_nodes_without_delay():
-    node2 = NetworkNode('localhost', 28002)
-    node1 = NetworkNode('localhost', 28001)
+    node2 = NetworkNode('localhost', 28001 + 10)
+    node1 = NetworkNode('localhost', 28002 + 10)
 
-    channel1 = TcNetworkInterface(lambda: 0, lambda: 0, 0, node2, 'wlp2s0')
-    channel2 = TcNetworkInterface(lambda: 0, lambda: 0, 0, node1, 'wlp2s0')
+    channel1 = TcNetworkInterface(node2, lambda: 0, lambda: 0, 0, 'lo')
+    channel2 = TcNetworkInterface(node1, lambda: 0, lambda: 0, 0, 'lo')
 
     node1.add_channel(channel1)
     node2.add_channel(channel2)
@@ -32,13 +32,13 @@ def test_network_two_nodes_without_delay():
 
 
 def test_network_called_two_nodes_without_delay():
-    node2 = NetworkNode('127.0.0.1', 28008)
-    node1 = NetworkNode('127.0.0.1', 28009)
+    node2 = NetworkNode('127.0.0.1', 28003 + 10)
+    node1 = NetworkNode('127.0.0.1', 28004 + 10)
 
     delay = 0.3
     timestamp = 0
-    channel1 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node2, 'lo')
-    channel2 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node1, 'lo')
+    channel1 = TcNetworkInterface(node2, lambda: timestamp, lambda: delay, 1, 'lo')
+    channel2 = TcNetworkInterface(node1, lambda: timestamp, lambda: delay, 1, 'lo')
 
     node1.add_channel(channel1)
     node2.add_channel(channel2)
@@ -72,13 +72,13 @@ def test_network_called_two_nodes_without_delay():
 
 
 def test_network_called_two_nodes_with_delay():
-    node2 = NetworkNode('127.0.0.1', 28008)
-    node1 = NetworkNode('127.0.0.1', 28009)
+    node2 = NetworkNode('127.0.0.1', 28005 + 10)
+    node1 = NetworkNode('127.0.0.1', 28006 + 10)
 
     delay = 0.3
     timestamp = 0
-    channel1 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node2, 'lo')
-    channel2 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node1, 'lo')
+    channel1 = TcNetworkInterface(node2, lambda: timestamp, lambda: delay, 1, 'lo')
+    channel2 = TcNetworkInterface(node1, lambda: timestamp, lambda: delay, 1, 'lo')
 
     node1.add_channel(channel1)
     node2.add_channel(channel2)
@@ -110,7 +110,9 @@ def test_network_called_two_nodes_with_delay():
     node1.quit()
     node2.quit()
 
+
 from unittest.mock import patch
+
 
 def test_network_called_two_nodes_with_exactly_delay():
     delay = 1000
@@ -122,11 +124,11 @@ def test_network_called_two_nodes_with_exactly_delay():
             timestamp_now = datetime.datetime.now().timestamp()
             assert abs(timestamp_now - network_message) <= delay + 1
 
-    node1 = NetworkNode('127.0.0.1', 28008)
-    node2 = NetworkNodeTest('127.0.0.1', 28009)
+    node1 = NetworkNode('127.0.0.1', 28007 + 10)
+    node2 = NetworkNodeTest('127.0.0.1', 28008 + 10)
 
-    channel1 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node2, 'lo')
-    channel2 = TcNetworkInterface(lambda: timestamp, lambda: delay, 1, node1, 'lo')
+    channel1 = TcNetworkInterface(node2, lambda: timestamp, lambda: delay, 1, 'lo')
+    channel2 = TcNetworkInterface(node1, lambda: timestamp, lambda: delay, 1, 'lo')
 
     node1.add_channel(channel1)
     node2.add_channel(channel2)

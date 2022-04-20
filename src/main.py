@@ -2,16 +2,14 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
-from src.network.NetworkChannel import TcNetworkInterface
-from src.carla_bridge.CarlaActor import CarlaVehicle
-from src.carla_bridge.CarlaSensor import CarlaCameraManager, CarlaGnssSensor
+from src.actor.TeleVehicle import TeleVehicle
+from src.actor.TeleSensor import TeleCameraManager, TeleGnssSensor
 from src.args_parse import my_parser
-from src.carla_bridge.CarlaWorld import CarlaActuatorWorld
+from src.carla_bridge.TeleWorld import TeleActuatorWorld
 from src.folder_path import OUT_PATH
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController
-from src.utils.distribution_utils import delay_family_to_func
 
 
 def main():
@@ -52,20 +50,20 @@ def main():
     pygame.display.flip()
 
     player_attrs = {'role_name': 'hero'}
-    player = CarlaVehicle(carla_simulation_conf['vehicle_player'], '1', player_attrs, start_position=start_position,
-                          modify_vehicle_physics=True)
+    player = TeleVehicle(carla_simulation_conf['vehicle_player'], '1', player_attrs, start_position=start_position,
+                         modify_vehicle_physics=True)
 
     hud = HUD(carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height'])
-    tele_world: CarlaActuatorWorld = CarlaActuatorWorld(sim_world, player, carla_simulation_conf, hud)
+    tele_world: TeleActuatorWorld = TeleActuatorWorld(sim_world, player, carla_simulation_conf, hud)
 
-    camera_manager = CarlaCameraManager(hud, 2.2, 1280, 720)
+    camera_manager = TeleCameraManager(hud, 2.2, 1280, 720)
     tele_world.add_sensor(camera_manager, player)
 
     controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
     # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
     tele_world.add_controller(controller)
 
-    gnss_sensor = CarlaGnssSensor()
+    gnss_sensor = TeleGnssSensor()
     tele_world.add_sensor(gnss_sensor, player)
 
     tele_world.start()
@@ -88,8 +86,8 @@ def main():
                                             })
 
     data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
-    network_delay = TcNetworkInterface(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
-                                       1, 'valecislavale')
+    # network_delay = TcNetworkInterface(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+    #                                    1, 'valecislavale')
 
     exit = False
     # network_delay.start()
@@ -107,7 +105,7 @@ def main():
 
     # TODO destroy everything
     finally:
-        network_delay.finish()
+        # network_delay.finish()
         pygame.quit()
         tele_world.destroy()
 

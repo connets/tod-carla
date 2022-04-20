@@ -10,18 +10,26 @@ from threading import Thread
 
 
 class NetworkChannel(ABC):
-    def __init__(self, timestamp_func, distr_func, interval):
+    def __init__(self, destination_node, timestamp_func, distr_func, interval):
+        self.destination_node = destination_node
+
         self._timestamp_func = timestamp_func
         self._distr_func = distr_func
         self._interval = interval
-        self._last_timestamp = None
-
-    @abstractmethod
-    def bind(self, network_node):
-        ...
-        # self.tick()
+        self._last_tick_timestamp = None
 
     def tick(self):
+        current_timestamp = self._timestamp_func()
+        if self._last_tick_timestamp is None or current_timestamp >= self._last_tick_timestamp + self._interval:
+            self._apply_delay()
+            self._last_tick_timestamp = current_timestamp
+
+    @abstractmethod
+    def _apply_delay(self):
+        pass
+
+    @abstractmethod
+    def bind(self, source_node):
         ...
 
     @abstractmethod
@@ -34,11 +42,10 @@ class NetworkChannel(ABC):
 
 
 class PhysicNetworkChannel(NetworkChannel):
-    def __init__(self, timestamp_func, distr_func, interval, destination_node):
-        super().__init__(timestamp_func, distr_func, interval)
+    def __init__(self, destination_node, timestamp_func, distr_func, interval):
+        super().__init__(destination_node, timestamp_func, distr_func, interval)
         # self.network_node = None
         # self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # UDP socket
-        self.destination_node = destination_node
         self._out_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self._input_daemon = None
 
@@ -80,12 +87,6 @@ class PhysicNetworkChannel(NetworkChannel):
         # init_msg = NetworkMessage.from_bytes(s.recv(4096))
         # print(datetime.datetime.now().timestamp() - init_msg.timestamp)
 
-    def tick(self):
-        current_timestamp = self._timestamp_func()
-        if self._last_timestamp is None or current_timestamp >= self._last_timestamp + self._interval:
-            self._apply_delay()
-            self._last_timestamp = current_timestamp
-
     def quit(self):
         if self._input_daemon is not None:
             self._input_daemon.stop()
@@ -97,12 +98,12 @@ class PhysicNetworkChannel(NetworkChannel):
 
 class TcNetworkInterface(PhysicNetworkChannel):
 
-    def __init__(self, timestamp_func, distr_func, interval, destination_node, network_interface):
-        super().__init__(timestamp_func, distr_func, interval, destination_node)
+    def __init__(self, destination_node, timestamp_func, distr_func, interval, network_interface):
+        super().__init__(destination_node, timestamp_func, distr_func, interval)
         self._network_interface = network_interface
 
     def _apply_delay(self):
-        tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change 2> /dev/null""" #TODO change stderr
+        tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change 2> /dev/null"""  # TODO change stderr
         print(tc_config)
         os.system(tc_config)
 
@@ -110,14 +111,30 @@ class TcNetworkInterface(PhysicNetworkChannel):
         os.system(f'tcdel {self._network_interface}')
 
 
-
 class DiscreteNetworkChannel(NetworkChannel):
-    def __init__(self, timestamp_func):
-        super().__init__(timestamp_func)
-        self._queue = PriorityQueue()
 
-    def schedule(self, event, delay: float):  # seconds
-        self._queue.put(self.TimingEvent(event, self._timestamp_func() + delay))
+    def __init__(self, destination_node, timestamp_func, distr_func, interval):
+        super().__init__(destination_node, timestamp_func, distr_func, interval)
+        self._queue = PriorityQueue()
+        self._delay = None
+
+    def bind(self, source_node):
+        ...
+
+    def _apply_delay(self):
+        self._delay = self._distr_func()
+
+    def send(self, msg):
+        current_timestamp = self._timestamp_func()
+        self._queue.put(self.TimingEvent(lambda: self.destination_node.receive_msg(msg), current_timestamp + self._delay))
+
+    def quit(self):
+        pass
+
+    def tick(self):
+        super()
+        if not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._timestamp_func():
+            self._queue.get().event()
 
     class TimingEvent:
         def __init__(self, event, timestamp):
@@ -134,10 +151,6 @@ class DiscreteNetworkChannel(NetworkChannel):
 
         def __lt__(self, e):
             return self._timestamp < e.timestamp
-
-    def tick(self):
-        if not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._timestamp_func():
-            self._queue.get().event()
 
 
 if __name__ == '__main__':

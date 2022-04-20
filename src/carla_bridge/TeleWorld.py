@@ -2,13 +2,13 @@ import sys
 
 import carla
 
-from src.carla_bridge.CarlaSensor import CarlaSensor, CarlaRenderingSensor
+from src.actor.TeleSensor import TeleSensor, TeleRenderingSensor
 from src.utils.carla_utils import find_weather_presets
 from src.utils.utils import need_member
 from carla.libcarla import World
 
 
-class CarlaWorld:
+class TeleWorld:
 
     def __init__(self, world_name):
         self._world_name = world_name
@@ -31,7 +31,7 @@ class CarlaWorld:
         return call_event
 
 
-class CarlaActuatorWorld(CarlaWorld):
+class TeleActuatorWorld(TeleWorld):
     """ Class representing the surrounding environment """
 
     def __init__(self, carla_world: World, vehicle, carla_conf, hud):
@@ -108,7 +108,7 @@ class CarlaActuatorWorld(CarlaWorld):
         self._controller = controller
         self._controller.add_player_in_world(self.player)
 
-    def add_sensor(self, sensor: CarlaSensor, parent):
+    def add_sensor(self, sensor: TeleSensor, parent):
         sensor.spawn_in_world(parent)
         self._sensors.append(sensor)
 
@@ -134,7 +134,7 @@ class CarlaActuatorWorld(CarlaWorld):
     def render(self, display):
         """Render world"""
         for sensor in self._sensors:
-            if isinstance(sensor, CarlaRenderingSensor):
+            if isinstance(sensor, TeleRenderingSensor):
                 sensor.render(display)
 
         # self.camera_manager.render(display)

@@ -8,7 +8,7 @@ import pygame
 from carla import ColorConverter as cc
 
 
-class CarlaSensor(ABC):
+class TeleSensor(ABC):
     @abstractmethod
     def spawn_in_world(self, parent_actor):
         ...
@@ -20,13 +20,13 @@ class CarlaSensor(ABC):
         ...
 
 
-class CarlaRenderingSensor(CarlaSensor):
+class TeleRenderingSensor(TeleSensor):
     @abstractmethod
     def render(self, display):
         ...
 
 
-class CarlaCameraManager(CarlaRenderingSensor):
+class TeleCameraManager(TeleRenderingSensor):
 
     def __init__(self, gamma_correction, hud, width, height):
         self._gamma_correction = gamma_correction
@@ -168,7 +168,7 @@ class CarlaCameraManager(CarlaRenderingSensor):
             # We need to pass the lambda a weak reference to
             # self to avoid circular reference.
             weak_self = weakref.ref(self)
-            self.sensor.listen(lambda image: CarlaCameraManager._parse_image(weak_self, image))
+            self.sensor.listen(lambda image: TeleCameraManager._parse_image(weak_self, image))
         # if notify:
         #     self.hud.notification(self.sensors[index][2])
         self.index = index
@@ -216,7 +216,7 @@ class CarlaCameraManager(CarlaRenderingSensor):
             image.save_to_disk('_out/%08d' % image.frame)
 
 
-class CarlaGnssSensor(CarlaSensor):
+class TeleGnssSensor(TeleSensor):
 
     def __init__(self):
         self.sensor = None
@@ -234,7 +234,7 @@ class CarlaGnssSensor(CarlaSensor):
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.
         weak_self = weakref.ref(self)
-        self.sensor.listen(lambda event: CarlaGnssSensor._on_gnss_event(weak_self, event))
+        self.sensor.listen(lambda event: TeleGnssSensor._on_gnss_event(weak_self, event))
 
     def stop(self):
         self.sensor.stop()

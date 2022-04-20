@@ -14,9 +14,10 @@ class NetworkMessage(ABC):
         return pickle.loads(msg_bytes)
 
 
-# from operator to vehicle (or mec?)
+# from operator to vehicle (or from mec?)
 class InstructionNetworkMessage(NetworkMessage):
-    ...
+    def __init__(self, command):
+        self.command = command
 
 
 # from vehicle to mec
@@ -27,3 +28,5 @@ class InfoUpdateNetworkMessage(NetworkMessage):
 # from mec to operator
 class AugmentedInfoUpdateNetworkMessage(NetworkMessage):
     ...
+
+

@@ -3,7 +3,6 @@ from abc import ABC
 from typing import List
 
 from src.network.NetworkChannel import NetworkChannel
-from src.utils.utils import need_member
 
 
 class NetworkNode(ABC):
@@ -19,7 +18,6 @@ class NetworkNode(ABC):
         self._channels.append(channel)
 
     def receive_msg(self, network_message):
-        print("((((())))))"*30)
         ...
 
     def send_message(self, network_message):
