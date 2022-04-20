@@ -5,7 +5,7 @@ from carla import libcarla, Transform, Location, Rotation
 from src.actor.TeleVehicle import TeleVehicle
 from src.actor.TeleSensor import TeleCameraManager, TeleGnssSensor
 from src.args_parse import my_parser
-from src.carla_bridge.TeleWorld import TeleActuatorWorld
+from src.carla_bridge.TeleWorld import TeleWorld
 from src.folder_path import OUT_PATH
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
@@ -50,11 +50,11 @@ def main():
     pygame.display.flip()
 
     player_attrs = {'role_name': 'hero'}
-    player = TeleVehicle(carla_simulation_conf['vehicle_player'], '1', player_attrs, start_position=start_position,
+    player = TeleVehicle(None, carla_simulation_conf['vehicle_player'], '1', player_attrs, start_position=start_position,
                          modify_vehicle_physics=True)
 
     hud = HUD(carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height'])
-    tele_world: TeleActuatorWorld = TeleActuatorWorld(sim_world, player, carla_simulation_conf, hud)
+    tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf, hud)
 
     camera_manager = TeleCameraManager(hud, 2.2, 1280, 720)
     tele_world.add_sensor(camera_manager, player)

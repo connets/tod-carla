@@ -1,3 +1,7 @@
+import functools
+import threading
+
+
 def need_member(*members):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
@@ -21,6 +25,18 @@ def flat_dict(d, keys_sep='.'):
         return res
 
     return dict(flat_dict_aux(d))
+
+
+def synchronized(lock: threading.RLock):
+    def _decorator(wrapped):
+        @functools.wraps(wrapped)
+        def _wrapper(*args, **kwargs):
+            with lock:
+                return wrapped(*args, **kwargs)
+
+        return _wrapper
+
+    return _decorator
 
 
 if __name__ == '__main__':

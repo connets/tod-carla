@@ -5,12 +5,13 @@ from abc import ABC, abstractmethod
 import carla
 from carla import ActorBlueprint, Transform, Location, Rotation
 
+from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.utils.utils import need_member
 
 
-class TeleVehicle:
-
-    def __init__(self, actor_filter, actor_id, attrs, start_position=None, modify_vehicle_physics=False):
+class TeleVehicle(TeleCarlaActor):
+    def __init__(self, tele_world, actor_filter, actor_id, attrs, start_position=None, modify_vehicle_physics=False):
+        super().__init__(tele_world)
         self._actor_filter = actor_filter
         self._actor_id = actor_id
         self._attrs = attrs
@@ -19,16 +20,21 @@ class TeleVehicle:
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
 
+    def start(self):
+        self._controller.add_player_in_world(self)
+
     def receive_instruction(self, command):
-        # self.appl
+        self.apply_control(command)
         ...
+
     @need_member('model')
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
-    def spawn_in_world(self, map, world):
-
-        blueprint: ActorBlueprint = random.choice(world.get_blueprint_library().filter(self._actor_filter))
+    def spawn_in_world(self):
+        sim_world = self.tele_world.sim_world
+        carla_map = self.tele_world.carla_map
+        blueprint: ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(self._actor_filter))
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
             blueprint.set_attribute('color', color)
@@ -42,21 +48,21 @@ class TeleVehicle:
 
         self.model = None
         if self._start_position is not None:
-            self.model = world.try_spawn_actor(blueprint, self._start_position)
+            self.model = sim_world.try_spawn_actor(blueprint, self._start_position)
             if self.model is None:
                 print("Error in spawning car in:", self._start_position)
 
         while self.model is None:
-            if not map.get_spawn_points():
+            if not carla_map.get_spawn_points():
                 print('There are no spawn points available in your map/town.')
                 print('Please add some Vehicle Spawn Point to your UE4 scene.')
                 sys.exit(1)
-            spawn_points = map.get_spawn_points()
+            spawn_points = carla_map.get_spawn_points()
             spawn_point = spawn_points[1]
             # spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
             # x=29.911945, y=-2.026154, z=0.000000
             # spawn_point = Transform(Location(x=299.399994, y=133.240036, z=0.300000), Rotation(pitch=0.000000, yaw=-0.000092, roll=0.000000))
-            self.model = world.try_spawn_actor(blueprint, spawn_point)
+            self.model = sim_world.try_spawn_actor(blueprint, spawn_point)
             if self._modify_vehicle_physics:
                 self.modify_vehicle_physics()
         self.set_light_state(carla.VehicleLightState.Position)
