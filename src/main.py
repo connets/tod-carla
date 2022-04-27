@@ -2,6 +2,7 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
+from src.TeleLogger import TeleLogger
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleVehicle import TeleVehicle
@@ -48,6 +49,8 @@ def main():
     - carla_server_file (default: configuration/default_server.yaml),
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
+
+    TeleLogger()
     configurations = parse_configurations()
     carla_server_conf = configurations['carla_server_conf']
     carla_simulation_conf = configurations['carla_simulation_conf']
@@ -55,6 +58,11 @@ def main():
     display = create_display(carla_simulation_conf)
 
     sim_world = create_sim_world(carla_server_conf, carla_simulation_conf)
+
+    def elapsed_seconds():
+
+        ts = sim_world.get_snapshot().timestamp.elapsed_seconds
+        return ts
 
     start_position = Transform(
         Location(x=carla_simulation_conf['route.start.x'], y=carla_simulation_conf['route.start.y'],
@@ -75,18 +83,17 @@ def main():
                          modify_vehicle_physics=True)
 
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
-    camera_sensor.spawn_in_world()
 
     controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
-    vehicle_operator_channel = TcNetworkInterface(tele_operator, lambda: tele_world.timestamp,
+    vehicle_operator_channel = TcNetworkInterface(tele_operator, elapsed_seconds,
                                                   delay_family_to_func['uniform'](10, 20), 1000, 'lo')
     player.add_channel(vehicle_operator_channel)
-    operator_vehicle_channel = TcNetworkInterface(player, lambda: tele_world.timestamp,
+    operator_vehicle_channel = TcNetworkInterface(player, elapsed_seconds,
                                                   delay_family_to_func['uniform'](10, 20), 1000, 'lo')
     tele_operator.add_channel(operator_vehicle_channel)
-
+    player.start(1000, False)
     # tele_world.add_sensor(camera_manager, player)
 
     # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
@@ -106,9 +113,9 @@ def main():
                                             'acceleration_x': lambda: round(player.get_acceleration().x, 5),
                                             'acceleration_y': lambda: round(player.get_acceleration().y, 5),
                                             'acceleration_z': lambda: round(player.get_acceleration().z, 5),
-                                            'altitude': lambda: round(gnss_sensor.altitude, 5),
-                                            'longitude': lambda: round(gnss_sensor.longitude, 5),
-                                            'latitude': lambda: round(gnss_sensor.latitude, 5),
+                                            # 'altitude': lambda: round(gnss_sensor.altitude, 5),
+                                            # 'longitude': lambda: round(gnss_sensor.longitude, 5),
+                                            # 'latitude': lambda: round(gnss_sensor.latitude, 5),
                                             'Throttle': lambda: round(player.get_control().throttle, 5),
                                             'Steer': lambda: round(player.get_control().steer, 5),
                                             'Brake': lambda: round(player.get_control().brake, 5)
@@ -123,12 +130,13 @@ def main():
 
     try:
         while not exit:
+            ...
             # network_delay.tick()
-            clock.tick()
-            exit = tele_world.tick(clock) != 0
-            tele_world.render(display)
-            pygame.display.flip()
-            data_collector.tick()
+            # clock.tick()
+            # exit = tele_world.tick(clock) != 0
+            # tele_world.render(display)
+            # pygame.display.flip()
+            # data_collector.tick()
             # print(tele_world.timestamp)
     # exit = i == 1000 | exit
 

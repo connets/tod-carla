@@ -36,7 +36,7 @@ class InfoUpdateNetworkMessage(NetworkMessage):
         self._snapshot = snapshot
 
     def action(self, destination):
-        ...
+        destination.receive_state_info(self._snapshot)
 
 
 # from mec to operator

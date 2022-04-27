@@ -17,8 +17,6 @@ class NetworkNode(ABC):
         channel.bind(self)
         self._channels.append(channel)
 
-    def receive_msg(self, network_message):
-        ...
 
     def send_message(self, network_message):
         for channel in self._channels:

@@ -1,5 +1,6 @@
 import threading
 
+from src.TeleLogger import TeleLogger
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils.utils import synchronized
@@ -23,6 +24,7 @@ class TeleOperator(TeleCarlaActor):
     @synchronized(lock)
     def receive_state_info(self, snapshot):
         self._last_snapshot = snapshot
+        TeleLogger.instance.network_logger.info('I AM tele operator and i received a message')
 
     def start(self):
         ...

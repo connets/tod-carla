@@ -23,16 +23,17 @@ class TeleVehicle(TeleCarlaActor):
         self.model = None
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
+        self._spawn_in_world()
 
     def start(self, sending_interval, synchronous):
-        self._controller.add_player_in_world(self)
+        # self._controller.add_player_in_world(self)
         if synchronous:
             ...
         else:
             def send_info_state():
                 while True:
                     self.send_message(InfoUpdateNetworkMessage(self.tele_world.get_snapshot()))
-                    sleep(sending_interval)
+                    sleep(sending_interval / 1000)
 
             sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
             sending_info_thread.start()
@@ -41,7 +42,7 @@ class TeleVehicle(TeleCarlaActor):
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
-    def spawn_in_world(self):
+    def _spawn_in_world(self):
         sim_world = self.tele_world.sim_world
         carla_map = self.tele_world.carla_map
         blueprint: ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(self._actor_filter))

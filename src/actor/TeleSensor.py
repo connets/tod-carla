@@ -17,10 +17,6 @@ class TeleSensor(NetworkNode):
         self.parent_actor = parent_actor
         self.world = self.parent_actor.get_world()
 
-    @abstractmethod
-    def spawn_in_world(self):
-        ...
-
     def stop(self):
         ...
 
@@ -70,7 +66,9 @@ class TeleCameraSensor(TeleRenderingSensor):
             ['sensor.camera.optical_flow', cc.Raw, 'Optical Flow', {}],
         ]
 
-    def spawn_in_world(self):
+        self._spawn_in_world()
+
+    def _spawn_in_world(self):
         # self.sensor = None
         # self.surface = None
         # self._parent = parent_actor

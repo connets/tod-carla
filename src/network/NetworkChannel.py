@@ -68,7 +68,7 @@ class PhysicNetworkChannel(NetworkChannel):
                         data, addr = self._socket.recvfrom(4096)
                         msg = NetworkMessage.from_bytes(data)
                         print('Got connection', source_node.host, source_node.port)
-                        source_node.receive_msg(msg)
+                        msg.action(source_node)
                     except socket.timeout:
                         ...
 
@@ -127,7 +127,7 @@ class DiscreteNetworkChannel(NetworkChannel):
         super().send(msg)
         current_timestamp = self._timestamp_func()
         self._queue.put(
-            self.TimingEvent(lambda: self.destination_node.receive_msg(msg), current_timestamp + self._delay))
+            self.TimingEvent(lambda: msg.action(self.destination_node), current_timestamp + self._delay))
 
     def quit(self):
         pass
