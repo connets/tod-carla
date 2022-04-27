@@ -74,7 +74,7 @@ class BehaviorAgent(BasicAgent):
         if self._direction is None:
             self._direction = RoadOption.LANEFOLLOW
 
-        self._look_ahead_steps = int((self._speed_limit) / 10)
+        self._look_ahead_steps = int(self._speed_limit / 10)
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
@@ -245,6 +245,9 @@ class BehaviorAgent(BasicAgent):
             :return control: carla.VehicleControl
         """
         self._update_information()
+
+        vehicle_snapshot = self._world.get_snapshot()
+        print([tmp.id for tmp in vehicle_snapshot])
 
         control = None
         if self._behavior.tailgate_counter > 0:

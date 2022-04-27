@@ -13,7 +13,7 @@ from src.folder_path import OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
-from src.TeleWorldController import BehaviorAgentTeleWorldController
+from src.TeleWorldController import BehaviorAgentTeleWorldController, BasicAgentTeleWorldController
 from src.utils.distribution_utils import delay_family_to_func
 from src.utils.utils import find_free_port
 
@@ -84,7 +84,8 @@ def main():
 
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
 
-    controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    controller = BasicAgentTeleWorldController( )  # TODO change here
+    # controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
     vehicle_operator_channel = TcNetworkInterface(tele_operator, elapsed_seconds,
