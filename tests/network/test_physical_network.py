@@ -5,11 +5,18 @@ from unittest.mock import MagicMock
 from src.network.NetworkChannel import PhysicNetworkChannel, TcNetworkInterface
 from src.network.NetworkMessage import NetworkMessage
 from src.network.NetworkNode import NetworkNode
+from src.utils.utils import find_free_port
+
+
+class MyNetworkMessage(NetworkMessage):
+
+    def action(self, destination):
+        ...
 
 
 def test_network_two_nodes_without_delay():
-    node2 = NetworkNode('localhost', 28001 + 10)
-    node1 = NetworkNode('localhost', 28002 + 10)
+    node2 = NetworkNode('localhost', find_free_port())
+    node1 = NetworkNode('localhost', find_free_port())
 
     channel1 = TcNetworkInterface(node2, lambda: 0, lambda: 0, 0, 'lo')
     channel2 = TcNetworkInterface(node1, lambda: 0, lambda: 0, 0, 'lo')
@@ -17,7 +24,7 @@ def test_network_two_nodes_without_delay():
     node1.add_channel(channel1)
     node2.add_channel(channel2)
 
-    msg = NetworkMessage(datetime.datetime.now().timestamp())
+    msg = MyNetworkMessage(datetime.datetime.now().timestamp())
     node2.receive_msg = MagicMock()
 
     assert node2.receive_msg.call_count == 0
@@ -32,8 +39,8 @@ def test_network_two_nodes_without_delay():
 
 
 def test_network_called_two_nodes_without_delay():
-    node2 = NetworkNode('127.0.0.1', 28003 + 10)
-    node1 = NetworkNode('127.0.0.1', 28004 + 10)
+    node2 = NetworkNode('127.0.0.1', find_free_port())
+    node1 = NetworkNode('127.0.0.1', find_free_port())
 
     delay = 0.3
     timestamp = 0
@@ -51,7 +58,7 @@ def test_network_called_two_nodes_without_delay():
     node2.receive_msg = MagicMock()
     assert node2.receive_msg.call_count == 0
 
-    msg = NetworkMessage(datetime.datetime.now().timestamp())
+    msg = MyNetworkMessage(datetime.datetime.now().timestamp())
     node1.send_message(msg)
     sleep(1)  # enough time to receive msg
 
@@ -72,8 +79,8 @@ def test_network_called_two_nodes_without_delay():
 
 
 def test_network_called_two_nodes_with_delay():
-    node2 = NetworkNode('127.0.0.1', 28005 + 10)
-    node1 = NetworkNode('127.0.0.1', 28006 + 10)
+    node2 = NetworkNode('127.0.0.1', find_free_port())
+    node1 = NetworkNode('127.0.0.1', find_free_port())
 
     delay = 0.3
     timestamp = 0
@@ -91,7 +98,7 @@ def test_network_called_two_nodes_with_delay():
     node2.receive_msg = MagicMock()
     assert node2.receive_msg.call_count == 0
 
-    msg = NetworkMessage(datetime.datetime.now().timestamp())
+    msg = MyNetworkMessage(datetime.datetime.now().timestamp())
     node1.send_message(msg)
     sleep(1)  # enough time to receive msg
 
@@ -124,8 +131,8 @@ def test_network_called_two_nodes_with_exactly_delay():
             timestamp_now = datetime.datetime.now().timestamp()
             assert abs(timestamp_now - network_message) <= delay + 1
 
-    node1 = NetworkNode('127.0.0.1', 28007 + 10)
-    node2 = NetworkNodeTest('127.0.0.1', 28008 + 10)
+    node1 = NetworkNode('127.0.0.1', find_free_port())
+    node2 = NetworkNodeTest('127.0.0.1', find_free_port())
 
     channel1 = TcNetworkInterface(node2, lambda: timestamp, lambda: delay, 1, 'lo')
     channel2 = TcNetworkInterface(node1, lambda: timestamp, lambda: delay, 1, 'lo')
@@ -136,7 +143,7 @@ def test_network_called_two_nodes_with_exactly_delay():
     channel2.tick()
     channel1.tick()
 
-    msg = NetworkMessage(datetime.datetime.now().timestamp())
+    msg = MyNetworkMessage(datetime.datetime.now().timestamp())
     node1.send_message(msg)
 
     sleep(delay / 1000 + 0.1)  # enough time to receive msg

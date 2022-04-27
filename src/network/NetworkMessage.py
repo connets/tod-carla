@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 
 
 class NetworkMessage(ABC):
-    def __init__(self, timestamp):
-        self.timestamp = timestamp
+    def __init__(self):
+        self.timestamp = None
 
     def to_bytes(self):
         return pickle.dumps(self)
@@ -14,27 +14,32 @@ class NetworkMessage(ABC):
         return pickle.loads(msg_bytes)
 
     @abstractmethod
-    def action(self):
+    def action(self, destination):
         ...
 
 
 # from operator to vehicle (or from mec?)
 class InstructionNetworkMessage(NetworkMessage):
-    def __init__(self, timestamp, command):
-        super().__init__(timestamp)
+    def __init__(self, command):
+        super().__init__()
         self.command = command
 
-    def action(self, ):
-        pass
+    def action(self, destination):
+        destination.receive_instruction_network_message(self.command)
+        ...
 
 
 # from vehicle to mec
 class InfoUpdateNetworkMessage(NetworkMessage):
-    ...
+    def __init__(self, snapshot):
+        super().__init__()
+        self._snapshot = snapshot
+
+    def action(self, destination):
+        ...
 
 
 # from mec to operator
 class AugmentedInfoUpdateNetworkMessage(NetworkMessage):
-    ...
-
-
+    def action(self, destination):
+        ...

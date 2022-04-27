@@ -2,14 +2,44 @@ import carla
 import pygame
 from carla import libcarla, Transform, Location, Rotation
 
+from src.actor.TeleMEC import TeleMEC
+from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleVehicle import TeleVehicle
-from src.actor.TeleSensor import TeleCameraManager, TeleGnssSensor
+from src.actor.TeleSensor import TeleCameraSensor, TeleGnssSensor
 from src.args_parse import my_parser
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.folder_path import OUT_PATH
+from src.network.NetworkChannel import TcNetworkInterface
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController
+from src.utils.distribution_utils import delay_family_to_func
+from src.utils.utils import find_free_port
+
+
+def parse_configurations():
+    res = dict()
+    conf_files = my_parser.parse_configuration_files()
+    res['carla_server_conf'] = my_parser.parse_carla_server_args(conf_files['carla_server_file'])
+    res['carla_simulation_conf'] = my_parser.parse_carla_simulation_args(conf_files['carla_simulation_file'])
+    return res
+
+
+def create_display(carla_simulation_conf):
+    pygame.init()
+    pygame.font.init()
+    display = pygame.display.set_mode((carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height']),
+                                      pygame.HWSURFACE | pygame.DOUBLEBUF)
+    display.fill((0, 0, 0))
+    pygame.display.flip()
+    return display
+
+
+def create_sim_world(carla_server_conf, carla_simulation_conf):
+    client: libcarla.Client = carla.Client(carla_server_conf['host'], carla_server_conf['port'])
+    client.set_timeout(carla_server_conf['timeout'])
+    sim_world: carla.World = client.load_world(carla_simulation_conf['world'])
+    return sim_world
 
 
 def main():
@@ -18,20 +48,13 @@ def main():
     - carla_server_file (default: configuration/default_server.yaml),
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
-    conf_files = my_parser.parse_configuration_files()
-    carla_server_conf = my_parser.parse_carla_server_args(conf_files['carla_server_file'])
-    carla_simulation_conf = my_parser.parse_carla_simulation_args(conf_files['carla_simulation_file'])
+    configurations = parse_configurations()
+    carla_server_conf = configurations['carla_server_conf']
+    carla_simulation_conf = configurations['carla_simulation_conf']
 
-    pygame.init()
-    pygame.font.init()
+    display = create_display(carla_simulation_conf)
 
-    client: libcarla.Client = carla.Client(carla_server_conf['host'], carla_server_conf['port'])
-    client.set_timeout(carla_server_conf['timeout'])
-
-    sim_world: carla.World = client.load_world(carla_simulation_conf['world'])
-
-    builds = sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
-    objects_to_toggle = {build.id for build in builds}
+    sim_world = create_sim_world(carla_server_conf, carla_simulation_conf)
 
     start_position = Transform(
         Location(x=carla_simulation_conf['route.start.x'], y=carla_simulation_conf['route.start.y'],
@@ -41,30 +64,36 @@ def main():
     destination_position = Location(x=carla_simulation_conf['route.end.x'], y=carla_simulation_conf['route.end.y'],
                                     z=carla_simulation_conf['route.end.z'])
 
-    sim_world.enable_environment_objects(objects_to_toggle, False)
-
-    traffic_manager = client.get_trafficmanager()
-    display = pygame.display.set_mode((carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height']),
-                                      pygame.HWSURFACE | pygame.DOUBLEBUF)
-    display.fill((0, 0, 0))
-    pygame.display.flip()
-
-    player_attrs = {'role_name': 'hero'}
-    player = TeleVehicle(None, carla_simulation_conf['vehicle_player'], '1', player_attrs, start_position=start_position,
-                         modify_vehicle_physics=True)
+    # traffic_manager = client.get_trafficmanager()
 
     hud = HUD(carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height'])
     tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf, hud)
 
-    camera_manager = TeleCameraManager(hud, 2.2, 1280, 720)
-    tele_world.add_sensor(camera_manager, player)
+    player_attrs = {'role_name': 'hero'}
+    player = TeleVehicle('localhost', 28007, tele_world, carla_simulation_conf['vehicle_player'], '1', player_attrs,
+                         start_position=start_position,
+                         modify_vehicle_physics=True)
+
+    camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
+    camera_sensor.spawn_in_world()
 
     controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
-    # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
-    tele_world.add_controller(controller)
+    tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
+    mec = TeleMEC('localhost', find_free_port(), tele_world)
+    vehicle_operator_channel = TcNetworkInterface(tele_operator, lambda: tele_world.timestamp,
+                                                  delay_family_to_func['uniform'](10, 20), 1000, 'lo')
+    player.add_channel(vehicle_operator_channel)
+    operator_vehicle_channel = TcNetworkInterface(player, lambda: tele_world.timestamp,
+                                                  delay_family_to_func['uniform'](10, 20), 1000, 'lo')
+    tele_operator.add_channel(operator_vehicle_channel)
 
-    gnss_sensor = TeleGnssSensor()
-    tele_world.add_sensor(gnss_sensor, player)
+    # tele_world.add_sensor(camera_manager, player)
+
+    # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
+    # tele_world.add_controller(controller)
+
+    # gnss_sensor = TeleGnssSensor()
+    # tele_world.add_sensor(gnss_sensor, player)
 
     tele_world.start()
     clock = pygame.time.Clock()

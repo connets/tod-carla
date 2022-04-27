@@ -1,17 +1,21 @@
 import random
 import sys
 from abc import ABC, abstractmethod
+from time import sleep
 
 import carla
 from carla import ActorBlueprint, Transform, Location, Rotation
 
 from src.actor.TeleCarlaActor import TeleCarlaActor
+from src.network.NetworkMessage import InfoUpdateNetworkMessage
 from src.utils.utils import need_member
+from threading import Thread
 
 
 class TeleVehicle(TeleCarlaActor):
-    def __init__(self, tele_world, actor_filter, actor_id, attrs, start_position=None, modify_vehicle_physics=False):
-        super().__init__(tele_world)
+    def __init__(self, host, port, tele_world, actor_filter, actor_id, attrs, start_position=None,
+                 modify_vehicle_physics=False):
+        super().__init__(host, port, tele_world)
         self._actor_filter = actor_filter
         self._actor_id = actor_id
         self._attrs = attrs
@@ -20,12 +24,18 @@ class TeleVehicle(TeleCarlaActor):
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
 
-    def start(self):
+    def start(self, sending_interval, synchronous):
         self._controller.add_player_in_world(self)
+        if synchronous:
+            ...
+        else:
+            def send_info_state():
+                while True:
+                    self.send_message(InfoUpdateNetworkMessage(self.tele_world.get_snapshot()))
+                    sleep(sending_interval)
 
-    def receive_instruction(self, command):
-        self.apply_control(command)
-        ...
+            sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
+            sending_info_thread.start()
 
     @need_member('model')
     def __getattr__(self, *args):
@@ -74,3 +84,6 @@ class TeleVehicle(TeleCarlaActor):
             self.apply_physics_control(physics_control)
         except Exception:
             pass
+
+    def receive_instruction_network_message(self, command):
+        self.apply_control(command)

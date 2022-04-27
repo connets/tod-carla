@@ -7,10 +7,18 @@ import numpy as np
 import pygame
 from carla import ColorConverter as cc
 
+from src.network.NetworkNode import NetworkNode
 
-class TeleSensor(ABC):
+
+class TeleSensor(NetworkNode):
+
+    def __init__(self, host, port, parent_actor):
+        super().__init__(host, port)
+        self.parent_actor = parent_actor
+        self.world = self.parent_actor.get_world()
+
     @abstractmethod
-    def spawn_in_world(self, parent_actor):
+    def spawn_in_world(self):
         ...
 
     def stop(self):
@@ -26,16 +34,16 @@ class TeleRenderingSensor(TeleSensor):
         ...
 
 
-class TeleCameraManager(TeleRenderingSensor):
+class TeleCameraSensor(TeleRenderingSensor):
 
-    def __init__(self, gamma_correction, hud, width, height):
+    def __init__(self, host, port, parent_actor, gamma_correction, hud, width, height):
+        super().__init__(host, port, parent_actor)
         self._gamma_correction = gamma_correction
         self.hud = hud
         self.width = width
         self.height = height
         self.sensor = None
         self.surface = None
-        self._parent = None
         self.recording = False
         self.lidar_range = None
 
@@ -62,8 +70,7 @@ class TeleCameraManager(TeleRenderingSensor):
             ['sensor.camera.optical_flow', cc.Raw, 'Optical Flow', {}],
         ]
 
-    def spawn_in_world(self, parent_actor):
-        self._parent = parent_actor
+    def spawn_in_world(self):
         # self.sensor = None
         # self.surface = None
         # self._parent = parent_actor
@@ -73,9 +80,9 @@ class TeleCameraManager(TeleRenderingSensor):
         #
         #
 
-        bound_x = 0.5 + self._parent.bounding_box.extent.x
-        bound_y = 0.5 + self._parent.bounding_box.extent.y
-        bound_z = 0.5 + self._parent.bounding_box.extent.z
+        bound_x = 0.5 + self.parent_actor.bounding_box.extent.x
+        bound_y = 0.5 + self.parent_actor.bounding_box.extent.y
+        bound_z = 0.5 + self.parent_actor.bounding_box.extent.z
 
         Attachment = carla.AttachmentType
         self._camera_transforms = [
@@ -115,8 +122,7 @@ class TeleCameraManager(TeleRenderingSensor):
         #         'chromatic_aberration_offset': '0'}],
         #     ['sensor.camera.optical_flow', cc.Raw, 'Optical Flow', {}],
         # ]
-        world = self._parent.get_world()
-        bp_library = world.get_blueprint_library()
+        bp_library = self.world.get_blueprint_library()
         for item in self.sensors:
             bp = bp_library.find(item[0])
             if item[0].startswith('sensor.camera'):
@@ -159,16 +165,16 @@ class TeleCameraManager(TeleRenderingSensor):
             if self.sensor is not None:
                 self.sensor.destroy()
                 self.surface = None
-            self.sensor = self._parent.get_world().spawn_actor(
+            self.sensor = self.parent_actor.get_world().spawn_actor(
                 self.sensors[index][-1],
                 self._camera_transforms[self.transform_index][0],
-                attach_to=self._parent.model,
+                attach_to=self.parent_actor.model,
                 attachment_type=self._camera_transforms[self.transform_index][1])
 
             # We need to pass the lambda a weak reference to
             # self to avoid circular reference.
             weak_self = weakref.ref(self)
-            self.sensor.listen(lambda image: TeleCameraManager._parse_image(weak_self, image))
+            self.sensor.listen(lambda image: TeleCameraSensor._parse_image(weak_self, image))
         # if notify:
         #     self.hud.notification(self.sensors[index][2])
         self.index = index

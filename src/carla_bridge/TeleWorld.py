@@ -19,6 +19,10 @@ class TeleWorld:
 
         self.sim_world: World = carla_world
 
+        builds = self.sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
+        objects_to_toggle = {build.id for build in builds}
+        self.sim_world.enable_environment_objects(objects_to_toggle, False)
+
         if carla_conf['synchronicity']:
             self.sync = True
             settings = self.sim_world.get_settings()
@@ -77,9 +81,9 @@ class TeleWorld:
         else:
             self.sim_world.wait_for_tick()
 
-    def add_sensor(self, sensor: TeleSensor, parent):
-        sensor.spawn_in_world(parent)
-        self._sensors.append(sensor)
+    # def add_sensor(self, sensor: TeleSensor, parent):
+    #     sensor.spawn_in_world(parent)
+    #     self._sensors.append(sensor)
 
     @need_member('player', '_controller')
     def tick(self, clock):  # TODO change here, put NetworkNode
@@ -114,10 +118,13 @@ class TeleWorld:
             if sensor is not None:
                 sensor.stop()
                 sensor.destroy()
-        if self.player is not None:
-            self.player.destroy()
+        # if self.player is not None:
+        #     self.player.destroy()
 
 
     @property
     def timestamp(self):
         return self._last_snapshot.timestamp
+
+    def get_snapshot(self):
+        return self.sim_world.get_snapshot()

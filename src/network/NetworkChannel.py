@@ -32,9 +32,8 @@ class NetworkChannel(ABC):
     def bind(self, source_node):
         ...
 
-    @abstractmethod
     def send(self, msg):
-        ...
+        msg.timestamp = self._timestamp_func()
 
     @abstractmethod
     def quit(self):
@@ -51,7 +50,6 @@ class PhysicNetworkChannel(NetworkChannel):
 
     def bind(self, source_node):
         # self.network_node = network_node
-
         class InputDaemon(Thread):
 
             def __init__(self):
@@ -82,6 +80,7 @@ class PhysicNetworkChannel(NetworkChannel):
         ...
 
     def send(self, msg):
+        super().send(msg)
         # self._socket.connect((destination_node.host, destination_node.port))
         self._out_socket.sendto(msg.to_bytes(), (self.destination_node.host, self.destination_node.port))
         # init_msg = NetworkMessage.from_bytes(s.recv(4096))
@@ -125,8 +124,10 @@ class DiscreteNetworkChannel(NetworkChannel):
         self._delay = self._distr_func()
 
     def send(self, msg):
+        super().send(msg)
         current_timestamp = self._timestamp_func()
-        self._queue.put(self.TimingEvent(lambda: self.destination_node.receive_msg(msg), current_timestamp + self._delay))
+        self._queue.put(
+            self.TimingEvent(lambda: self.destination_node.receive_msg(msg), current_timestamp + self._delay))
 
     def quit(self):
         pass
