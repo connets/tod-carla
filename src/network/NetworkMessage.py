@@ -1,13 +1,15 @@
+import json
 import pickle
 from abc import ABC, abstractmethod
 
 
 class NetworkMessage(ABC):
-    def __init__(self):
-        self.timestamp = None
+    def __init__(self, timestamp=None, periodic=False):
+        self.timestamp = timestamp
+        self.periodic = periodic
 
     def to_bytes(self):
-        return pickle.dumps(self)
+        return pickle.dumps(self)  # TODO this isn't working
 
     @staticmethod
     def from_bytes(msg_bytes):
@@ -20,8 +22,8 @@ class NetworkMessage(ABC):
 
 # from operator to vehicle (or from mec?)
 class InstructionNetworkMessage(NetworkMessage):
-    def __init__(self, command):
-        super().__init__()
+    def __init__(self, command, timestamp=None, periodic=False):
+        super().__init__(timestamp, periodic)
         self.command = command
 
     def action(self, destination):
@@ -31,12 +33,13 @@ class InstructionNetworkMessage(NetworkMessage):
 
 # from vehicle to mec
 class InfoUpdateNetworkMessage(NetworkMessage):
-    def __init__(self, snapshot):
-        super().__init__()
-        self._snapshot = snapshot
+    def __init__(self, tele_vehicle_state, timestamp=None, periodic=False):
+        super().__init__(timestamp, periodic)
+
+        self._tele_vehicle_state = tele_vehicle_state
 
     def action(self, destination):
-        destination.receive_state_info(self._snapshot)
+        destination.receive_state_info(self._tele_vehicle_state)
 
 
 # from mec to operator

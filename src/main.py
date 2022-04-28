@@ -3,6 +3,7 @@ import pygame
 from carla import libcarla, Transform, Location, Rotation
 
 from src.TeleLogger import TeleLogger
+from src.TeleScheduler import TeleScheduler
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleVehicle import TeleVehicle
@@ -10,7 +11,7 @@ from src.actor.TeleSensor import TeleCameraSensor, TeleGnssSensor
 from src.args_parse import my_parser
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.folder_path import OUT_PATH
-from src.network.NetworkChannel import TcNetworkInterface
+from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController, BasicAgentTeleWorldController
@@ -60,9 +61,9 @@ def main():
     sim_world = create_sim_world(carla_server_conf, carla_simulation_conf)
 
     def elapsed_seconds():
+        return sim_world.get_snapshot().timestamp.elapsed_seconds * 1000
 
-        ts = sim_world.get_snapshot().timestamp.elapsed_seconds
-        return ts
+    TeleScheduler(elapsed_seconds)
 
     start_position = Transform(
         Location(x=carla_simulation_conf['route.start.x'], y=carla_simulation_conf['route.start.y'],
@@ -84,17 +85,17 @@ def main():
 
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
 
-    controller = BasicAgentTeleWorldController( )  # TODO change here
+    controller = BasicAgentTeleWorldController()  # TODO change here
     # controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
-    vehicle_operator_channel = TcNetworkInterface(tele_operator, elapsed_seconds,
-                                                  delay_family_to_func['uniform'](10, 20), 1000, 'lo')
+    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, elapsed_seconds,
+                                                      delay_family_to_func['uniform'](10, 20), 1000)
     player.add_channel(vehicle_operator_channel)
-    operator_vehicle_channel = TcNetworkInterface(player, elapsed_seconds,
-                                                  delay_family_to_func['uniform'](10, 20), 1000, 'lo')
+    operator_vehicle_channel = DiscreteNetworkChannel(player, elapsed_seconds,
+                                                      delay_family_to_func['uniform'](10, 20), 1000)
     tele_operator.add_channel(operator_vehicle_channel)
-    player.start(1000, False)
+    player.start(1000, True)
     # tele_world.add_sensor(camera_manager, player)
 
     # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
@@ -134,7 +135,9 @@ def main():
             ...
             # network_delay.tick()
             # clock.tick()
-            # exit = tele_world.tick(clock) != 0
+            player.tick()
+            TeleScheduler.instance.tick()
+            exit = tele_world.tick(clock) != 0
             # tele_world.render(display)
             # pygame.display.flip()
             # data_collector.tick()

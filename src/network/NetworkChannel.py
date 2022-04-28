@@ -4,9 +4,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from queue import PriorityQueue
 
+from src.TeleLogger import TeleLogger
+from src.TeleScheduler import TeleScheduler
 from src.network.NetworkMessage import NetworkMessage
 from src.utils.distribution_utils import _constant_family
 from threading import Thread
+
+from src.utils.utils import need_member
 
 
 class NetworkChannel(ABC):
@@ -17,10 +21,12 @@ class NetworkChannel(ABC):
         self._distr_func = distr_func
         self._interval = interval
         self._last_tick_timestamp = None
+        self._binded = False
 
+    @need_member('_binded', valid=lambda x: x)  # you have to call bind before tick
     def tick(self):
         current_timestamp = self._timestamp_func()
-        if self._last_tick_timestamp is None or current_timestamp >= self._last_tick_timestamp + self._interval:
+        if current_timestamp >= self._last_tick_timestamp + self._interval:
             self._apply_delay()
             self._last_tick_timestamp = current_timestamp
 
@@ -28,9 +34,10 @@ class NetworkChannel(ABC):
     def _apply_delay(self):
         pass
 
-    @abstractmethod
     def bind(self, source_node):
-        ...
+        self._apply_delay()
+        self._last_tick_timestamp = self._timestamp_func()
+        self._binded = True
 
     def send(self, msg):
         msg.timestamp = self._timestamp_func()
@@ -49,6 +56,8 @@ class PhysicNetworkChannel(NetworkChannel):
         self._input_daemon = None
 
     def bind(self, source_node):
+        super().bind(source_node)
+
         # self.network_node = network_node
         class InputDaemon(Thread):
 
@@ -74,10 +83,6 @@ class PhysicNetworkChannel(NetworkChannel):
 
         self._input_daemon = InputDaemon()
         self._input_daemon.start()
-
-    @abstractmethod
-    def _apply_delay(self):
-        ...
 
     def send(self, msg):
         super().send(msg)
@@ -114,44 +119,16 @@ class DiscreteNetworkChannel(NetworkChannel):
 
     def __init__(self, destination_node, timestamp_func, distr_func, interval):
         super().__init__(destination_node, timestamp_func, distr_func, interval)
-        self._queue = PriorityQueue()
-        self._delay = None
-
-    def bind(self, source_node):
-        ...
 
     def _apply_delay(self):
         self._delay = self._distr_func()
 
     def send(self, msg):
         super().send(msg)
-        current_timestamp = self._timestamp_func()
-        self._queue.put(
-            self.TimingEvent(lambda: msg.action(self.destination_node), current_timestamp + self._delay))
+        TeleScheduler.instance.schedule(lambda: msg.action(self.destination_node), self._delay)
 
     def quit(self):
         pass
-
-    def tick(self):
-        super()
-        if not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._timestamp_func():
-            self._queue.get().event()
-
-    class TimingEvent:
-        def __init__(self, event, timestamp):
-            self._event = event
-            self._timestamp = timestamp
-
-        @property
-        def event(self):
-            return self._event
-
-        @property
-        def timestamp_scheduled(self) -> int:
-            return self._timestamp
-
-        def __lt__(self, e):
-            return self._timestamp < e.timestamp
 
 
 if __name__ == '__main__':

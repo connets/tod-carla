@@ -6,6 +6,8 @@ from time import sleep
 import carla
 from carla import ActorBlueprint, Transform, Location, Rotation
 
+from src.TeleScheduler import TeleScheduler
+from src.TeleVehicleState import TeleVehicleState
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
 from src.utils.utils import need_member
@@ -28,11 +30,14 @@ class TeleVehicle(TeleCarlaActor):
     def start(self, sending_interval, synchronous):
         # self._controller.add_player_in_world(self)
         if synchronous:
-            ...
+            def send_state():
+                self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
+                TeleScheduler.instance.schedule(send_state, 100)
+            send_state()
         else:
             def send_info_state():
                 while True:
-                    self.send_message(InfoUpdateNetworkMessage(self.tele_world.get_snapshot()))
+                    self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
                     sleep(sending_interval / 1000)
 
             sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(

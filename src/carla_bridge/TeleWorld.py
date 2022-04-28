@@ -27,7 +27,7 @@ class TeleWorld:
             self.sync = True
             settings = self.sim_world.get_settings()
             settings.synchronous_mode = True
-            settings.fixed_delta_seconds = float(self._carla_conf['time_step'])
+            settings.fixed_delta_seconds = float(self._carla_conf['time_step'] / 1000)
             self.sim_world.apply_settings(settings)
             # traffic_manager.set_synchronous_mode(True)
         else:
@@ -85,7 +85,6 @@ class TeleWorld:
     #     sensor.spawn_in_world(parent)
     #     self._sensors.append(sensor)
 
-    @need_member('player', '_controller')
     def tick(self, clock):  # TODO change here, put NetworkNode
         """Method for every tick"""
         if self.sync:

@@ -22,8 +22,8 @@ class TeleOperator(TeleCarlaActor):
             ...  # do stuffs
 
     @synchronized(lock)
-    def receive_state_info(self, snapshot):
-        self._last_snapshot = snapshot
+    def receive_state_info(self, tele_vehicle_state):
+        self._controller.update_vehicle_state(tele_vehicle_state)
         TeleLogger.instance.network_logger.info('I AM tele operator and i received a message')
 
     def start(self):

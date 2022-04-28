@@ -17,10 +17,13 @@ class NetworkNode(ABC):
         channel.bind(self)
         self._channels.append(channel)
 
-
     def send_message(self, network_message):
         for channel in self._channels:
             channel.send(network_message)
+
+    def tick(self):
+        for channel in self._channels:
+            channel.tick()
 
     def quit(self):
         for channel in self._channels:

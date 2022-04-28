@@ -11,7 +11,7 @@ from src.utils.utils import find_free_port
 class MyNetworkMessage(NetworkMessage):
 
     def action(self, destination):
-        ...
+        destination.receive_msg()
 
 
 def test_network_two_nodes_without_delay():
@@ -50,8 +50,9 @@ def test_network_called_two_nodes_without_delay():
     node1.add_channel(channel1)
     node2.add_channel(channel2)
 
-    channel2.tick()
-    channel1.tick()
+
+    node1.tick()
+    node2.tick()
 
     sleep(delay + 0.2)  # enough time to receive msg
 

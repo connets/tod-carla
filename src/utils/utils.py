@@ -5,12 +5,12 @@ import socket
 from contextlib import closing
 
 
-def need_member(*members):
+def need_member(*members, valid=lambda x: x is not None):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
             for member in members:
-                if getattr(ref, member) is None:
-                    raise Exception(f"You can't call method {method.__name__} with {member} None")
+                if not valid(getattr(ref, member)):
+                    raise Exception(f"Some errors occurred with {member} while calling method {method.__name__}")
             return method(ref, *args, **kwargs)
 
         return validation

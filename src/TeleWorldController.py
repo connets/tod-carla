@@ -50,6 +50,9 @@ from lib.agents.navigation.behavior_agent import BehaviorAgent
 
 class TeleController(ABC):
 
+    def __init__(self):
+        self._tele_vehicle_state = None
+
     @abstractmethod
     def add_player_in_world(self, player):
         ...
@@ -62,12 +65,16 @@ class TeleController(ABC):
     def _is_quit_shortcut(key):
         return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
 
+    def update_vehicle_state(self, tele_vehicle_state):
+        self._tele_vehicle_state = tele_vehicle_state
+
 
 class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
 
     def __init__(self, camera_manager, clock):
         # self._autopilot_enabled = start_in_autopilot
+        super().__init__()
         self._control = carla.VehicleControl()
         self._lights = carla.VehicleLightState.NONE
         # world.player.set_autopilot(self._autopilot_enabled)
@@ -262,6 +269,7 @@ class KeyboardTeleWorldController(TeleController):
 class BasicAgentTeleWorldController(TeleController):
 
     def __init__(self):
+        super().__init__()
         self._player = None
         self.carla_agent = None
 
@@ -283,6 +291,7 @@ class BasicAgentTeleWorldController(TeleController):
 class BehaviorAgentTeleWorldController(TeleController):
 
     def __init__(self, behavior, destination_position):
+        super().__init__()
         self._behavior = behavior
         self._destination_position = destination_position
         self._player = None
