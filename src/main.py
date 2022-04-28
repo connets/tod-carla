@@ -14,7 +14,7 @@ from src.folder_path import OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
-from src.TeleWorldController import BehaviorAgentTeleWorldController, BasicAgentTeleWorldController
+from src.TeleWorldController import BehaviorAgentTeleWorldController
 from src.utils.distribution_utils import delay_family_to_func
 from src.utils.utils import find_free_port
 

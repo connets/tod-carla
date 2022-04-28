@@ -277,12 +277,7 @@ class BasicAgentTeleWorldController(TeleController):
         self._player = player
         self.carla_agent = BasicAgent(player.model)
 
-    def _quit(self, event):
-        return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
-
     def do_action(self):
-        if any(self._quit(e) for e in pygame.event.get()):
-            return None
         control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control
