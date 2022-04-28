@@ -32,7 +32,7 @@ class TeleVehicle(TeleCarlaActor):
         if synchronous:
             def send_state():
                 self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
-                TeleScheduler.instance.schedule(send_state, 100)
+                TeleScheduler.instance.schedule(send_state, 10)
             send_state()
         else:
             def send_info_state():

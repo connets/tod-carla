@@ -31,4 +31,7 @@ class TeleLogger:
     _current_simulation_log_path = LOG_PATH + _dt_string + '/'
     os.mkdir(_current_simulation_log_path)
 
-    network_logger = _configure_logger(output_file_path=f'{_current_simulation_log_path}/network.log')
+    network_logger = _configure_logger(log_format='%(message)s',
+                                       output_file_path=f'{_current_simulation_log_path}/network.log')
+    event_logger = _configure_logger(log_format='%(message)s',
+                                     output_file_path=f'{_current_simulation_log_path}/events.log')

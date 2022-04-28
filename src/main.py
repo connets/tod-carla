@@ -85,15 +85,16 @@ def main():
 
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
 
-    controller = BasicAgentTeleWorldController()  # TODO change here
-    # controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    # controller = BehaviorAgentTeleWorldController()  # TODO change here
+    controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    controller.add_player_in_world(player)
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
     vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, elapsed_seconds,
-                                                      delay_family_to_func['uniform'](10, 20), 1000)
+                                                      delay_family_to_func['uniform'](1, 2), 1000)
     player.add_channel(vehicle_operator_channel)
     operator_vehicle_channel = DiscreteNetworkChannel(player, elapsed_seconds,
-                                                      delay_family_to_func['uniform'](10, 20), 1000)
+                                                      delay_family_to_func['uniform'](1, 2), 1000)
     tele_operator.add_channel(operator_vehicle_channel)
     player.start(1000, True)
     # tele_world.add_sensor(camera_manager, player)
@@ -134,12 +135,15 @@ def main():
         while not exit:
             ...
             # network_delay.tick()
-            # clock.tick()
-            player.tick()
-            TeleScheduler.instance.tick()
+            clock.tick()
             exit = tele_world.tick(clock) != 0
-            # tele_world.render(display)
-            # pygame.display.flip()
+            player.tick()
+            tele_operator.tick()
+            mec.tick()
+
+            TeleScheduler.instance.tick()
+            camera_sensor.render(display)
+            pygame.display.flip()
             # data_collector.tick()
             # print(tele_world.timestamp)
     # exit = i == 1000 | exit
