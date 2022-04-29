@@ -109,7 +109,7 @@ class World(object):
         self._weather_index = 0
         self._actor_filter = args.filter
         self.restart(args)
-        self.world.on_tick(hud.on_world_tick)
+        # self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
 
@@ -188,7 +188,7 @@ class World(object):
     def render(self, display):
         """Render world"""
         self.camera_manager.render(display)
-        self.hud.render(display)
+        # self.hud.render(display)
 
     def destroy_sensors(self):
         """Destroy sensors"""
@@ -604,11 +604,11 @@ class CameraManager(object):
                 blp.set_attribute('range', '50')
             item.append(blp)
         self.index = None
-
-    def toggle_camera(self):
-        """Activate a camera"""
-        self.transform_index = (self.transform_index + 1) % len(self._camera_transforms)
-        self.set_sensor(self.index, notify=False, force_respawn=True)
+    #
+    # def toggle_camera(self):
+    #     """Activate a camera"""
+    #     self.transform_index = (self.transform_index + 1) % len(self._camera_transforms)
+    #     self.set_sensor(self.index, notify=False, force_respawn=True)
 
     def set_sensor(self, index, notify=True, force_respawn=False):
         """Set a sensor"""
@@ -632,15 +632,15 @@ class CameraManager(object):
         if notify:
             self.hud.notification(self.sensors[index][2])
         self.index = index
+    #
+    # def next_sensor(self):
+    #     """Get the next sensor"""
+    #     self.set_sensor(self.index + 1)
 
-    def next_sensor(self):
-        """Get the next sensor"""
-        self.set_sensor(self.index + 1)
-
-    def toggle_recording(self):
-        """Toggle recording on or off"""
-        self.recording = not self.recording
-        self.hud.notification('Recording %s' % ('On' if self.recording else 'Off'))
+    # def toggle_recording(self):
+    #     """Toggle recording on or off"""
+    #     self.recording = not self.recording
+    #     self.hud.notification('Recording %s' % ('On' if self.recording else 'Off'))
 
     def render(self, display):
         """Render method"""
@@ -757,6 +757,7 @@ def game_loop(args):
                     break
 
             control = agent.run_step()
+            print(world.player.get_location())
             control.manual_gear_shift = False
             world.player.apply_control(control)
 

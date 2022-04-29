@@ -15,13 +15,13 @@ from threading import Thread
 
 
 class TeleVehicle(TeleCarlaActor):
-    def __init__(self, host, port, tele_world, actor_filter, actor_id, attrs, start_position=None,
+    def __init__(self, host, port, tele_world, actor_filter, actor_id, attrs, start_transform=None,
                  modify_vehicle_physics=False):
         super().__init__(host, port, tele_world)
         self._actor_filter = actor_filter
         self._actor_id = actor_id
         self._attrs = attrs
-        self._start_position = start_position
+        self._start_transform = start_transform
         self.model = None
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
@@ -63,10 +63,10 @@ class TeleVehicle(TeleCarlaActor):
             blueprint.set_attribute(key, value)
 
         self.model = None
-        if self._start_position is not None:
-            self.model = sim_world.try_spawn_actor(blueprint, self._start_position)
+        if self._start_transform is not None:
+            self.model = sim_world.try_spawn_actor(blueprint, self._start_transform)
             if self.model is None:
-                print("Error in spawning car in:", self._start_position)
+                print("Error in spawning car in:", self._start_transform)
 
         while self.model is None:
             if not carla_map.get_spawn_points():
@@ -82,7 +82,7 @@ class TeleVehicle(TeleCarlaActor):
             if self._modify_vehicle_physics:
                 self.modify_vehicle_physics()
         self.set_light_state(carla.VehicleLightState.Position)
-
+        sim_world.tick()
     def modify_vehicle_physics(self):
         try:
             physics_control = self.get_physics_control()

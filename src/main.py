@@ -73,12 +73,12 @@ def main():
 
     TeleScheduler(elapsed_seconds)
 
-    start_position = Transform(
+    start_transform = Transform(
         Location(x=carla_simulation_conf['route.start.x'], y=carla_simulation_conf['route.start.y'],
                  z=carla_simulation_conf['route.start.z']),
         Rotation(pitch=carla_simulation_conf['route.start.pitch'], yaw=carla_simulation_conf['route.start.yaw'],
                  roll=carla_simulation_conf['route.start.roll']))
-    destination_position = Location(x=carla_simulation_conf['route.end.x'], y=carla_simulation_conf['route.end.y'],
+    destination_location = Location(x=carla_simulation_conf['route.end.x'], y=carla_simulation_conf['route.end.y'],
                                     z=carla_simulation_conf['route.end.z'])
 
     # traffic_manager = client.get_trafficmanager()
@@ -88,13 +88,13 @@ def main():
 
     player_attrs = {'role_name': 'hero'}
     player = TeleVehicle('localhost', 28007, tele_world, carla_simulation_conf['vehicle_player'], '1', player_attrs,
-                         start_position=start_position,
+                         start_transform=start_transform,
                          modify_vehicle_physics=True)
 
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
 
     # controller = BehaviorAgentTeleWorldController()  # TODO change here
-    controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)  # TODO change here
     clock = pygame.time.Clock()
 
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
@@ -107,7 +107,7 @@ def main():
     operator_vehicle_channel = DiscreteNetworkChannel(player, elapsed_seconds,
                                                       delay_family_to_func['uniform'](1, 2), 1000)
     tele_operator.add_channel(operator_vehicle_channel)
-    player.start(1000, True)
+    player.start(30, True)
     # tele_world.add_sensor(camera_manager, player)
 
     # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
@@ -116,7 +116,7 @@ def main():
     # gnss_sensor = TeleGnssSensor()
     # tele_world.add_sensor(gnss_sensor, player)
 
-    tele_world.start()
+    # tele_world.start()
 
     data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
                                            {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
@@ -138,6 +138,7 @@ def main():
     # network_delay = TcNetworkInterface(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
     #                                    1, 'valecislavale')
 
+
     exit = False
     # network_delay.start()
 
@@ -147,13 +148,22 @@ def main():
             # network_delay.tick()
             clock.tick()
             exit = tele_world.tick(clock) != 0
+            camera_sensor.render(display)
+            pygame.display.flip()
+
             player.tick()
             tele_operator.tick()
             mec.tick()
+            try:
+                command = controller.do_action()
+                if command is None:
+                    return -1
+                player.apply_control(command)
+            except:
+                ...
+            print('*** =>', player.get_location())
 
-            TeleScheduler.instance.tick()
-            camera_sensor.render(display)
-            pygame.display.flip()
+            # TeleScheduler.instance.tick()
             # data_collector.tick()
             # print(tele_world.timestamp)
     # exit = i == 1000 | exit

@@ -78,6 +78,7 @@ class BehaviorAgent(BasicAgent):
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
+        # print(self._vehicle.get_location(), self._incoming_waypoint)
         if self._incoming_direction is None:
             self._incoming_direction = RoadOption.LANEFOLLOW
 

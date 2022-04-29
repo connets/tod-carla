@@ -127,6 +127,7 @@ class BasicAgent(object):
         end_waypoint = self._map.get_waypoint(end_location)
 
         route_trace = self.trace_route(start_waypoint, end_waypoint)
+        for loc in [trace[0].transform.location for trace in route_trace]: print(loc)
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
 
     def set_global_plan(self, plan, stop_waypoint_creation=True, clean_queue=True):
@@ -152,6 +153,7 @@ class BasicAgent(object):
         """
         start_location = start_waypoint.transform.location
         end_location = end_waypoint.transform.location
+
         return self._global_planner.trace_route(start_location, end_location)
 
     def run_step(self):
@@ -249,7 +251,8 @@ class BasicAgent(object):
 
         return (False, None)
 
-    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0, lane_offset=0):
+    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+                                   lane_offset=0):
         """
         Method to check if there is a vehicle in front of the agent blocking its path.
 
@@ -290,11 +293,11 @@ class BasicAgent(object):
             # Simplified version for outside junctions
             if not ego_wpt.is_junction or not target_wpt.is_junction:
 
-                if target_wpt.road_id != ego_wpt.road_id or target_wpt.lane_id != ego_wpt.lane_id  + lane_offset:
+                if target_wpt.road_id != ego_wpt.road_id or target_wpt.lane_id != ego_wpt.lane_id + lane_offset:
                     next_wpt = self._local_planner.get_incoming_waypoint_and_direction(steps=3)[0]
                     if not next_wpt:
                         continue
-                    if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id  + lane_offset:
+                    if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id + lane_offset:
                         continue
 
                 target_forward_vector = target_transform.get_forward_vector()
@@ -305,7 +308,8 @@ class BasicAgent(object):
                     y=target_extent * target_forward_vector.y,
                 )
 
-                if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
+                if is_within_distance(target_rear_transform, ego_front_transform, max_distance,
+                                      [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
 
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
