@@ -14,7 +14,7 @@ from src.folder_path import OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
-from src.TeleWorldController import BehaviorAgentTeleWorldController
+from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController
 from src.utils.distribution_utils import delay_family_to_func
 from src.utils.utils import find_free_port
 
@@ -32,7 +32,7 @@ def create_display(carla_simulation_conf):
     pygame.font.init()
     display = pygame.display.set_mode((carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height']),
                                       pygame.HWSURFACE | pygame.DOUBLEBUF)
-    display.fill((0, 0, 0))
+    # display.fill((0, 0, 0))
     pygame.display.flip()
     return display
 
@@ -41,6 +41,14 @@ def create_sim_world(carla_server_conf, carla_simulation_conf):
     client: libcarla.Client = carla.Client(carla_server_conf['host'], carla_server_conf['port'])
     client.set_timeout(carla_server_conf['timeout'])
     sim_world: carla.World = client.load_world(carla_simulation_conf['world'])
+
+    if carla_simulation_conf['synchronicity']:
+        settings = sim_world.get_settings()
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = float(carla_simulation_conf['time_step'] / 1000)
+        sim_world.apply_settings(settings)
+        # traffic_manager.set_synchronous_mode(True)
+
     return sim_world
 
 
@@ -87,6 +95,9 @@ def main():
 
     # controller = BehaviorAgentTeleWorldController()  # TODO change here
     controller = BehaviorAgentTeleWorldController('normal', destination_position)  # TODO change here
+    clock = pygame.time.Clock()
+
+    # controller = KeyboardTeleWorldController(camera_sensor, clock)
     controller.add_player_in_world(player)
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
@@ -106,7 +117,6 @@ def main():
     # tele_world.add_sensor(gnss_sensor, player)
 
     tele_world.start()
-    clock = pygame.time.Clock()
 
     data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
                                            {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),

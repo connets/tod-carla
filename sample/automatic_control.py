@@ -59,8 +59,7 @@ except IndexError:
     pass
 
 import carla
-from carla import ColorConverter as cc
-
+from carla import ColorConverter as cc, Transform, Location, Rotation
 
 
 # ==============================================================================
@@ -143,6 +142,10 @@ class World(object):
                 sys.exit(1)
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            spawn_point = Transform(
+                Location(x=396.449982, y=87.529510, z=0.3),
+                Rotation(pitch=0., yaw=-90.000298,
+                         roll=0.))
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
@@ -695,7 +698,7 @@ def game_loop(args):
         client.set_timeout(8.0)
 
         traffic_manager = client.get_trafficmanager()
-        sim_world = client.get_world()
+        sim_world = client.load_world('Town01_Opt')
 
         if args.sync:
             settings = sim_world.get_settings()
@@ -718,8 +721,15 @@ def game_loop(args):
             agent = BehaviorAgent(world.player, behavior=args.behavior)
 
         # Set the agent destination
+
+        destination_position = Location(x=359., y=-2., z=0.3)
+
         spawn_points = world.map.get_spawn_points()
         destination = random.choice(spawn_points).location
+
+
+        destination = destination_position
+
         agent.set_destination(destination)
 
         clock = pygame.time.Clock()
@@ -736,7 +746,6 @@ def game_loop(args):
             world.tick(clock)
             world.render(display)
             pygame.display.flip()
-            print("*** => ", sim_world.get_snapshot().timestamp)
 
             if agent.done():
                 if args.loop:
@@ -803,7 +812,7 @@ def main():
     argparser.add_argument(
         '--filter',
         metavar='PATTERN',
-        default='vehicle.*',
+        default='vehicle.tesla.model3',
         help='Actor filter (default: "vehicle.*")')
     argparser.add_argument(
         '-l', '--loop',

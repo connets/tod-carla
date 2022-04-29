@@ -25,10 +25,10 @@ class TeleWorld:
 
         if carla_conf['synchronicity']:
             self.sync = True
-            settings = self.sim_world.get_settings()
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = float(self._carla_conf['time_step'] / 1000)
-            self.sim_world.apply_settings(settings)
+            # settings = self.sim_world.get_settings()
+            # settings.synchronous_mode = True
+            # settings.fixed_delta_seconds = float(self._carla_conf['time_step'] / 1000)
+            # self.sim_world.apply_settings(settings)
             # traffic_manager.set_synchronous_mode(True)
         else:
             self.sync = False
