@@ -5,7 +5,6 @@ import carla
 
 from src.actor.TeleSensor import TeleSensor, TeleRenderingSensor
 from src.utils.carla_utils import find_weather_presets
-from src.utils.utils import need_member
 from carla.libcarla import World
 
 

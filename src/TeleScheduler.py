@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 
 from src.TeleLogger import TeleLogger
-from src.utils.MySingleton import Singleton
+from src.utils.decorators import Singleton
 
 
 @Singleton

@@ -14,12 +14,11 @@ def closure(f):
     return closure_aux
 
 
-def need_member(*members, valid=lambda x: x is not None):
+def need_member(member, valid=lambda x: x is not None):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
-            for member in members:
-                if not valid(getattr(ref, member)):
-                    raise Exception(f"Some errors occurred with {member} while calling method {method.__name__}")
+            if not valid(getattr(ref, member)):
+                raise Exception(f"Some errors occurred with {member} while calling method {method.__name__}")
             return method(ref, *args, **kwargs)
 
         return validation

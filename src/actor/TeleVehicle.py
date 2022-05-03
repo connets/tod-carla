@@ -10,8 +10,9 @@ from src.TeleScheduler import TeleScheduler
 from src.TeleVehicleState import TeleVehicleState
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
-from src.utils.utils import need_member
 from threading import Thread
+
+from src.utils.decorators import need_member
 
 
 class TeleVehicle(TeleCarlaActor):

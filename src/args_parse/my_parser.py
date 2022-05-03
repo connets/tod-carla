@@ -2,8 +2,24 @@ import argparse
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
 from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_ROUTE_PATH
+from src.utils import parser_utils
 
 
+def _parse_unit_measurement(config_dict):
+    """
+    :param config_dict:
+    :return update the config_dict using the international system:
+    """
+    for k, v in config_dict.items():
+        if isinstance(v, dict):
+            config_dict[k] = _parse_unit_measurement(v)
+        elif isinstance(v, list):
+            config_dict[k] = [parser_utils._parse_single_unit_value(e) if isinstance(e, str) else _parse_unit_measurement(e) for e in v]
+        elif isinstance(v, str):
+            config_dict[k] = parser_utils._parse_single_unit_value(v)
+        else:
+            config_dict[k] = v
+    return config_dict
 
 def parse_configuration_files(args=None):
     parser = ConfigurationParser()
@@ -13,7 +29,7 @@ def parse_configuration_files(args=None):
                default=CONFIGURATION_ROUTE_PATH + 'default_simulation_curve.yaml')
     # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
     #            required=True)
-    return parser.parse(args=args)
+    return _parse_unit_measurement(parser.parse(args=args))
 
 
 def parse_carla_server_args(configuration_path, args=None):
@@ -22,7 +38,7 @@ def parse_carla_server_args(configuration_path, args=None):
     parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
     parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
 
-    return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
+    return _parse_unit_measurement(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 
 
 def parse_carla_simulation_args(configuration_path, args=None):
@@ -70,7 +86,7 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser.add('--respawn', help='Automatically respawn dormant vehicles (only in large maps)')
     parser.add('--no-rendering', help='Activate no rendering mode')
 
-    return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
+    return _parse_unit_measurement(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 
 
 if __name__ == '__main__':

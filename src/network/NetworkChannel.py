@@ -7,10 +7,10 @@ from queue import PriorityQueue
 from src.TeleLogger import TeleLogger
 from src.TeleScheduler import TeleScheduler
 from src.network.NetworkMessage import NetworkMessage
+from src.utils.decorators import need_member
 from src.utils.distribution_utils import _constant_family
 from threading import Thread
 
-from src.utils.utils import need_member
 
 
 class NetworkChannel(ABC):

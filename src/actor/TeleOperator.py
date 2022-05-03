@@ -4,7 +4,6 @@ from src.TeleLogger import TeleLogger
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.network.NetworkMessage import InstructionNetworkMessage
-from src.utils.utils import synchronized
 
 
 class TeleOperator(TeleCarlaActor):

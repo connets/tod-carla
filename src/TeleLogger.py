@@ -2,7 +2,6 @@ import logging
 import os
 
 from src.folder_path import LOG_PATH
-from src.utils.MySingleton import Singleton
 from datetime import datetime
 
 

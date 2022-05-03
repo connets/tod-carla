@@ -30,7 +30,7 @@ def parse_configurations():
 def create_display(carla_simulation_conf):
     pygame.init()
     pygame.font.init()
-    display = pygame.display.set_mode((carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height']),
+    display = pygame.display.set_mode((carla_simulation_conf['camera']['width'], carla_simulation_conf['camera']['height']),
                                       pygame.HWSURFACE | pygame.DOUBLEBUF)
     # display.fill((0, 0, 0))
     pygame.display.flip()
@@ -78,16 +78,16 @@ def main():
     TeleScheduler(elapsed_seconds)
 
     start_transform = Transform(
-        Location(x=carla_simulation_conf['route.start.x'], y=carla_simulation_conf['route.start.y'],
-                 z=carla_simulation_conf['route.start.z']),
-        Rotation(pitch=carla_simulation_conf['route.start.pitch'], yaw=carla_simulation_conf['route.start.yaw'],
-                 roll=carla_simulation_conf['route.start.roll']))
-    destination_location = Location(x=carla_simulation_conf['route.end.x'], y=carla_simulation_conf['route.end.y'],
-                                    z=carla_simulation_conf['route.end.z'])
+        Location(x=carla_simulation_conf['route']['start']['x'], y=carla_simulation_conf['route']['start']['y'],
+                 z=carla_simulation_conf['route']['start']['z']),
+        Rotation(pitch=carla_simulation_conf['route']['start']['pitch'], yaw=carla_simulation_conf['route']['start']['yaw'],
+                 roll=carla_simulation_conf['route']['start']['roll']))
+    destination_location = Location(x=carla_simulation_conf['route']['end']['x'], y=carla_simulation_conf['route']['end']['y'],
+                                    z=carla_simulation_conf['route']['end']['z'])
 
     # traffic_manager = client.get_trafficmanager()
 
-    hud = HUD(carla_simulation_conf['camera.width'], carla_simulation_conf['camera.height'])
+    hud = HUD(carla_simulation_conf['camera']['width'], carla_simulation_conf['camera']['height'])
     tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf, hud)
 
     player_attrs = {'role_name': 'hero'}
@@ -159,15 +159,15 @@ def main():
             tele_operator.tick()
             mec.tick()
 
-            # command = controller.do_action()
-            # if command is None:
-            #     return -1
-            # player.apply_control(command)
-            # print('*** =>', player.get_location())
+            command = controller.do_action()
+            if command is None:
+                return -1
+            player.apply_control(command)
+            print('*** =>', player.get_location())
 
-            TeleScheduler.instance.tick()
+            # TeleScheduler.instance.tick()
             # data_collector.tick()
-            print(sim_world.get_snapshot().timestamp.delta_seconds)
+            print(sim_world.get_snapshot().timestamp)
     # exit = i == 1000 | exit
 
     # TODO destroy everything
