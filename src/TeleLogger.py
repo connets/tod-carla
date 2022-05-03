@@ -25,16 +25,35 @@ def _configure_logger(name, log_format="%(asctime)s [%(threadName)-12.12s] %(mes
     return logger
 
 
-@Singleton
 class TeleLogger:
     _dt_string = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     _current_simulation_log_path = LOG_PATH + _dt_string + '/'
     os.mkdir(_current_simulation_log_path)
 
-    network_logger = _configure_logger('network', log_format='%(message)s',
-                                       output_file_path=f'{_current_simulation_log_path}/network.log')
-    event_logger = _configure_logger('event', log_format='%(message)s',
-                                     output_file_path=f'{_current_simulation_log_path}/events.log')
+
+    class _NetworkLogger:
+        def __init__(self, file_path):
+            self._logger = _configure_logger('network', log_format='%(message)s',
+                                             output_file_path=file_path)
+
+
+        def write(self, text):
+            self._logger.info(text)
+
+    class _EventLogger:
+        def __init__(self, file_path):
+            self._logger = _configure_logger('event', log_format='%(message)s',
+                                             output_file_path=file_path)
+
+            self._logger.info('scheduled_timestamp, current_timestamp, event')
+
+        def write(self, scheduled_timestamp, current_timestamp, event):
+            self._logger.info(f'{scheduled_timestamp}, {current_timestamp}, {event.__class__.__name__}')
+
+    network_logger = _NetworkLogger(f'{_current_simulation_log_path}network.log')
+
+    event_logger = _EventLogger(f'{_current_simulation_log_path}event.log')
+
 
 
 def setup_logger(name, log_file, level=logging.INFO):

@@ -4,15 +4,16 @@ from src.args_parse.ConfigurationParser import ConfigurationParser
 from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_ROUTE_PATH
 
 
+
 def parse_configuration_files(args=None):
     parser = ConfigurationParser()
     parser.add('--carla_server_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_server.yaml')
     parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for simulation',
                default=CONFIGURATION_ROUTE_PATH + 'default_simulation_curve.yaml')
-    parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
-               required=True)
-    return vars(parser.parse(args=args))
+    # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
+    #            required=True)
+    return parser.parse(args=args)
 
 
 def parse_carla_server_args(configuration_path, args=None):
@@ -21,7 +22,7 @@ def parse_carla_server_args(configuration_path, args=None):
     parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
     parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
 
-    return vars(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+    return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
 
 def parse_carla_simulation_args(configuration_path, args=None):
@@ -31,7 +32,7 @@ def parse_carla_simulation_args(configuration_path, args=None):
 
     parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
                required=True)
-    parser.add('--time_step', metavar='T', type=float, help='time-step, mandatory for synchronicity simulation')
+    parser.add('--time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
 
     parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
     parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
@@ -69,9 +70,19 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser.add('--respawn', help='Automatically respawn dormant vehicles (only in large maps)')
     parser.add('--no-rendering', help='Activate no rendering mode')
 
-    return vars(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+    return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
 
 if __name__ == '__main__':
+    configurations = dict()
     conf_files = parse_configuration_files()
-    # carla_conf = parse_carla_args(conf_files.carla_server_file)
+    configurations['carla_server_conf'] = parse_carla_server_args(conf_files['carla_server_file'])
+    configurations['carla_simulation_conf'] = parse_carla_simulation_args(conf_files['carla_simulation_file'])
+
+    carla_server_conf = configurations['carla_server_conf']
+    carla_simulation_conf = configurations['carla_simulation_conf']
+    # carla_server_conf = {k: parser_utils._parse_single_unit_value(v) if isinstance(v, str) else v for k, v in
+    #                      carla_server_conf.items()}
+    # carla_simulation_conf = {k: parser_utils._parse_single_unit_value(v) if isinstance(v, str) else v for k, v in
+    #                          carla_simulation_conf.items()}
+    print(carla_simulation_conf)

@@ -27,12 +27,16 @@ class TeleVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self._spawn_in_world()
 
+    def generate_current_state(self):
+        return TeleVehicleState(self.get_velocity(), self.get_transform(), self.get_speed_limit())
+
     def start(self, sending_interval, synchronous):
         # self._controller.add_player_in_world(self)
         if synchronous:
             def send_state():
-                self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
-                TeleScheduler.instance.schedule(send_state, 10)
+                self.send_message(InfoUpdateNetworkMessage(self.generate_current_state()))
+                TeleScheduler.instance.schedule(send_state, sending_interval)
+
             send_state()
         else:
             def send_info_state():
@@ -83,6 +87,7 @@ class TeleVehicle(TeleCarlaActor):
                 self.modify_vehicle_physics()
         self.set_light_state(carla.VehicleLightState.Position)
         sim_world.tick()
+
     def modify_vehicle_physics(self):
         try:
             physics_control = self.get_physics_control()

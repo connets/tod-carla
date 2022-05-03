@@ -1,5 +1,6 @@
 class TeleVehicleState:
-    def __init__(self, velocity, location):
+    def __init__(self, velocity, transform, speed_limit):
         self.velocity = velocity
-        self.location = location
+        self.transform = transform
+        self.speed_limit = speed_limit
         # self.location = location

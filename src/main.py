@@ -37,17 +37,19 @@ def create_display(carla_simulation_conf):
     return display
 
 
-def create_sim_world(carla_server_conf, carla_simulation_conf):
-    client: libcarla.Client = carla.Client(carla_server_conf['host'], carla_server_conf['port'])
-    client.set_timeout(carla_server_conf['timeout'])
-    sim_world: carla.World = client.load_world(carla_simulation_conf['world'])
+def create_sim_world(host, port, timeout, world, sync, time_step=None):
+    client: libcarla.Client = carla.Client(host, port)
+    client.set_timeout(timeout)
+    sim_world: carla.World = client.load_world(world)
+    traffic_manager = client.get_trafficmanager()
+    traffic_manager.set_synchronous_mode(sync)  # TODO move from here, check if sync is active or not
 
-    if carla_simulation_conf['synchronicity']:
-        settings = sim_world.get_settings()
-        settings.synchronous_mode = True
-        settings.fixed_delta_seconds = float(carla_simulation_conf['time_step'] / 1000)
-        sim_world.apply_settings(settings)
-        # traffic_manager.set_synchronous_mode(True)
+    settings = sim_world.get_settings()
+    settings.synchronous_mode = True
+    if time_step is not None:
+        settings.fixed_delta_seconds = float(time_step / 1000)
+    sim_world.apply_settings(settings)
+    # traffic_manager.set_synchronous_mode(True)
 
     return sim_world
 
@@ -66,10 +68,12 @@ def main():
 
     display = create_display(carla_simulation_conf)
 
-    sim_world = create_sim_world(carla_server_conf, carla_simulation_conf)
+    sim_world = create_sim_world(carla_server_conf['host'], carla_server_conf['port'], carla_server_conf['timeout'],
+                                 carla_simulation_conf['world'], carla_simulation_conf['synchronicity'],
+                                 carla_simulation_conf['time_step'])
 
     def elapsed_seconds():
-        return sim_world.get_snapshot().timestamp.elapsed_seconds * 1000
+        return round(sim_world.get_snapshot().timestamp.elapsed_seconds * 1000, 3)
 
     TeleScheduler(elapsed_seconds)
 
@@ -94,7 +98,8 @@ def main():
     camera_sensor = TeleCameraSensor('localhost', find_free_port(), player, hud, 2.2, 1280, 720)
 
     # controller = BehaviorAgentTeleWorldController()  # TODO change here
-    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)  # TODO change here
+    controller = BehaviorAgentTeleWorldController('normal', start_transform.location,
+                                                  destination_location)  # TODO change here
     clock = pygame.time.Clock()
 
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
@@ -102,12 +107,12 @@ def main():
     tele_operator = TeleOperator('localhost', find_free_port(), tele_world, controller)
     mec = TeleMEC('localhost', find_free_port(), tele_world)
     vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, elapsed_seconds,
-                                                      delay_family_to_func['uniform'](1, 2), 1000)
+                                                      delay_family_to_func['uniform'](1, 2), 1)
     player.add_channel(vehicle_operator_channel)
     operator_vehicle_channel = DiscreteNetworkChannel(player, elapsed_seconds,
-                                                      delay_family_to_func['uniform'](1, 2), 1000)
+                                                      delay_family_to_func['uniform'](1, 2), 1)
     tele_operator.add_channel(operator_vehicle_channel)
-    player.start(30, True)
+    player.start(50, True)
     # tele_world.add_sensor(camera_manager, player)
 
     # controller = KeyboardTeleWorldController(camera_manager)  # TODO change here
@@ -138,7 +143,6 @@ def main():
     # network_delay = TcNetworkInterface(delay_family_to_func['constant'](5), lambda: round(tele_world.timestamp.elapsed_seconds, 5),
     #                                    1, 'valecislavale')
 
-
     exit = False
     # network_delay.start()
 
@@ -154,18 +158,16 @@ def main():
             player.tick()
             tele_operator.tick()
             mec.tick()
-            try:
-                command = controller.do_action()
-                if command is None:
-                    return -1
-                player.apply_control(command)
-            except:
-                ...
-            print('*** =>', player.get_location())
 
-            # TeleScheduler.instance.tick()
+            # command = controller.do_action()
+            # if command is None:
+            #     return -1
+            # player.apply_control(command)
+            # print('*** =>', player.get_location())
+
+            TeleScheduler.instance.tick()
             # data_collector.tick()
-            # print(tele_world.timestamp)
+            print(sim_world.get_snapshot().timestamp.delta_seconds)
     # exit = i == 1000 | exit
 
     # TODO destroy everything

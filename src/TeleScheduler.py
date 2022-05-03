@@ -11,13 +11,14 @@ class TeleScheduler:
         self._timestamp_func = timestmap_func
 
     def schedule(self, event, ms):
+        # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         self._queue.put(self.TimingEvent(event, self._timestamp_func() + ms))
 
     def tick(self):
-        if not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._timestamp_func():
+        while not self._queue.empty() and self._queue.queue[0].timestamp_scheduled <= self._timestamp_func():
             timing_event = self._queue.get()
-            TeleLogger.instance.event_logger.info(
-                f'{timing_event.timestamp}, {self._timestamp_func()}, {timing_event.__class__.__name__}')
+            TeleLogger.event_logger.write(timing_event.timestamp, self._timestamp_func(),
+                                            timing_event)
             timing_event.event()
 
     class TimingEvent:

@@ -19,7 +19,7 @@ class TeleOperator(TeleCarlaActor):
         self._controller.update_vehicle_state(tele_vehicle_state)
         command = self._controller.do_action()
         self.send_message(InstructionNetworkMessage(command))
-        TeleLogger.instance.network_logger.info('I AM tele operator and i received a message')
+        TeleLogger.network_logger.write('I AM tele operator and i received a message')
 
     def start(self):
         ...
