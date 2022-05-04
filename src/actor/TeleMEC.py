@@ -1,8 +1,6 @@
 from src.actor.TeleCarlaActor import TeleCarlaActor
+from src.network.NetworkNode import NetworkNode
 
 
-class TeleMEC(TeleCarlaActor):
-    def start(self):
-        pass
-
+class TeleMEC(NetworkNode):
     ...

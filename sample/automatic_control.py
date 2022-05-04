@@ -6,7 +6,7 @@
 # This work is licensed under the terms of the MIT license.
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
-"""Example of automatic vehicle control from client side."""
+""""""
 
 from __future__ import print_function
 
@@ -70,7 +70,9 @@ from carla import ColorConverter as cc, Transform, Location, Rotation
 def find_weather_presets():
     """Method to find weather presets"""
     rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+
     def name(x): return ' '.join(m.group(0) for m in rgx.finditer(x))
+
     presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
     return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
 
@@ -109,7 +111,7 @@ class World(object):
         self._weather_index = 0
         self._actor_filter = args.filter
         self.restart(args)
-        # self.world.on_tick(hud.on_world_tick)
+        self.world.on_tick(hud.on_world_tick)
         self.recording_enabled = False
         self.recording_start = 0
 
@@ -144,8 +146,8 @@ class World(object):
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
             spawn_point = Transform(
                 Location(x=396.449982, y=87.529510, z=0.3),
-                Rotation(pitch=0., yaw=-90.000298,
-                         roll=0.))
+                Rotation(pitch=0., yaw=-90.000298, roll=0.)
+            )
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
@@ -173,7 +175,7 @@ class World(object):
         self.player.get_world().set_weather(preset[0])
 
     def modify_vehicle_physics(self, actor):
-        #If actor is not a vehicle, we cannot use the physics control
+        # If actor is not a vehicle, we cannot use the physics control
         try:
             physics_control = actor.get_physics_control()
             physics_control.use_sweep_wheel_collision = True
@@ -188,7 +190,7 @@ class World(object):
     def render(self, display):
         """Render world"""
         self.camera_manager.render(display)
-        # self.hud.render(display)
+        self.hud.render(display)
 
     def destroy_sensors(self):
         """Destroy sensors"""
@@ -230,6 +232,7 @@ class KeyboardControl(object):
     def _is_quit_shortcut(key):
         """Shortcut for quitting"""
         return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
+
 
 # ==============================================================================
 # -- HUD -----------------------------------------------------------------------
@@ -291,7 +294,7 @@ class HUD(object):
             'Map:     % 20s' % world.map.name.split('/')[-1],
             'Simulation time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
             '',
-            'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)),
+            'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)),
             u'Heading:% 16.0f\N{DEGREE SIGN} % 2s' % (transform.rotation.yaw, heading),
             'Location:% 20s' % ('(% 5.1f, % 5.1f)' % (transform.location.x, transform.location.y)),
             'GNSS:% 24s' % ('(% 2.6f, % 3.6f)' % (world.gnss_sensor.lat, world.gnss_sensor.lon)),
@@ -321,8 +324,9 @@ class HUD(object):
             self._info_text += ['Nearby vehicles:']
 
         def dist(l):
-            return math.sqrt((l.x - transform.location.x)**2 + (l.y - transform.location.y)
-                             ** 2 + (l.z - transform.location.z)**2)
+            return math.sqrt((l.x - transform.location.x) ** 2 + (l.y - transform.location.y)
+                             ** 2 + (l.z - transform.location.z) ** 2)
+
         vehicles = [(dist(x.get_location()), x) for x in vehicles if x.id != world.player.id]
 
         for dist, vehicle in sorted(vehicles):
@@ -383,6 +387,7 @@ class HUD(object):
         self._notifications.render(display)
         self.help.render(display)
 
+
 # ==============================================================================
 # -- FadingText ----------------------------------------------------------------
 # ==============================================================================
@@ -417,6 +422,7 @@ class FadingText(object):
         """Render fading text method"""
         display.blit(self.surface, self.pos)
 
+
 # ==============================================================================
 # -- HelpText ------------------------------------------------------------------
 # ==============================================================================
@@ -427,13 +433,19 @@ class HelpText(object):
 
     def __init__(self, font, width, height):
         """Constructor method"""
-        lines = __doc__.split('\n')
+
+        lines = []
         self.font = font
         self.dim = (680, len(lines) * 22 + 12)
         self.pos = (0.5 * width - 0.5 * self.dim[0], 0.5 * height - 0.5 * self.dim[1])
         self.seconds_left = 0
         self.surface = pygame.Surface(self.dim)
         self.surface.fill((0, 0, 0, 0))
+        self._render = False
+        text_texture = self.font.render('', True, (255, 255, 255))
+
+        self.surface.blit(text_texture, (22, 100 * 22))
+
         for i, line in enumerate(lines):
             text_texture = self.font.render(line, True, (255, 255, 255))
             self.surface.blit(text_texture, (22, i * 22))
@@ -448,6 +460,7 @@ class HelpText(object):
         """Render help text method"""
         if self._render:
             display.blit(self.surface, self.pos)
+
 
 # ==============================================================================
 # -- CollisionSensor -----------------------------------------------------------
@@ -492,6 +505,7 @@ class CollisionSensor(object):
         if len(self.history) > 4000:
             self.history.pop(0)
 
+
 # ==============================================================================
 # -- LaneInvasionSensor --------------------------------------------------------
 # ==============================================================================
@@ -522,6 +536,7 @@ class LaneInvasionSensor(object):
         lane_types = set(x.type for x in event.crossed_lane_markings)
         text = ['%r' % str(x).split()[-1] for x in lane_types]
         self.hud.notification('Crossed line %s' % ' and '.join(text))
+
 
 # ==============================================================================
 # -- GnssSensor --------------------------------------------------------
@@ -554,6 +569,7 @@ class GnssSensor(object):
             return
         self.lat = event.latitude
         self.lon = event.longitude
+
 
 # ==============================================================================
 # -- CameraManager -------------------------------------------------------------
@@ -604,6 +620,7 @@ class CameraManager(object):
                 blp.set_attribute('range', '50')
             item.append(blp)
         self.index = None
+
     #
     # def toggle_camera(self):
     #     """Activate a camera"""
@@ -614,7 +631,7 @@ class CameraManager(object):
         """Set a sensor"""
         index = index % len(self.sensors)
         needs_respawn = True if self.index is None else (
-            force_respawn or (self.sensors[index][0] != self.sensors[self.index][0]))
+                force_respawn or (self.sensors[index][0] != self.sensors[self.index][0]))
         if needs_respawn:
             if self.sensor is not None:
                 self.sensor.destroy()
@@ -632,6 +649,7 @@ class CameraManager(object):
         if notify:
             self.hud.notification(self.sensors[index][2])
         self.index = index
+
     #
     # def next_sensor(self):
     #     """Get the next sensor"""
@@ -674,6 +692,7 @@ class CameraManager(object):
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self.recording:
             image.save_to_disk('_out/%08d' % image.frame)
+
 
 # ==============================================================================
 # -- Game Loop ---------------------------------------------------------
@@ -726,7 +745,6 @@ def game_loop(args):
 
         spawn_points = world.map.get_spawn_points()
         destination = random.choice(spawn_points).location
-
 
         destination = destination_position
 
@@ -844,8 +862,6 @@ def main():
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
     logging.info('listening to server %s:%s', args.host, args.port)
-
-    print(__doc__)
 
     try:
         game_loop(args)

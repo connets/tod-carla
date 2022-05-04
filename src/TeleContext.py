@@ -1,31 +1,35 @@
-# @Singleton
-# class TeleContext:
-#
-#     def __init__(self, scheduler: TeleEventsScheduler):
-#         self._scheduler = scheduler
-#         self._worlds = []
-#
-#     def add_world(self, world: TeleWorld):
-#         world.start(self._scheduler)
-#         self._worlds.append(world)
-#
-#     def get_world(self, world_name: str) -> TeleWorld:
-#         for world in self._worlds:
-#             if world.world_name == world_name: return world
-#         raise Exception(f"There isn't any associated {world_name} world")
-#
-#     @property
-#     def current_timestamp(self):
-#         return self._current_timestamp
-#
-#     @property
-#     def start_timestamp(self):
-#         return self._start_timestamp
-#
-#     @property
-#     def end_timestamp(self):
-#         return self._end_timestamp
-#
-#     @property
-#     def time_step(self):
-#         return self._time_step
+from queue import PriorityQueue
+
+from src.TeleLogger import TeleLogger
+from src.utils.decorators import Singleton
+
+
+class TeleContext:
+    def __init__(self, initial_timestamp):
+        self._queue = PriorityQueue()
+        self.timestamp = initial_timestamp
+
+    def next_timestamp_event(self):
+        return self._queue[0].timestamp if not self._queue.empty() else None
+
+    def run_next_event(self):
+        timing_event = self._queue.get()
+        TeleLogger.event_logger.write(timing_event.timestamp, timing_event)
+        self.timestamp = timing_event.timestamp
+        timing_event.event()
+
+    def schedule(self, event, s):
+        # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
+        self._queue.put(self.TimingEvent(event, self.timestamp + s))
+
+    class TimingEvent:
+        def __init__(self, event, timestamp):
+            self.event = event
+            self.timestamp = timestamp
+
+        def __lt__(self, e):
+            return self.timestamp < e.timestamp
+
+        @property
+        def timestamp_scheduled(self):
+            return self.timestamp

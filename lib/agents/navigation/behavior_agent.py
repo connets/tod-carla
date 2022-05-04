@@ -261,7 +261,6 @@ class BehaviorAgent(BasicAgent):
         # 2.1: Pedestrian avoidance behaviors
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
 
-        print(self._vehicle.bounding_box.extent.x, self._vehicle.bounding_box.extent.y)
 
         if walker_state:
             # Distance is computed from the center of the two cars,

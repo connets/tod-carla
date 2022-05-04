@@ -18,7 +18,7 @@ def need_member(member, valid=lambda x: x is not None):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
             if not valid(getattr(ref, member)):
-                raise Exception(f"Some errors occurred with {member} while calling method {method.__name__}")
+                raise Exception(f"{member} is not in a valid state to calls the method {method.__name__}")
             return method(ref, *args, **kwargs)
 
         return validation

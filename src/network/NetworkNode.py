@@ -3,6 +3,7 @@ from abc import ABC
 from typing import List
 
 from src.network.NetworkChannel import NetworkChannel
+from src.utils.decorators import need_member
 
 
 class NetworkNode(ABC):
@@ -12,31 +13,28 @@ class NetworkNode(ABC):
         self.port = port
         # self._network_delay_manager = NetworkChannel()
         self._channels: List[NetworkChannel] = []
+        self._tele_context = None
 
     def add_channel(self, channel):
         channel.bind(self)
         self._channels.append(channel)
 
+    def set_context(self, tele_context):
+        self._tele_context = tele_context
+
     def send_message(self, network_message):
         for channel in self._channels:
             channel.send(network_message)
-
-    def tick(self):
-        for channel in self._channels:
-            channel.tick()
 
     def quit(self):
         for channel in self._channels:
             channel.quit()
 
+    def run(self, tele_world):
+        ...
 
-class OperatorNetworkNode(NetworkNode):
-    ...
-
-
-class MecNetworkNode(NetworkNode):
-    ...
-
-
-class VehicleNetworkNode(NetworkNode):
-    ...
+    @need_member('_tele_context')
+    def start(self, tele_world):
+        for channel in self._channels:
+            channel.start(self._tele_context)
+        self.run(tele_world)

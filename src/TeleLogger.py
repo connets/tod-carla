@@ -44,10 +44,10 @@ class TeleLogger:
             self._logger = _configure_logger('event', log_format='%(message)s',
                                              output_file_path=file_path)
 
-            self._logger.info('scheduled_timestamp, current_timestamp, event')
+            self._logger.info('scheduled_timestamp, event')
 
-        def write(self, scheduled_timestamp, current_timestamp, event):
-            self._logger.info(f'{scheduled_timestamp}, {current_timestamp}, {event.__class__.__name__}')
+        def write(self, scheduled_timestamp, event):
+            self._logger.info(f'{scheduled_timestamp}, {event.__class__.__name__}')
 
     network_logger = _NetworkLogger(f'{_current_simulation_log_path}network.log')
 

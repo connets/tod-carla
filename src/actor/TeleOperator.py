@@ -1,16 +1,15 @@
 import threading
 
 from src.TeleLogger import TeleLogger
-from src.actor.TeleCarlaActor import TeleCarlaActor
-from src.carla_bridge.TeleWorld import TeleWorld
 from src.network.NetworkMessage import InstructionNetworkMessage
+from src.network.NetworkNode import NetworkNode
 
 
-class TeleOperator(TeleCarlaActor):
+class TeleOperator(NetworkNode):
     lock = threading.RLock()
 
-    def __init__(self, host, port, tele_world: TeleWorld, controller):
-        super().__init__(host, port, tele_world)
+    def __init__(self, host, port, controller):
+        super().__init__(host, port)
         self._last_snapshot = None
         self._controller = controller
 
@@ -20,5 +19,5 @@ class TeleOperator(TeleCarlaActor):
         self.send_message(InstructionNetworkMessage(command))
         TeleLogger.network_logger.write('I AM tele operator and i received a message')
 
-    def start(self):
-        ...
+
+

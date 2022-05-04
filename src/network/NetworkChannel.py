@@ -5,42 +5,30 @@ from collections.abc import Callable
 from queue import PriorityQueue
 
 from src.TeleLogger import TeleLogger
-from src.TeleScheduler import TeleScheduler
+from src.TeleContext import TeleContext
 from src.network.NetworkMessage import NetworkMessage
 from src.utils.decorators import need_member
 from src.utils.distribution_utils import _constant_family
 from threading import Thread
 
 
-
 class NetworkChannel(ABC):
-    def __init__(self, destination_node, timestamp_func, distr_func, interval):
+    def __init__(self, destination_node, distr_func, interval):
         self.destination_node = destination_node
 
-        self._timestamp_func = timestamp_func
         self._distr_func = distr_func
         self._interval = interval
-        self._last_tick_timestamp = None
+        self._delay = 0
         self._binded = False
 
-    @need_member('_binded', valid=lambda x: x)  # you have to call bind before tick
-    def tick(self):
-        current_timestamp = self._timestamp_func()
-        if current_timestamp >= self._last_tick_timestamp + self._interval:
-            self._apply_delay()
-            self._last_tick_timestamp = current_timestamp
-
-    @abstractmethod
-    def _apply_delay(self):
-        pass
-
     def bind(self, source_node):
-        self._apply_delay()
-        self._last_tick_timestamp = self._timestamp_func()
         self._binded = True
 
+    @abstractmethod
     def send(self, msg):
-        msg.timestamp = self._timestamp_func()
+        ...
+
+
 
     @abstractmethod
     def quit(self):
@@ -48,12 +36,20 @@ class NetworkChannel(ABC):
 
 
 class PhysicNetworkChannel(NetworkChannel):
-    def __init__(self, destination_node, timestamp_func, distr_func, interval):
-        super().__init__(destination_node, timestamp_func, distr_func, interval)
+    def __init__(self, destination_node, distr_func, interval, timestamp_func):
+        super().__init__(destination_node, distr_func, interval)
+        self._timestamp_func = timestamp_func
+        self._last_tick_timestamp = 0
         # self.network_node = None
         # self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # UDP socket
         self._out_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self._input_daemon = None
+
+    def start(self):
+        current_timestamp = self._timestamp_func()
+        if current_timestamp >= self._last_tick_timestamp + self._interval:
+            self._apply_delay()
+            self._last_tick_timestamp = current_timestamp
 
     def bind(self, source_node):
         super().bind(source_node)
@@ -117,15 +113,23 @@ class TcNetworkInterface(PhysicNetworkChannel):
 
 class DiscreteNetworkChannel(NetworkChannel):
 
-    def __init__(self, destination_node, timestamp_func, distr_func, interval):
-        super().__init__(destination_node, timestamp_func, distr_func, interval)
+    def __init__(self, destination_node, distr_func, interval):
+        super().__init__(destination_node, distr_func, interval)
+        self._tele_context = None
 
-    def _apply_delay(self):
-        self._delay = self._distr_func()
+    @need_member('_binded', lambda x: x)
+    def start(self, tele_context):
+        self._tele_context = tele_context
 
+        def change_delay():
+            self._delay = self._distr_func()
+            self._tele_context.schedule(change_delay, self._interval)
+        change_delay()
+
+    @need_member('_tele_context')
     def send(self, msg):
         super().send(msg)
-        TeleScheduler.instance.schedule(lambda: msg.action(self.destination_node), self._delay)
+        self._tele_context.schedule(lambda: msg.action(self.destination_node), self._delay)
 
     def quit(self):
         pass

@@ -6,7 +6,7 @@ from time import sleep
 import carla
 from carla import ActorBlueprint, Transform, Location, Rotation
 
-from src.TeleScheduler import TeleScheduler
+from src.TeleContext import TeleContext
 from src.TeleVehicleState import TeleVehicleState
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
@@ -15,46 +15,54 @@ from threading import Thread
 from src.utils.decorators import need_member
 
 
-class TeleVehicle(TeleCarlaActor):
-    def __init__(self, host, port, tele_world, actor_filter, actor_id, attrs, start_transform=None,
-                 modify_vehicle_physics=False):
-        super().__init__(host, port, tele_world)
+class TeleCarlaVehicle(TeleCarlaActor):
+    def __init__(self, host, port, sync, sending_interval,
+                 actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None, modify_vehicle_physics=False):
+        super().__init__(host, port)
+        self._sync = sync
+        self._sending_interval = sending_interval
+        if attrs is None:
+            attrs = dict()
         self._actor_filter = actor_filter
-        self._actor_id = actor_id
         self._attrs = attrs
         self._start_transform = start_transform
         self.model = None
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
-        self._spawn_in_world()
+        self._sensors = set()
 
     def generate_current_state(self):
         return TeleVehicleState(self.get_velocity(), self.get_transform(), self.get_speed_limit())
 
-    def start(self, sending_interval, synchronous):
+    def run(self, tele_world):
+        # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
-        if synchronous:
+        if self._sync:
             def send_state():
                 self.send_message(InfoUpdateNetworkMessage(self.generate_current_state()))
-                TeleScheduler.instance.schedule(send_state, sending_interval)
+                self._tele_context.schedule(send_state, self._sending_interval)
 
             send_state()
         else:
             def send_info_state():
                 while True:
                     self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
-                    sleep(sending_interval / 1000)
+                    sleep(self._sending_interval)
 
             sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
             sending_info_thread.start()
+
+    def attach_sensor(self, tele_carla_sensor):
+        self._sensors.add(tele_carla_sensor)
+
 
     @need_member('model')
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
-    def _spawn_in_world(self):
-        sim_world = self.tele_world.sim_world
-        carla_map = self.tele_world.carla_map
+    def spawn_in_the_world(self, tele_world):
+        sim_world = tele_world.sim_world
+        carla_map = tele_world.carla_map
         blueprint: ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(self._actor_filter))
         if blueprint.has_attribute('color'):
             color = random.choice(blueprint.get_attribute('color').recommended_values)
@@ -88,6 +96,9 @@ class TeleVehicle(TeleCarlaActor):
                 self.modify_vehicle_physics()
         self.set_light_state(carla.VehicleLightState.Position)
         sim_world.tick()
+
+        for sensor in self._sensors:
+            sensor.spawn_in_the_world(self)
 
     def modify_vehicle_physics(self):
         try:
