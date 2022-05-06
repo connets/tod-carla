@@ -12,7 +12,7 @@ from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
 from threading import Thread
 
-from src.utils.decorators import need_member
+from src.utils.decorators import needs_member
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
@@ -31,22 +31,21 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self._sensors = set()
 
-    def generate_current_state(self):
-        return TeleVehicleState(self.get_velocity(), self.get_transform(), self.get_speed_limit())
-
     def run(self, tele_world):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
         if self._sync:
-            def send_state():
-                self.send_message(InfoUpdateNetworkMessage(self.generate_current_state()))
-                self._tele_context.schedule(send_state, self._sending_interval)
+            def daemon_state():
+                self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
+                                                           timestamp=self._tele_context.timestamp))
+                self._tele_context.schedule(daemon_state, self._sending_interval)
 
-            send_state()
+            daemon_state()
         else:
             def send_info_state():
                 while True:
-                    self.send_message(InfoUpdateNetworkMessage(TeleVehicleState(4, 3)))
+                    self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
+                                                           timestamp=self._tele_context.timestamp))
                     sleep(self._sending_interval)
 
             sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
@@ -55,8 +54,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def attach_sensor(self, tele_carla_sensor):
         self._sensors.add(tele_carla_sensor)
 
-
-    @need_member('model')
+    @needs_member('model')
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 

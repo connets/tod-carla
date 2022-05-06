@@ -39,7 +39,7 @@ class InfoUpdateNetworkMessage(NetworkMessage):
         self._tele_vehicle_state = tele_vehicle_state
 
     def action(self, destination):
-        destination.receive_vehicle_state_info(self._tele_vehicle_state)
+        destination.receive_vehicle_state_info(self._tele_vehicle_state, self.timestamp)
 
 
 # from mec to operator

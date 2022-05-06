@@ -11,9 +11,13 @@ from src.utils.carla_utils import get_actor_display_name
 class HUD(object):
     """Class for HUD text"""
 
-    def __init__(self, width, height):
+    def __init__(self, tele_world, player, clock, width, height):
         """Constructor method"""
         self.dim = (width, height)
+        self.tele_world = tele_world
+        self.player = player
+        self.clock = clock
+
         font = pygame.font.Font(pygame.font.get_default_font(), 20)
         font_name = 'courier' if os.name == 'nt' else 'mono'
         fonts = [x for x in pygame.font.get_fonts() if font_name in x]
@@ -37,14 +41,19 @@ class HUD(object):
         self.frame = timestamp.frame_count
         self.simulation_time = timestamp.elapsed_seconds
 
-    def tick(self, tele_world, player, clock):
+    def tick(self, timestamp):
+        self._server_clock.tick()
+        self.server_fps = self._server_clock.get_fps()
+        self.frame = timestamp.frame_count
+        self.simulation_time = timestamp.elapsed_seconds
+
         """HUD method for every tick"""
-        self._notifications.tick(player, clock)
+        self._notifications.tick(self.player, self.clock)
         if not self._show_info:
             return
-        transform = player.get_transform()
-        vel = player.get_velocity()
-        control = player.get_control()
+        transform = self.player.get_transform()
+        vel = self.player.get_velocity()
+        control = self.player.get_control()
         heading = 'N' if abs(transform.rotation.yaw) < 89.5 else ''
         heading += 'S' if abs(transform.rotation.yaw) > 90.5 else ''
         heading += 'E' if 179.5 > transform.rotation.yaw > 0.5 else ''
@@ -58,10 +67,10 @@ class HUD(object):
 
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,
-            'Client:  % 16.0f FPS' % clock.get_fps(),
+            'Client:  % 16.0f FPS' % self.clock.get_fps(),
             '',
-            'Vehicle: % 20s' % get_actor_display_name(player, truncate=20),
-            'Map:     % 20s' % tele_world.carla_map.name.split('/')[-1],
+            'Vehicle: % 20s' % get_actor_display_name(self.player, truncate=20),
+            'Map:     % 20s' % self.tele_world.carla_map.name.split('/')[-1],
             'Simulation time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
             '',
             'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)),

@@ -716,6 +716,7 @@ def game_loop(args):
         client = carla.Client(args.host, args.port)
         client.set_timeout(8.0)
 
+
         traffic_manager = client.get_trafficmanager()
         sim_world = client.load_world('Town01_Opt')
 
@@ -753,6 +754,7 @@ def game_loop(args):
         clock = pygame.time.Clock()
 
         while True:
+            agent.update_vehicle_state(world.player)
             clock.tick()
             if args.sync:
                 world.world.tick()
@@ -774,7 +776,7 @@ def game_loop(args):
                     print("The target has been reached, stopping the simulation")
                     break
 
-            control = agent.run_step()
+            control = agent.run_step(True)
             print(world.player.get_location())
             control.manual_gear_shift = False
             world.player.apply_control(control)

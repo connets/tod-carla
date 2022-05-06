@@ -1,3 +1,6 @@
+import threading
+
+
 class TeleSimulator:
     def __init__(self, tele_world, tele_context, clock):
         self._tele_world = tele_world
@@ -24,15 +27,15 @@ class TeleSimulator:
             actor.set_context(self._tele_context)
             actor.start(self._tele_world)
 
-    def do_simulation(self, tmp):
+    def do_simulation(self, sync):
         finish = False
 
         while not finish:
             # network_delay.tick()
-            while not finish and self._tele_context.timestamp > self._tele_world.timestamp:
+            simulator_timestamp = round(self._tele_context.timestamp, 6)
+            while not finish and simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
-                finish = self._tele_world.tick(self._clock) != 0
-                tmp()
+                self._tele_world.tick(self._clock)
 
             for callback in self._step_callbacks: callback()
 

@@ -58,7 +58,7 @@ class TeleController(ABC):
         ...
 
     @abstractmethod
-    def do_action(self):
+    def do_action(self, vehicle_state=None):
         ...
 
     @staticmethod
@@ -277,7 +277,10 @@ class BasicAgentTeleWorldController(TeleController):
         self._player = player
         self.carla_agent = BasicAgent(player.model)
 
-    def do_action(self):
+    def do_action(self, vehicle_state=None):
+        if vehicle_state is not None:
+            self.carla_agent.update_vehicle_state(vehicle_state)
+
         control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control
@@ -301,10 +304,13 @@ class BehaviorAgentTeleWorldController(TeleController):
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
-    def do_action(self):
+    def do_action(self, vehicle_state=None):
         if any(self._quit(e) for e in pygame.event.get()):
             return None
 
-        control = self.carla_agent.run_step()
+        if vehicle_state is not None:
+            self.carla_agent.update_vehicle_state(vehicle_state)
+
+        control = self.carla_agent.run_step(True)
         control.manual_gear_shift = False
         return control

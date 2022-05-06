@@ -55,7 +55,9 @@ class LocalPlanner(object):
             offset: distance between the route waypoints and the center of the lane
         """
         self._vehicle = vehicle
-        self._world = self._vehicle.get_world()
+        # self._last_vehicle_state = vehicle
+        self._last_vehicle_state = None
+        self._world = vehicle.get_world()
         self._map = self._world.get_map()
 
         self._vehicle_controller = None
@@ -105,15 +107,19 @@ class LocalPlanner(object):
                 self._follow_speed_limits = opt_dict['follow_speed_limits']
 
         # initializing controller
-        self._init_controller()
+        self._init_controller(vehicle)
+
+    def update_vehicle_state(self, vehicle_state):
+        self._last_vehicle_state = vehicle_state
+        self._vehicle_controller.update_vehicle_state(vehicle_state)
 
     def reset_vehicle(self):
         """Reset the ego-vehicle"""
         self._vehicle = None
 
-    def _init_controller(self):
+    def _init_controller(self, vehicle):
         """Controller initialization"""
-        self._vehicle_controller = VehiclePIDController(self._vehicle,
+        self._vehicle_controller = VehiclePIDController(vehicle,
                                                         args_lateral=self._args_lateral_dict,
                                                         args_longitudinal=self._args_longitudinal_dict,
                                                         offset=self._offset,
@@ -122,7 +128,7 @@ class LocalPlanner(object):
                                                         max_steering=self._max_steer)
 
         # Compute the current vehicle waypoint
-        current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
+        current_waypoint = self._map.get_waypoint(vehicle.get_location())
         self.target_waypoint, self.target_road_option = (current_waypoint, RoadOption.LANEFOLLOW)
         self._waypoints_queue.append((self.target_waypoint, self.target_road_option))
 
@@ -214,16 +220,19 @@ class LocalPlanner(object):
         :return: control to be applied
         """
         if self._follow_speed_limits:
-            self._target_speed = self._vehicle.get_speed_limit()
+            self._target_speed = self._last_vehicle_state.get_speed_limit()
 
         # Add more waypoints too few in the horizon
         if not self._stop_waypoint_creation and len(self._waypoints_queue) < self._min_waypoint_queue_length:
             self._compute_next_waypoints(k=self._min_waypoint_queue_length)
 
         # Purge the queue of obsolete waypoints
-        veh_location = self._vehicle.get_location()
-        vehicle_speed = get_speed(self._vehicle) / 3.6
-        self._min_distance = self._base_min_distance + 0.5 *vehicle_speed
+        print('vehicle', self._last_vehicle_state.get_transform().location)
+        print('state', self._last_vehicle_state.get_location())
+        print("wrong: ", '*' * 2 if self._last_vehicle_state.get_transform().location != self._last_vehicle_state.get_location() else '')
+        veh_location = self._last_vehicle_state.get_location()
+        vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
+        self._min_distance = self._base_min_distance + 0.5 * vehicle_speed
 
         num_waypoint_removed = 0
         for waypoint, _ in self._waypoints_queue:
@@ -255,7 +264,7 @@ class LocalPlanner(object):
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:
-            draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], 1.0)
+            draw_waypoints(self._world, [self.target_waypoint], 1.0)
 
         return control
 

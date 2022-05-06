@@ -3,7 +3,7 @@ from abc import ABC
 from typing import List
 
 from src.network.NetworkChannel import NetworkChannel
-from src.utils.decorators import need_member
+from src.utils.decorators import needs_member
 
 
 class NetworkNode(ABC):
@@ -33,7 +33,7 @@ class NetworkNode(ABC):
     def run(self, tele_world):
         ...
 
-    @need_member('_tele_context')
+    @needs_member('_tele_context')
     def start(self, tele_world):
         for channel in self._channels:
             channel.start(self._tele_context)

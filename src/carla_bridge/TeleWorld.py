@@ -1,5 +1,6 @@
 import random
 import sys
+import threading
 
 import carla
 
@@ -11,7 +12,7 @@ from carla.libcarla import World
 class TeleWorld:
     """ Class representing the surrounding environment """
 
-    def __init__(self, carla_world: World, carla_conf, hud):
+    def __init__(self, carla_world: World, carla_conf):
         """Constructor method"""
         self._carla_conf = carla_conf
         self._last_snapshot: carla.WorldSnapshot = carla_world.get_snapshot()
@@ -43,11 +44,15 @@ class TeleWorld:
         #     if abs(396.984039 - spawn_point.location.x) < 6:
         #         print(spawn_point)
 
-        self.hud = hud
         self.vehicles = []
 
         self._tick_callbacks = set()
-        self.sim_world.on_tick(lambda timestamp: (callback(timestamp) for callback in self._tick_callbacks))
+
+        def call_on_tick(timestamp):
+            for callback in self._tick_callbacks:
+                callback(timestamp)
+
+        self.sim_world.on_tick(call_on_tick)
         self.camera_manager = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
@@ -102,8 +107,6 @@ class TeleWorld:
         #                                0.01)  # TODO change delay hardcoded here
         # self.player.apply_control(command)
 
-        return 0
-
     def render(self, display):
         """Render world"""
         for sensor in self._sensors:
@@ -124,8 +127,8 @@ class TeleWorld:
     @property
     def timestamp(self):
         if self._last_snapshot is None:
-            self._last_snapshot = self.sim_world.get_snapshot().timestamp
-        return self._last_snapshot.timestamp.elapsed_seconds
+            self._last_snapshot = self.sim_world.get_snapshot()
+        return self._last_snapshot.timestamp
 
     def get_snapshot(self):
         return self.sim_world.get_snapshot()

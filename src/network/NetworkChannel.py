@@ -1,4 +1,5 @@
 import os
+import re
 import socket
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -7,7 +8,7 @@ from queue import PriorityQueue
 from src.TeleLogger import TeleLogger
 from src.TeleContext import TeleContext
 from src.network.NetworkMessage import NetworkMessage
-from src.utils.decorators import need_member
+from src.utils.decorators import needs_member
 from src.utils.distribution_utils import _constant_family
 from threading import Thread
 
@@ -21,14 +22,26 @@ class NetworkChannel(ABC):
         self._delay = 0
         self._binded = False
 
+    @needs_member('_binded', lambda x: x)
+    def start(self, tele_context):
+        self._tele_context = tele_context
+
+        def change_delay():
+            self._apply_delay()
+            self._tele_context.schedule(change_delay, self._interval)
+
+        change_delay()
+
+    @abstractmethod
+    def _apply_delay(self):
+        ...
+
     def bind(self, source_node):
         self._binded = True
 
     @abstractmethod
     def send(self, msg):
         ...
-
-
 
     @abstractmethod
     def quit(self):
@@ -45,11 +58,11 @@ class PhysicNetworkChannel(NetworkChannel):
         self._out_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         self._input_daemon = None
 
-    def start(self):
-        current_timestamp = self._timestamp_func()
-        if current_timestamp >= self._last_tick_timestamp + self._interval:
-            self._apply_delay()
-            self._last_tick_timestamp = current_timestamp
+    # def start(self):
+    #     current_timestamp = self._timestamp_func()
+    #     if current_timestamp >= self._last_tick_timestamp + self._interval:
+    #         self._apply_delay()
+    #         self._last_tick_timestamp = current_timestamp
 
     def bind(self, source_node):
         super().bind(source_node)
@@ -104,7 +117,7 @@ class TcNetworkInterface(PhysicNetworkChannel):
 
     def _apply_delay(self):
         tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change 2> /dev/null"""  # TODO change stderr
-        print(tc_config)
+        # print(tc_config)
         os.system(tc_config)
 
     def _remove_delay(self):
@@ -117,19 +130,19 @@ class DiscreteNetworkChannel(NetworkChannel):
         super().__init__(destination_node, distr_func, interval)
         self._tele_context = None
 
-    @need_member('_binded', lambda x: x)
-    def start(self, tele_context):
-        self._tele_context = tele_context
+    def _apply_delay(self):
+        self._delay = self._distr_func()
 
-        def change_delay():
-            self._delay = self._distr_func()
-            self._tele_context.schedule(change_delay, self._interval)
-        change_delay()
-
-    @need_member('_tele_context')
+    @needs_member('_tele_context')
     def send(self, msg):
         super().send(msg)
-        self._tele_context.schedule(lambda: msg.action(self.destination_node), self._delay)
+
+        def send_message():
+            msg.action(self.destination_node)
+
+        send_message.__name__ += '_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower()
+
+        self._tele_context.schedule(send_message, self._delay)
 
     def quit(self):
         pass

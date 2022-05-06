@@ -17,7 +17,8 @@ from src.folder_path import OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
-from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController
+from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
+    BasicAgentTeleWorldController
 from src.utils.distribution_utils import delay_family_to_func
 from src.utils.utils import find_free_port
 
@@ -45,13 +46,15 @@ def create_sim_world(host, port, timeout, world, sync, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
+    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
+
     traffic_manager = client.get_trafficmanager()
     traffic_manager.set_synchronous_mode(sync)  # TODO move from here, check if sync is active or not
 
     settings = sim_world.get_settings()
     settings.synchronous_mode = sync
     if time_step is not None:
-        settings.fixed_delta_seconds = float(time_step)
+        settings.fixed_delta_seconds = time_step
     sim_world.apply_settings(settings)
     # traffic_manager.set_synchronous_mode(True)
 
@@ -74,7 +77,7 @@ def main():
 
     sim_world = create_sim_world(carla_server_conf['host'], carla_server_conf['port'], carla_server_conf['timeout'],
                                  carla_simulation_conf['world'], carla_simulation_conf['synchronicity'],
-                                 carla_simulation_conf['time_step'])
+                                 carla_simulation_conf['time_step'] if 'time_step' in carla_simulation_conf else None)
 
     def elapsed_seconds():
         return round(sim_world.get_snapshot().timestamp.elapsed_seconds * 1000, 3)
@@ -93,30 +96,34 @@ def main():
 
     # traffic_manager = client.get_trafficmanager()
 
-    hud = HUD(carla_simulation_conf['camera']['width'], carla_simulation_conf['camera']['height'])
-    tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf, hud)
+    tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf)
 
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('localhost', 28007, carla_simulation_conf['synchronicity'], 0.01,
+    player = TeleCarlaVehicle('localhost', 28007, carla_simulation_conf['synchronicity'], 0.03,
                               carla_simulation_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
                               modify_vehicle_physics=True)
 
-
-    # controller = BehaviorAgentTeleWorldController()  # TODO change here
-    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
+    # controller = BasicAgentTeleWorldController()  # TODO change here
+    controller = BehaviorAgentTeleWorldController('cautious', start_transform.location, destination_location)
+    # controller = BasicAgentTeleWorldController()
 
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
     tele_operator = TeleOperator('localhost', find_free_port(), controller)
     mec = TeleMEC('localhost', find_free_port())
-    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['uniform'](0.01, 0.02), 0.1)
+    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.0), 0.1)
+    # vehicle_operator_channel = TcNetworkInterface(tele_operator, )
     player.add_channel(vehicle_operator_channel)
-    operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['uniform'](0.01, 0.02), 0.1)
+    operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.0), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)
 
-    tele_context = TeleContext(tele_world.timestamp)
+    tele_context = TeleContext(tele_world.timestamp.elapsed_seconds)
 
+    clock = pygame.time.Clock()
+
+    hud = HUD(tele_world, player, clock, carla_simulation_conf['camera']['width'],
+              carla_simulation_conf['camera']['height'])
     camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720)
     player.attach_sensor(camera_sensor)
 
@@ -126,8 +133,6 @@ def main():
     # tele_operator.start(tele_world)
     # mec.set_context(tele_context)
     # mec.start(tele_world)
-
-    clock = pygame.time.Clock()
 
     # tele_world.add_sensor(camera_manager, player)
 
@@ -161,19 +166,20 @@ def main():
     tele_sim.add_network_node(player)
     tele_sim.add_network_node(mec)
     tele_sim.add_network_node(tele_operator)
+
     # camera_sensor.spawn_in_the_world(sim_world)
 
-    def my_tmp_render():
-        print(player.get_location())
+    def render(_):
         camera_sensor.render(display)
         hud.render(display)
         pygame.display.flip()
 
-    # tele_sim.add_tick_listener(lambda _: my_tmp_render())
     tele_sim.start()
+    tele_sim.add_tick_listener(render)
+    tele_sim.add_tick_listener(hud.tick)
     controller.add_player_in_world(player)
 
-    tele_sim.do_simulation(my_tmp_render)
+    tele_sim.do_simulation(carla_simulation_conf['synchronicity'])
 
     # exit = False
     # try:

@@ -67,8 +67,8 @@ class BehaviorAgent(BasicAgent):
         This method updates the information regarding the ego
         vehicle based on the surrounding world.
         """
-        self._speed = get_speed(self._vehicle)
-        self._speed_limit = self._vehicle.get_speed_limit()
+        self._speed = get_speed(self._last_vehicle_state)
+        self._speed_limit = self._last_vehicle_state.get_speed_limit()
         self._local_planner.set_speed(self._speed_limit)
         self._direction = self._local_planner.target_road_option
         if self._direction is None:
@@ -144,7 +144,7 @@ class BehaviorAgent(BasicAgent):
 
         vehicle_list = self._world.get_actors().filter("*vehicle*")
         def dist(v): return v.get_location().distance(waypoint.transform.location)
-        vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._vehicle.id]
+        vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._last_vehicle_state.id]
 
         if self._direction == RoadOption.CHANGELANELEFT:
             vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
@@ -251,7 +251,7 @@ class BehaviorAgent(BasicAgent):
         if self._behavior.tailgate_counter > 0:
             self._behavior.tailgate_counter -= 1
 
-        ego_vehicle_loc = self._vehicle.get_location()
+        ego_vehicle_loc = self._last_vehicle_state.get_location()
         ego_vehicle_wp = self._map.get_waypoint(ego_vehicle_loc)
 
         # 1: Red lights and stops behavior
@@ -267,7 +267,7 @@ class BehaviorAgent(BasicAgent):
             # we use bounding boxes to calculate the actual distance
             distance = w_distance - max(
                 walker.bounding_box.extent.y, walker.bounding_box.extent.x) - max(
-                    self._vehicle.bounding_box.extent.y, self._vehicle.bounding_box.extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
@@ -281,7 +281,7 @@ class BehaviorAgent(BasicAgent):
             # we use bounding boxes to calculate the actual distance
             distance = distance - max(
                 vehicle.bounding_box.extent.y, vehicle.bounding_box.extent.x) - max(
-                    self._vehicle.bounding_box.extent.y, self._vehicle.bounding_box.extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:

@@ -14,7 +14,7 @@ def closure(f):
     return closure_aux
 
 
-def need_member(member, valid=lambda x: x is not None):
+def needs_member(member, valid=lambda x: x is not None):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
             if not valid(getattr(ref, member)):
@@ -44,7 +44,7 @@ class Singleton:
         self._instance = None
 
     @property
-    @need_member("_instance")
+    @needs_member("_instance")
     def instance(self):
         return self._instance
 
