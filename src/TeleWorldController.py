@@ -50,36 +50,43 @@ from lib.agents.navigation.behavior_agent import BehaviorAgent
 
 class TeleController(ABC):
 
+    def __init__(self):
+        self._tele_vehicle_state = None
+
     @abstractmethod
     def add_player_in_world(self, player):
         ...
 
     @abstractmethod
-    def do_action(self, clock):
+    def do_action(self, vehicle_state=None):
         ...
 
     @staticmethod
     def _is_quit_shortcut(key):
         return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
 
+    def update_vehicle_state(self, tele_vehicle_state):
+        self._tele_vehicle_state = tele_vehicle_state
 
 
 class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
 
-    def __init__(self, camera_manager):
+    def __init__(self, camera_manager, clock):
         # self._autopilot_enabled = start_in_autopilot
+        super().__init__()
         self._control = carla.VehicleControl()
         self._lights = carla.VehicleLightState.NONE
         # world.player.set_autopilot(self._autopilot_enabled)
         # world.player.set_light_state(self._lights)
         self._steer_cache = 0.0
         self._camera_manager = camera_manager
+        self._clock = clock
 
     def add_player_in_world(self, player):
         self._world = player.get_world()
 
-    def do_action(self, clock):
+    def do_action(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None
@@ -212,7 +219,7 @@ class KeyboardTeleWorldController(TeleController):
 
         # if not self._autopilot_enabled:
         # if isinstance(self._control, carla.VehicleControl):
-        self._parse_vehicle_keys(pygame.key.get_pressed(), clock.get_time())
+        self._parse_vehicle_keys(pygame.key.get_pressed(), self._clock.get_time())
         self._control.reverse = self._control.gear < 0
         # Set automatic control-related vehicle lights
         # if self._control.brake:
@@ -259,10 +266,10 @@ class KeyboardTeleWorldController(TeleController):
         self._control.hand_brake = keys[K_SPACE]
 
 
-
 class BasicAgentTeleWorldController(TeleController):
 
     def __init__(self):
+        super().__init__()
         self._player = None
         self.carla_agent = None
 
@@ -270,7 +277,10 @@ class BasicAgentTeleWorldController(TeleController):
         self._player = player
         self.carla_agent = BasicAgent(player.model)
 
-    def do_action(self, clock):
+    def do_action(self, vehicle_state=None):
+        if vehicle_state is not None:
+            self.carla_agent.update_vehicle_state(vehicle_state)
+
         control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control
@@ -278,24 +288,29 @@ class BasicAgentTeleWorldController(TeleController):
 
 class BehaviorAgentTeleWorldController(TeleController):
 
-    def __init__(self, behavior, destination_position):
+    def __init__(self, behavior, start_location, destination_location):
+        super().__init__()
         self._behavior = behavior
-        self._destination_position = destination_position
+        self._start_location = start_location
+        self._destination_location = destination_location
         self._player = None
         self.carla_agent = None
 
     def add_player_in_world(self, player):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
-        self.carla_agent.set_destination(self._destination_position)
+        self.carla_agent.set_destination(self._destination_location, start_location=self._start_location)
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
-    def do_action(self, clock):
+    def do_action(self, vehicle_state=None):
         if any(self._quit(e) for e in pygame.event.get()):
             return None
 
-        control = self.carla_agent.run_step()
+        if vehicle_state is not None:
+            self.carla_agent.update_vehicle_state(vehicle_state)
+
+        control = self.carla_agent.run_step(True)
         control.manual_gear_shift = False
         return control

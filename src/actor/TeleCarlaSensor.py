@@ -7,11 +7,11 @@ import numpy as np
 import pygame
 from carla import ColorConverter as cc
 
+from src.actor.TeleCarlaActor import TeleCarlaActor
+from src.network.NetworkNode import NetworkNode
 
-class TeleSensor(ABC):
-    @abstractmethod
-    def spawn_in_world(self, parent_actor):
-        ...
+
+class TeleCarlaSensor:
 
     def stop(self):
         ...
@@ -20,13 +20,13 @@ class TeleSensor(ABC):
         ...
 
 
-class TeleRenderingSensor(TeleSensor):
+class TeleCarlaRenderingSensor(TeleCarlaSensor):
     @abstractmethod
     def render(self, display):
         ...
 
 
-class CameraManager(TeleRenderingSensor):
+class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
     def __init__(self, gamma_correction, hud, width, height):
         self._gamma_correction = gamma_correction
@@ -35,7 +35,6 @@ class CameraManager(TeleRenderingSensor):
         self.height = height
         self.sensor = None
         self.surface = None
-        self._parent = None
         self.recording = False
         self.lidar_range = None
 
@@ -62,8 +61,11 @@ class CameraManager(TeleRenderingSensor):
             ['sensor.camera.optical_flow', cc.Raw, 'Optical Flow', {}],
         ]
 
-    def spawn_in_world(self, parent_actor):
-        self._parent = parent_actor
+        self.parent_actor = None
+
+    def spawn_in_the_world(self, parent_actor):
+        print("====> ")
+        self.parent_actor = parent_actor
         # self.sensor = None
         # self.surface = None
         # self._parent = parent_actor
@@ -73,9 +75,9 @@ class CameraManager(TeleRenderingSensor):
         #
         #
 
-        bound_x = 0.5 + self._parent.bounding_box.extent.x
-        bound_y = 0.5 + self._parent.bounding_box.extent.y
-        bound_z = 0.5 + self._parent.bounding_box.extent.z
+        bound_x = 0.5 + parent_actor.bounding_box.extent.x
+        bound_y = 0.5 + parent_actor.bounding_box.extent.y
+        bound_z = 0.5 + parent_actor.bounding_box.extent.z
 
         Attachment = carla.AttachmentType
         self._camera_transforms = [
@@ -115,8 +117,7 @@ class CameraManager(TeleRenderingSensor):
         #         'chromatic_aberration_offset': '0'}],
         #     ['sensor.camera.optical_flow', cc.Raw, 'Optical Flow', {}],
         # ]
-        world = self._parent.get_world()
-        bp_library = world.get_blueprint_library()
+        bp_library = parent_actor.get_world().get_blueprint_library()
         for item in self.sensors:
             bp = bp_library.find(item[0])
             if item[0].startswith('sensor.camera'):
@@ -159,16 +160,16 @@ class CameraManager(TeleRenderingSensor):
             if self.sensor is not None:
                 self.sensor.destroy()
                 self.surface = None
-            self.sensor = self._parent.get_world().spawn_actor(
+            self.sensor = self.parent_actor.get_world().spawn_actor(
                 self.sensors[index][-1],
                 self._camera_transforms[self.transform_index][0],
-                attach_to=self._parent.model,
+                attach_to=self.parent_actor.model,
                 attachment_type=self._camera_transforms[self.transform_index][1])
 
             # We need to pass the lambda a weak reference to
             # self to avoid circular reference.
             weak_self = weakref.ref(self)
-            self.sensor.listen(lambda image: CameraManager._parse_image(weak_self, image))
+            self.sensor.listen(lambda image: TeleCarlaCameraSensor._parse_image(weak_self, image))
         # if notify:
         #     self.hud.notification(self.sensors[index][2])
         self.index = index
@@ -216,7 +217,7 @@ class CameraManager(TeleRenderingSensor):
             image.save_to_disk('_out/%08d' % image.frame)
 
 
-class GnssSensor(TeleSensor):
+class TeleGnssSensor(TeleCarlaSensor):
 
     def __init__(self):
         self.sensor = None
@@ -234,7 +235,7 @@ class GnssSensor(TeleSensor):
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.
         weak_self = weakref.ref(self)
-        self.sensor.listen(lambda event: GnssSensor._on_gnss_event(weak_self, event))
+        self.sensor.listen(lambda event: TeleGnssSensor._on_gnss_event(weak_self, event))
 
     def stop(self):
         self.sensor.stop()

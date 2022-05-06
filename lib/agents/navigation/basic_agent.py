@@ -8,9 +8,12 @@ This module implements an agent that roams around a track following random
 waypoints and avoiding other vehicles. The agent also responds to traffic lights.
 It can also make use of the global route planner to follow a specifed route
 """
+import traceback
 
 import carla
 from enum import Enum
+
+from carla import Transform
 from shapely.geometry import Polygon
 
 from lib.agents.navigation.local_planner import LocalPlanner
@@ -35,8 +38,13 @@ class BasicAgent(object):
             :param opt_dict: dictionary in case some of its parameters want to be changed.
                 This also applies to parameters related to the LocalPlanner.
         """
+        # self._vehicle = vehicle
+        self._vehicle_extent = vehicle.bounding_box.extent
+        self._start_location = vehicle.get_location()
+        # self._last_vehicle_state = vehicle
+        self._last_vehicle_state = None
         self._vehicle = vehicle
-        self._world = self._vehicle.get_world()
+        self._world = vehicle.get_world()
         self._map = self._world.get_map()
         self._last_traffic_light = None
 
@@ -68,8 +76,12 @@ class BasicAgent(object):
             self._max_steering = opt_dict['max_brake']
 
         # Initialize the planners
-        self._local_planner = LocalPlanner(self._vehicle, opt_dict=opt_dict)
+        self._local_planner = LocalPlanner(vehicle, opt_dict=opt_dict)
         self._global_planner = GlobalRoutePlanner(self._map, self._sampling_resolution)
+
+    def update_vehicle_state(self, vehicle_state):
+        self._last_vehicle_state = vehicle_state
+        self._local_planner.update_vehicle_state(vehicle_state)
 
     def add_emergency_stop(self, control):
         """
@@ -120,13 +132,14 @@ class BasicAgent(object):
             start_location = self._local_planner.target_waypoint.transform.location
             clean_queue = True
         else:
-            start_location = self._vehicle.get_location()
+            start_location = self._start_location
             clean_queue = False
 
         start_waypoint = self._map.get_waypoint(start_location)
         end_waypoint = self._map.get_waypoint(end_location)
 
         route_trace = self.trace_route(start_waypoint, end_waypoint)
+        # for loc in [trace[0].transform.location for trace in route_trace]: print(loc)
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
 
     def set_global_plan(self, plan, stop_waypoint_creation=True, clean_queue=True):
@@ -152,10 +165,12 @@ class BasicAgent(object):
         """
         start_location = start_waypoint.transform.location
         end_location = end_waypoint.transform.location
+
         return self._global_planner.trace_route(start_location, end_location)
 
     def run_step(self):
         """Execute one step of navigation."""
+
         hazard_detected = False
 
         # Retrieve all relevant actors
@@ -163,7 +178,7 @@ class BasicAgent(object):
         vehicle_list = actor_list.filter("*vehicle*")
         lights_list = actor_list.filter("*traffic_light*")
 
-        vehicle_speed = get_speed(self._vehicle) / 3.6
+        vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
 
         # Check for possible vehicle obstacles
         max_vehicle_distance = self._base_vehicle_threshold + vehicle_speed
@@ -177,7 +192,7 @@ class BasicAgent(object):
         if affected_by_tlight:
             hazard_detected = True
 
-        control = self._local_planner.run_step()
+        control = self._local_planner.run_step(True)
         if hazard_detected:
             control = self.add_emergency_stop(control)
 
@@ -223,7 +238,7 @@ class BasicAgent(object):
             else:
                 return (True, self._last_traffic_light)
 
-        ego_vehicle_location = self._vehicle.get_location()
+        ego_vehicle_location = self._last_vehicle_state.get_location()
         ego_vehicle_waypoint = self._map.get_waypoint(ego_vehicle_location)
 
         for traffic_light in lights_list:
@@ -243,13 +258,15 @@ class BasicAgent(object):
             if traffic_light.state != carla.TrafficLightState.Red:
                 continue
 
-            if is_within_distance(object_waypoint.transform, self._vehicle.get_transform(), max_distance, [0, 90]):
+            if is_within_distance(object_waypoint.transform, self._last_vehicle_state.get_transform(), max_distance,
+                                  [0, 90]):
                 self._last_traffic_light = traffic_light
                 return (True, traffic_light)
 
         return (False, None)
 
-    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0, lane_offset=0):
+    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+                                   lane_offset=0):
         """
         Method to check if there is a vehicle in front of the agent blocking its path.
 
@@ -258,17 +275,19 @@ class BasicAgent(object):
             :param max_distance: max freespace to check for obstacles.
                 If None, the base threshold value is used
         """
+
         if self._ignore_vehicles:
             return (False, None, -1)
 
         if not vehicle_list:
-            vehicle_list = self._world.get_actors().filter("*vehicle*")
+            vehicle_list = [v for v in self._world.get_actors().filter("*vehicle*") if v.id != self._last_vehicle_state.id]
 
         if not max_distance:
             max_distance = self._base_vehicle_threshold
 
-        ego_transform = self._vehicle.get_transform()
-        ego_wpt = self._map.get_waypoint(self._vehicle.get_location())
+        ego_transform = Transform(self._last_vehicle_state.get_transform().location,
+                                  self._last_vehicle_state.get_transform().rotation)  # Created a copy of the object, in order to evitate side effect
+        ego_wpt = self._map.get_waypoint(self._last_vehicle_state.get_location())
 
         # Get the right offset
         if ego_wpt.lane_id < 0 and lane_offset != 0:
@@ -276,8 +295,9 @@ class BasicAgent(object):
 
         # Get the transform of the front of the ego
         ego_forward_vector = ego_transform.get_forward_vector()
-        ego_extent = self._vehicle.bounding_box.extent.x
+        ego_extent = self._vehicle_extent.x
         ego_front_transform = ego_transform
+
         ego_front_transform.location += carla.Location(
             x=ego_extent * ego_forward_vector.x,
             y=ego_extent * ego_forward_vector.y,
@@ -290,11 +310,11 @@ class BasicAgent(object):
             # Simplified version for outside junctions
             if not ego_wpt.is_junction or not target_wpt.is_junction:
 
-                if target_wpt.road_id != ego_wpt.road_id or target_wpt.lane_id != ego_wpt.lane_id  + lane_offset:
+                if target_wpt.road_id != ego_wpt.road_id or target_wpt.lane_id != ego_wpt.lane_id + lane_offset:
                     next_wpt = self._local_planner.get_incoming_waypoint_and_direction(steps=3)[0]
                     if not next_wpt:
                         continue
-                    if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id  + lane_offset:
+                    if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id + lane_offset:
                         continue
 
                 target_forward_vector = target_transform.get_forward_vector()
@@ -305,14 +325,15 @@ class BasicAgent(object):
                     y=target_extent * target_forward_vector.y,
                 )
 
-                if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
+                if is_within_distance(target_rear_transform, ego_front_transform, max_distance,
+                                      [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
 
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
                 route_bb = []
                 ego_location = ego_transform.location
-                extent_y = self._vehicle.bounding_box.extent.y
+                extent_y = self._last_vehicle_state.bounding_box.extent.y
                 r_vec = ego_transform.get_right_vector()
                 p1 = ego_location + carla.Location(extent_y * r_vec.x, extent_y * r_vec.y)
                 p2 = ego_location + carla.Location(-extent_y * r_vec.x, -extent_y * r_vec.y)
@@ -337,7 +358,7 @@ class BasicAgent(object):
                 # Compare the two polygons
                 for target_vehicle in vehicle_list:
                     target_extent = target_vehicle.bounding_box.extent.x
-                    if target_vehicle.id == self._vehicle.id:
+                    if target_vehicle.id == self._last_vehicle_state.id:
                         continue
                     if ego_location.distance(target_vehicle.get_location()) > max_distance:
                         continue

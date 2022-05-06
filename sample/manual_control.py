@@ -1181,9 +1181,23 @@ def game_loop(args):
 
     try:
         client = carla.Client("ubiquity", 3000)
+
+
         client.set_timeout(20.0)
 
-        sim_world = client.get_world()
+        f = open("../maps/leganes.xodr", 'r')
+        xodr_xml = f.read()
+        # sim_world = client.get_world()
+        sim_world = client.generate_opendrive_world(
+            xodr_xml, carla.OpendriveGenerationParameters(
+                vertex_distance=1,
+                max_road_length=1,
+                wall_height=1,
+                additional_width=1,
+                smooth_junctions=True,
+                enable_mesh_visibility=True))
+
+
         if args.sync:
             original_settings = sim_world.get_settings()
             settings = sim_world.get_settings()
@@ -1218,7 +1232,6 @@ def game_loop(args):
         while True:
             if args.sync:
                 sim_world.tick()
-            clock.tick_busy_loop(60)
             if controller.parse_events(client, world, clock, args.sync):
                 return
             world.tick(clock)
