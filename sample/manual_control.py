@@ -1185,18 +1185,7 @@ def game_loop(args):
 
         client.set_timeout(20.0)
 
-        f = open("../maps/leganes.xodr", 'r')
-        xodr_xml = f.read()
-        # sim_world = client.get_world()
-        sim_world = client.generate_opendrive_world(
-            xodr_xml, carla.OpendriveGenerationParameters(
-                vertex_distance=1,
-                max_road_length=1,
-                wall_height=1,
-                additional_width=1,
-                smooth_junctions=True,
-                enable_mesh_visibility=True))
-
+        sim_world = client.get_world()
 
         if args.sync:
             original_settings = sim_world.get_settings()

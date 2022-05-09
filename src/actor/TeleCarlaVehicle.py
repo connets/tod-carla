@@ -36,6 +36,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
         # self._controller.add_player_in_world(self)
         if self._sync:
             def daemon_state():
+                print("**********")
+
                 self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
                                                            timestamp=self._tele_context.timestamp))
                 self._tele_context.schedule(daemon_state, self._sending_interval)
@@ -45,7 +47,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
             def send_info_state():
                 while True:
                     self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
-                                                           timestamp=self._tele_context.timestamp))
+                                                               timestamp=self._tele_context.timestamp))
                     sleep(self._sending_interval)
 
             sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(

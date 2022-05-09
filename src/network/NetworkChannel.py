@@ -19,7 +19,7 @@ class NetworkChannel(ABC):
 
         self._distr_func = distr_func
         self._interval = interval
-        self._delay = 0
+        self._delay = distr_func()
         self._binded = False
 
     @needs_member('_binded', lambda x: x)
@@ -49,9 +49,8 @@ class NetworkChannel(ABC):
 
 
 class PhysicNetworkChannel(NetworkChannel):
-    def __init__(self, destination_node, distr_func, interval, timestamp_func):
+    def __init__(self, destination_node, distr_func, interval):
         super().__init__(destination_node, distr_func, interval)
-        self._timestamp_func = timestamp_func
         self._last_tick_timestamp = 0
         # self.network_node = None
         # self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # UDP socket
@@ -104,25 +103,18 @@ class PhysicNetworkChannel(NetworkChannel):
         if self._input_daemon is not None:
             self._input_daemon.stop()
 
-    @abstractmethod
-    def _remove_delay(self):
-        ...
-
 
 class TcNetworkInterface(PhysicNetworkChannel):
 
-    def __init__(self, destination_node, timestamp_func, distr_func, interval, network_interface):
-        super().__init__(destination_node, timestamp_func, distr_func, interval)
+    def __init__(self, destination_node, distr_func, interval, network_interface):
+        super().__init__(destination_node, distr_func, interval)
         self._network_interface = network_interface
 
+
     def _apply_delay(self):
-        tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change 2> /dev/null"""  # TODO change stderr
+        tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change"""  # TODO change stderr
         # print(tc_config)
         os.system(tc_config)
-
-    def _remove_delay(self):
-        os.system(f'tcdel {self._network_interface}')
-
 
 class DiscreteNetworkChannel(NetworkChannel):
 

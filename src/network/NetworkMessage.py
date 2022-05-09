@@ -2,6 +2,8 @@ import json
 import pickle
 from abc import ABC, abstractmethod
 
+from carla import VehicleControl
+
 
 class NetworkMessage(ABC):
     def __init__(self, timestamp=None, periodic=False):
@@ -29,6 +31,21 @@ class InstructionNetworkMessage(NetworkMessage):
     def action(self, destination):
         destination.receive_instruction_network_message(self.command)
         ...
+
+    def __getstate__(self):
+        return {
+            'throttle': self.command.throttle,
+            'steer': self.command.steer,
+            'brake': self.command.brake,
+            'hand_brake': self.command.hand_brake,
+            'reverse': self.command.reverse,
+            'manual_gear_shift': self.command.manual_gear_shift,
+            'gear': self.command.gear
+        }
+
+    def __setstate__(self, state):
+        self.command = VehicleControl(state['throttle'], state['steer'], state['brake'], state['hand_brake'],
+                                      state['reverse'], state['manual_gear_shift'], state['gear'])
 
 
 # from vehicle to mec
