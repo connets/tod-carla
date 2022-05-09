@@ -23,7 +23,6 @@ class TeleContext:
         timing_event.event()
 
     def schedule(self, event, s):
-        print(event.__name__, self._timestamp, self._timestamp + s)
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         self._queue.put(self.TimingEvent(event, self._timestamp + s))
 

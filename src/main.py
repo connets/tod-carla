@@ -1,3 +1,4 @@
+import random
 from copy import deepcopy
 
 import carla
@@ -26,8 +27,8 @@ from src.utils.utils import find_free_port
 def parse_configurations():
     res = dict()
     conf_files = my_parser.parse_configuration_files()
-    res['carla_server_conf'] = my_parser.parse_carla_server_args(conf_files['carla_server_file'])
-    res['carla_simulation_conf'] = my_parser.parse_carla_simulation_args(conf_files['carla_simulation_file'])
+    res['carla_simulation_file'] = my_parser.parse_carla_server_args(conf_files['carla_simulation_file'])
+    res['carla_scenario_file'] = my_parser.parse_carla_simulation_args(conf_files['carla_scenario_file'])
     return res
 
 
@@ -61,6 +62,29 @@ def create_sim_world(host, port, timeout, world, sync, time_step=None):
     return sim_world
 
 
+def create_route(tele_world, scenario_conf):
+    carla_map = tele_world.carla_map
+    if 'route' in scenario_conf:
+        for spawn_point in carla_map.get_spawn_points():
+            if abs(72.794968 - spawn_point.location.x) < 6:
+                print(spawn_point)
+        start_transform = Transform(
+            Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],
+                     z=scenario_conf['route']['start']['z']),
+            Rotation(pitch=scenario_conf['route']['start']['pitch'],
+                     yaw=scenario_conf['route']['start']['yaw'],
+                     roll=scenario_conf['route']['start']['roll']))
+        destination_location = Location(x=scenario_conf['route']['end']['x'],
+                                        y=scenario_conf['route']['end']['y'],
+                                        z=scenario_conf['route']['end']['z'])
+    else:
+        spawn_points = carla_map.get_spawn_points()
+        start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
+        destination_location = random.choice(spawn_points).location
+
+    return start_transform, destination_location
+
+
 def main():
     """
     get configurations for simulation:
@@ -70,37 +94,28 @@ def main():
 
     TeleLogger()
     configurations = parse_configurations()
-    carla_server_conf = configurations['carla_server_conf']
-    carla_simulation_conf = configurations['carla_simulation_conf']
+    simulation_conf = configurations['carla_simulation_file']
+    scenario_conf = configurations['carla_scenario_file']
 
-    display = create_display(carla_simulation_conf)
+    display = create_display(simulation_conf)
 
-    sim_world = create_sim_world(carla_server_conf['host'], carla_server_conf['port'], carla_server_conf['timeout'],
-                                 carla_simulation_conf['world'], carla_simulation_conf['synchronicity'],
-                                 carla_simulation_conf['time_step'] if 'time_step' in carla_simulation_conf else None)
+    sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
+                                 scenario_conf['world'], simulation_conf['synchronicity'],
+                                 simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
 
     def elapsed_seconds():
         return round(sim_world.get_snapshot().timestamp.elapsed_seconds * 1000, 3)
 
     TeleContext(elapsed_seconds)
 
-    start_transform = Transform(
-        Location(x=carla_simulation_conf['route']['start']['x'], y=carla_simulation_conf['route']['start']['y'],
-                 z=carla_simulation_conf['route']['start']['z']),
-        Rotation(pitch=carla_simulation_conf['route']['start']['pitch'],
-                 yaw=carla_simulation_conf['route']['start']['yaw'],
-                 roll=carla_simulation_conf['route']['start']['roll']))
-    destination_location = Location(x=carla_simulation_conf['route']['end']['x'],
-                                    y=carla_simulation_conf['route']['end']['y'],
-                                    z=carla_simulation_conf['route']['end']['z'])
-
     # traffic_manager = client.get_trafficmanager()
 
-    tele_world: TeleWorld = TeleWorld(sim_world, carla_simulation_conf)
+    tele_world: TeleWorld = TeleWorld(sim_world, simulation_conf['synchronicity'])
 
+    start_transform, destination_location = create_route(tele_world, scenario_conf)
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('127.0.0.1', 28007, carla_simulation_conf['synchronicity'], 0.03,
-                              carla_simulation_conf['vehicle_player'],
+    player = TeleCarlaVehicle('127.0.0.1', 28007, simulation_conf['synchronicity'], 0.03,
+                              scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
                               modify_vehicle_physics=True)
@@ -110,15 +125,15 @@ def main():
     # controller = BasicAgentTeleWorldController()
     clock = pygame.time.Clock()
 
-    hud = HUD(tele_world, player, clock, carla_simulation_conf['camera']['width'],
-              carla_simulation_conf['camera']['height'])
+    hud = HUD(tele_world, player, clock, simulation_conf['camera']['width'],
+              simulation_conf['camera']['height'])
     camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720)
     player.attach_sensor(camera_sensor)
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
     tele_operator = TeleOperator('127.0.0.1', find_free_port(), controller)
     mec = TeleMEC('127.0.0.1', find_free_port())
 
-    if carla_simulation_conf['synchronicity']:
+    if simulation_conf['synchronicity']:
         vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.0), 0.1)
         operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.0), 0.1)
     else:
@@ -129,10 +144,6 @@ def main():
     tele_operator.add_channel(operator_vehicle_channel)
 
     tele_context = TeleContext(tele_world.timestamp.elapsed_seconds)
-
-
-
-
 
     # player.set_context(tele_context)
     # player.start(tele_world)
@@ -177,6 +188,7 @@ def main():
     # camera_sensor.spawn_in_the_world(sim_world)
 
     def render(_):
+        print(player.get_transform())
         camera_sensor.render(display)
         hud.render(display)
         pygame.display.flip()
@@ -186,7 +198,7 @@ def main():
     tele_sim.add_tick_listener(hud.tick)
     controller.add_player_in_world(player)
 
-    tele_sim.do_simulation(carla_simulation_conf['synchronicity'])
+    tele_sim.do_simulation(simulation_conf['synchronicity'])
 
     # exit = False
     # try:

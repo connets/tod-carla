@@ -36,7 +36,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
         # self._controller.add_player_in_world(self)
         if self._sync:
             def daemon_state():
-                print("**********")
 
                 self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
                                                            timestamp=self._tele_context.timestamp))
