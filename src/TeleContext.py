@@ -1,8 +1,5 @@
 from queue import PriorityQueue
 
-from src.TeleLogger import TeleLogger
-from src.utils.decorators import Singleton
-
 
 class TeleContext:
     def __init__(self, initial_timestamp):
@@ -18,7 +15,7 @@ class TeleContext:
 
     def run_next_event(self):
         timing_event = self._queue.get()
-        TeleLogger.event_logger.write(timing_event.timestamp, timing_event.event)
+        # TeleLogger.event_logger.write(timing_event.timestamp, timing_event.event)
         self._timestamp = timing_event.timestamp
         timing_event.event()
 

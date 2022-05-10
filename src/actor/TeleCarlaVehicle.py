@@ -31,7 +31,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self._sensors = set()
 
-    def run(self, tele_world):
+    def run(self):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
         if self._sync:

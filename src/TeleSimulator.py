@@ -1,20 +1,24 @@
 import threading
 
+from src.TeleContext import TeleContext
+from src.actor.TeleCarlaActor import TeleCarlaActor
+
 
 class TeleSimulator:
-    def __init__(self, tele_world, tele_context, clock):
+    def __init__(self, tele_world, clock):
         self._tele_world = tele_world
-        self._tele_context = tele_context
         self._clock = clock
+
+        self._tele_context = TeleContext(tele_world.timestamp.elapsed_seconds)
         self._step_callbacks = set()
-        self._nodes = set()
+        self._actors = []
 
     @property
     def tele_world(self):
         return self._tele_world
 
-    def add_network_node(self, *network_nodes):
-        self._nodes.update(network_nodes)
+    def add_actor(self, *actors):
+        self._actors += actors
 
     def add_tick_listener(self, callback):
         self._tele_world.add_tick_listener(callback)
@@ -23,9 +27,11 @@ class TeleSimulator:
         self._step_callbacks.add(callback)
 
     def start(self):
-        for actor in self._nodes:
+        for actor in self._actors:
             actor.set_context(self._tele_context)
-            actor.start(self._tele_world)
+            if isinstance(actor, TeleCarlaActor):
+                actor.spawn_in_the_world(self._tele_world)
+            actor.start()
 
     def do_simulation(self, sync):
         if sync:

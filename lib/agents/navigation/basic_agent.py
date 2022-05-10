@@ -139,8 +139,11 @@ class BasicAgent(object):
         end_waypoint = self._map.get_waypoint(end_location)
 
         route_trace = self.trace_route(start_waypoint, end_waypoint)
+        waypoints = [{'x': item[0].transform.location.x, 'y': item[0].transform.location.y,
+                      'z': item[0].transform.location.z} for item in route_trace]
         # for loc in [trace[0].transform.location for trace in route_trace]: print(loc)
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
+        return waypoints
 
     def set_global_plan(self, plan, stop_waypoint_creation=True, clean_queue=True):
         """
@@ -280,7 +283,8 @@ class BasicAgent(object):
             return (False, None, -1)
 
         if not vehicle_list:
-            vehicle_list = [v for v in self._world.get_actors().filter("*vehicle*") if v.id != self._last_vehicle_state.id]
+            vehicle_list = [v for v in self._world.get_actors().filter("*vehicle*") if
+                            v.id != self._last_vehicle_state.id]
 
         if not max_distance:
             max_distance = self._base_vehicle_threshold

@@ -1,6 +1,5 @@
 import threading
 
-from src.TeleLogger import TeleLogger
 from src.network.NetworkMessage import InstructionNetworkMessage
 from src.network.NetworkNode import NetworkNode
 
@@ -16,7 +15,7 @@ class TeleOperator(NetworkNode):
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
         command = self._controller.do_action(tele_vehicle_state)
         self.send_message(InstructionNetworkMessage(command))
-        TeleLogger.network_logger.write('I AM tele operator and i received a message')
+        # TeleLogger.network_logger.write('I AM tele operator and i received a message')
 
 
 

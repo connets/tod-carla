@@ -208,6 +208,7 @@ class LocalPlanner(object):
 
         for elem in current_plan:
             self._waypoints_queue.append(elem)
+        print("*******", len(self._waypoints_queue))
 
         self._stop_waypoint_creation = stop_waypoint_creation
 
@@ -227,9 +228,6 @@ class LocalPlanner(object):
             self._compute_next_waypoints(k=self._min_waypoint_queue_length)
 
         # Purge the queue of obsolete waypoints
-        print('vehicle', self._last_vehicle_state.get_transform().location)
-        print('state', self._last_vehicle_state.get_location())
-        print("wrong: ", '*' * 2 if self._last_vehicle_state.get_transform().location != self._last_vehicle_state.get_location() else '')
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
         self._min_distance = self._base_min_distance + 0.5 * vehicle_speed

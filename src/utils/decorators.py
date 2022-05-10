@@ -18,7 +18,7 @@ def needs_member(member, valid=lambda x: x is not None):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
             if not valid(getattr(ref, member)):
-                raise Exception(f"{member} is not in a valid state to calls the method {method.__name__}")
+                raise Exception(f"You need {member} to call method {method.__name__}")
             return method(ref, *args, **kwargs)
 
         return validation
@@ -38,7 +38,21 @@ def synchronized(lock: threading.RLock):
     return _decorator
 
 
-class Singleton:
+class Singleton(type):
+    _instances = {}
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__()
+        print("èciao")
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class OldSingleton:
     def __init__(self, decorated_type):
         self._decorated_type = decorated_type
         self._instance = None
@@ -60,4 +74,3 @@ class Singleton:
     def destroy(self):
         del self._instance
         self._instance = None
-

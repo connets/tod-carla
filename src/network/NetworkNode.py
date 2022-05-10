@@ -2,13 +2,15 @@ import socket
 from abc import ABC
 from typing import List
 
+from src.actor.TeleActor import TeleActor
 from src.network.NetworkChannel import NetworkChannel
 from src.utils.decorators import needs_member
 
 
-class NetworkNode(ABC):
+class NetworkNode(TeleActor):
 
     def __init__(self, host, port):
+        super().__init__()
         self.host = host
         self.port = port
         # self._network_delay_manager = NetworkChannel()
@@ -30,11 +32,11 @@ class NetworkNode(ABC):
         for channel in self._channels:
             channel.quit()
 
-    def run(self, tele_world):
+    def run(self):
         ...
 
     @needs_member('_tele_context')
-    def start(self, tele_world):
+    def start(self):
         for channel in self._channels:
             channel.start(self._tele_context)
-        self.run(tele_world)
+        super(NetworkNode, self).start()
