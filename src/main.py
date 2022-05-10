@@ -7,7 +7,7 @@ import yaml
 from carla import libcarla, Transform, Location, Rotation
 
 from src.TeleContext import TeleContext
-from src.TeleOutputWriter import PeriodicDataCollector
+from src.TeleOutputWriter import PeriodicDataCollectorActor, DataCollector
 from src.TeleSimulator import TeleSimulator
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
@@ -163,21 +163,24 @@ def main():
 
     # tele_world.start()
 
-    data_collector = PeriodicDataCollector(CURRENT_OUT_PATH + "sensors.csv", 0.3,
-                                           {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
-                                            'velocity_x': lambda: round(player.get_velocity().x, 5),
-                                            'velocity_y': lambda: round(player.get_velocity().y, 5),
-                                            'velocity_z': lambda: round(player.get_velocity().z, 5),
-                                            'acceleration_x': lambda: round(player.get_acceleration().x, 5),
-                                            'acceleration_y': lambda: round(player.get_acceleration().y, 5),
-                                            'acceleration_z': lambda: round(player.get_acceleration().z, 5),
-                                            # 'altitude': lambda: round(gnss_sensor.altitude, 5),
-                                            # 'longitude': lambda: round(gnss_sensor.longitude, 5),
-                                            # 'latitude': lambda: round(gnss_sensor.latitude, 5),
-                                            'throttle': lambda: round(player.get_control().throttle, 5),
-                                            'steer': lambda: round(player.get_control().steer, 5),
-                                            'brake': lambda: round(player.get_control().brake, 5)
-                                            })
+    data_collector = PeriodicDataCollectorActor(CURRENT_OUT_PATH + "sensors.csv",
+                                                {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
+                                                 'velocity_x': lambda: round(player.get_velocity().x, 5),
+                                                 'velocity_y': lambda: round(player.get_velocity().y, 5),
+                                                 'velocity_z': lambda: round(player.get_velocity().z, 5),
+                                                 'acceleration_x': lambda: round(player.get_acceleration().x, 5),
+                                                 'acceleration_y': lambda: round(player.get_acceleration().y, 5),
+                                                 'acceleration_z': lambda: round(player.get_acceleration().z, 5),
+                                                 'location_x': lambda: round(player.get_location().x, 5),
+                                                 'location_y': lambda: round(player.get_location().y, 5),
+                                                 'location_z': lambda: round(player.get_location().z, 5),
+                                                 # 'altitude': lambda: round(gnss_sensor.altitude, 5),
+                                                 # 'longitude': lambda: round(gnss_sensor.longitude, 5),
+                                                 # 'latitude': lambda: round(gnss_sensor.latitude, 5),
+                                                 # 'throttle': lambda: round(player.get_control().throttle, 5),
+                                                 # 'steer': lambda: round(player.get_control().steer, 5),
+                                                 # 'brake': lambda: round(player.get_control().brake, 5)
+                                                 }, 0.3)
 
     # data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     #
@@ -198,6 +201,11 @@ def main():
     tele_sim.add_tick_listener(render)
     tele_sim.add_tick_listener(hud.tick)
     controller.add_player_in_world(player)
+    waypoints = controller.get_trajectory()
+    x, y, z = map(lambda it: lambda: next(it), map(iter, [*zip(*[item.values() for item in waypoints])]))
+    optimal_trajectory_collector = DataCollector(CURRENT_OUT_PATH + 'optimal_trajectory.csv', {'x': x, 'y': y, 'z': z})
+    for _ in range(len(waypoints)):
+        optimal_trajectory_collector.write()
 
     tele_sim.do_simulation(simulation_conf['synchronicity'])
 

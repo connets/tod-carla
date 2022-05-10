@@ -46,6 +46,7 @@ from enum import Enum
 
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.behavior_agent import BehaviorAgent
+from src.utils.decorators import needs_member
 
 
 class TeleController(ABC):
@@ -67,6 +68,9 @@ class TeleController(ABC):
 
     def update_vehicle_state(self, tele_vehicle_state):
         self._tele_vehicle_state = tele_vehicle_state
+
+    def get_trajectory(self):
+        return None
 
 
 class KeyboardTeleWorldController(TeleController):
@@ -295,11 +299,13 @@ class BehaviorAgentTeleWorldController(TeleController):
         self._destination_location = destination_location
         self._player = None
         self.carla_agent = None
+        self._waypoints = None
 
     def add_player_in_world(self, player):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
-        self.carla_agent.set_destination(self._destination_location, start_location=self._start_location)
+        self._waypoints = self.carla_agent.set_destination(self._destination_location,
+                                                           start_location=self._start_location)
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
@@ -314,3 +320,7 @@ class BehaviorAgentTeleWorldController(TeleController):
         control = self.carla_agent.run_step(True)
         control.manual_gear_shift = False
         return control
+
+    @needs_member('carla_agent')
+    def get_trajectory(self):
+        return self._waypoints
