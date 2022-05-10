@@ -29,8 +29,10 @@ def parse_configurations():
     conf_files = my_parser.parse_configuration_files()
     res['carla_simulation_file'] = my_parser.parse_carla_server_args(conf_files['carla_simulation_file'])
     res['carla_scenario_file'] = my_parser.parse_carla_simulation_args(conf_files['carla_scenario_file'])
-    with open('carla_simulation_file.yaml', 'w') as outfile:
+    with open(CURRENT_OUT_PATH + 'carla_simulation_file.yaml', 'w') as outfile:
         yaml.dump(res['carla_simulation_file'], outfile, default_flow_style=False)
+    with open(CURRENT_OUT_PATH + 'carla_scenario_file.yaml', 'w') as outfile:
+        yaml.dump(res['carla_scenario_file'], outfile, default_flow_style=False)
     return res
 
 
@@ -161,7 +163,7 @@ def main():
 
     # tele_world.start()
 
-    data_collector = PeriodicDataCollector(CURRENT_OUT_PATH + "tmp3.csv", 0.3,
+    data_collector = PeriodicDataCollector(CURRENT_OUT_PATH + "sensors.csv", 0.3,
                                            {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
                                             'velocity_x': lambda: round(player.get_velocity().x, 5),
                                             'velocity_y': lambda: round(player.get_velocity().y, 5),
@@ -172,9 +174,9 @@ def main():
                                             # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                                             # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                                             # 'latitude': lambda: round(gnss_sensor.latitude, 5),
-                                            'Throttle': lambda: round(player.get_control().throttle, 5),
-                                            'Steer': lambda: round(player.get_control().steer, 5),
-                                            'Brake': lambda: round(player.get_control().brake, 5)
+                                            'throttle': lambda: round(player.get_control().throttle, 5),
+                                            'steer': lambda: round(player.get_control().steer, 5),
+                                            'brake': lambda: round(player.get_control().brake, 5)
                                             })
 
     # data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
