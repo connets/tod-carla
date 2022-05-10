@@ -1,21 +1,9 @@
 world: Town01_Opt
 vehicle_player: vehicle.tesla.model3
-
-synchronicity: true
-time_step: 50ms. #milliseconds
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
-camera:
-  width: 1280
-  height: 720
 route:
   start:
-#    x: 357.599884
-#    y: 2.080980
-#    z: 0.001737
-#    pitch: -0.000676
-#    yaw: 1.325315
-#    roll: -0.000061
     x: 396.449982
     y: 87.529510
     z: 0.3
@@ -23,9 +11,6 @@ route:
     yaw: -90.000298
     roll: 0.
   end:
-#    x: 392.
-#    y: 45.
-#    z: 0.001
     x: 359.
     y: -2.
     z: 0.

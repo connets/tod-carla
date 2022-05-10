@@ -3,10 +3,11 @@ from copy import deepcopy
 
 import carla
 import pygame
+import yaml
 from carla import libcarla, Transform, Location, Rotation
 
-from src.TeleLogger import TeleLogger
 from src.TeleContext import TeleContext
+from src.TeleOutputWriter import PeriodicDataCollector
 from src.TeleSimulator import TeleSimulator
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
@@ -14,9 +15,8 @@ from src.actor.TeleCarlaVehicle import TeleCarlaVehicle
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleGnssSensor
 from src.args_parse import my_parser
 from src.carla_bridge.TeleWorld import TeleWorld
-from src.folder_path import OUT_PATH
+from src.folder_path import CURRENT_OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
-from src.utils.PeriodicDataCollector import PeriodicDataCollector
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
     BasicAgentTeleWorldController
@@ -29,6 +29,8 @@ def parse_configurations():
     conf_files = my_parser.parse_configuration_files()
     res['carla_simulation_file'] = my_parser.parse_carla_server_args(conf_files['carla_simulation_file'])
     res['carla_scenario_file'] = my_parser.parse_carla_simulation_args(conf_files['carla_scenario_file'])
+    with open('carla_simulation_file.yaml', 'w') as outfile:
+        yaml.dump(res['carla_simulation_file'], outfile, default_flow_style=False)
     return res
 
 
@@ -65,9 +67,9 @@ def create_sim_world(host, port, timeout, world, sync, time_step=None):
 def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
-        for spawn_point in carla_map.get_spawn_points():
-            if abs(72.794968 - spawn_point.location.x) < 6:
-                print(spawn_point)
+        # for spawn_point in carla_map.get_spawn_points():
+        #     if abs(72.794968 - spawn_point.location.x) < 6:
+        #         print(spawn_point)
         start_transform = Transform(
             Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],
                      z=scenario_conf['route']['start']['z']),
@@ -92,7 +94,6 @@ def main():
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
-    TeleLogger()
     configurations = parse_configurations()
     simulation_conf = configurations['carla_simulation_file']
     scenario_conf = configurations['carla_scenario_file']
@@ -134,16 +135,14 @@ def main():
     mec = TeleMEC('127.0.0.1', find_free_port())
 
     if simulation_conf['synchronicity']:
-        vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.0), 0.1)
-        operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.0), 0.1)
+        vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.15), 0.1)
+        operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.15), 0.1)
     else:
         vehicle_operator_channel = TcNetworkInterface(tele_operator, delay_family_to_func['constant'](0.1), 0.1, 'lo')
         operator_vehicle_channel = TcNetworkInterface(player, delay_family_to_func['constant'](0.1), 0.1, 'lo')
 
     player.add_channel(vehicle_operator_channel)
     tele_operator.add_channel(operator_vehicle_channel)
-
-    tele_context = TeleContext(tele_world.timestamp.elapsed_seconds)
 
     # player.set_context(tele_context)
     # player.start(tele_world)
@@ -162,7 +161,7 @@ def main():
 
     # tele_world.start()
 
-    data_collector = PeriodicDataCollector(OUT_PATH + "tmp.csv",
+    data_collector = PeriodicDataCollector(CURRENT_OUT_PATH + "tmp3.csv", 0.3,
                                            {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
                                             'velocity_x': lambda: round(player.get_velocity().x, 5),
                                             'velocity_y': lambda: round(player.get_velocity().y, 5),
@@ -180,15 +179,15 @@ def main():
 
     # data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     #
-    tele_sim = TeleSimulator(tele_world, tele_context, clock)
-    tele_sim.add_network_node(player)
-    tele_sim.add_network_node(mec)
-    tele_sim.add_network_node(tele_operator)
+    tele_sim = TeleSimulator(tele_world, clock)
+    tele_sim.add_actor(player)
+    tele_sim.add_actor(mec)
+    tele_sim.add_actor(tele_operator)
+    tele_sim.add_actor(data_collector)
 
     # camera_sensor.spawn_in_the_world(sim_world)
 
     def render(_):
-        print(player.get_transform())
         camera_sensor.render(display)
         hud.render(display)
         pygame.display.flip()
@@ -199,39 +198,6 @@ def main():
     controller.add_player_in_world(player)
 
     tele_sim.do_simulation(simulation_conf['synchronicity'])
-
-    # exit = False
-    # try:
-    #     while not exit:
-    #         ...
-    #         # network_delay.tick()
-    #         clock.tick()
-    #         exit = tele_world.tick(clock) != 0
-    #         # hud.tick(tele_world, player, clock)
-    #
-    #         camera_sensor.render(display)
-    #         hud.render(display)
-    #         pygame.display.flip()
-    #
-    #         # player.tick()
-    #         # tele_operator.tick()
-    #         # mec.tick()
-    #
-    #         # command = controller.do_action()
-    #         # if command is None:
-    #         #     return -1
-    #         # player.apply_control(command)
-    #
-    #         # TeleContext.instance.tick()
-    #         # data_collector.tick()
-    #         print(player.get_location())
-    # # exit = i == 1000 | exit
-    #
-    # # TODO destroy everything
-    # finally:
-    #     # network_delay.finish()
-    #     pygame.quit()
-    #     tele_world.destroy()
 
 
 if __name__ == '__main__':

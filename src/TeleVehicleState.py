@@ -11,7 +11,6 @@ class TeleVehicleState:
 
     @staticmethod
     def generate_current_state(vehicle):
-        print(vehicle.get_transform().location)
         return TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(), vehicle.get_speed_limit(),
                                 vehicle.bounding_box)
 

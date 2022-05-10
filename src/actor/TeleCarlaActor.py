@@ -7,7 +7,3 @@ class TeleCarlaActor(NetworkNode):
 
     def spawn_in_the_world(self, tele_world):
         ...
-
-    def start(self, tele_world):
-        self.spawn_in_the_world(tele_world)
-        super().start(tele_world)
