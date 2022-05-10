@@ -28,6 +28,12 @@ class TeleSimulator:
             actor.start(self._tele_world)
 
     def do_simulation(self, sync):
+        if sync:
+            self._do_sync_simulation()
+        else:
+            self._do_async_simulation()
+
+    def _do_sync_simulation(self):
         finish = False
 
         while not finish:
@@ -45,3 +51,16 @@ class TeleSimulator:
             # print(sim_world.get_snapshot().timestamp)
 
         return
+
+    def _do_async_simulation(self):
+        finish = False
+
+        while not finish:
+            simulator_timestamp = round(self._tele_context.timestamp, 6)
+            self._clock.tick()
+            self._tele_world.tick(self._clock)
+
+            for callback in self._step_callbacks: callback()
+
+            while self._tele_world.timestamp.elapsed_seconds > self._tele_context.next_timestamp_event():
+                self._tele_context.run_next_event()

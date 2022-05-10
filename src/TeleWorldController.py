@@ -86,7 +86,7 @@ class KeyboardTeleWorldController(TeleController):
     def add_player_in_world(self, player):
         self._world = player.get_world()
 
-    def do_action(self):
+    def do_action(self, vehicle_state=None):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 return None

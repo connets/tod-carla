@@ -1,0 +1,10 @@
+host: ubiquity
+port: 3000
+timeout: 4
+camera:
+  width: 1280
+  height: 720
+synchronicity: true
+time_step: 50ms. #milliseconds
+
+

@@ -14,7 +14,7 @@ class TeleContext:
         return self._timestamp
 
     def next_timestamp_event(self):
-        return self._queue[0].timestamp if not self._queue.empty() else None
+        return self._queue.queue[0].timestamp if not self._queue.empty() else None
 
     def run_next_event(self):
         timing_event = self._queue.get()
@@ -23,7 +23,6 @@ class TeleContext:
         timing_event.event()
 
     def schedule(self, event, s):
-        print(event.__name__, self._timestamp, self._timestamp + s)
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         self._queue.put(self.TimingEvent(event, self._timestamp + s))
 

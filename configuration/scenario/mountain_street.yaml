@@ -1,0 +1,17 @@
+world: Town07_Opt
+vehicle_player: vehicle.tesla.model3
+bot:
+  vehicle_model: vehicle.tesla.model3 #TODO change this
+route:
+  start:
+
+    x: 72.062538
+    y: -6.896622
+    z: 0.500000
+    pitch: 0.953050
+    yaw: -62.641914
+    roll: 0.
+  end:
+    x: 21.
+    y: -237.
+    z: 0.

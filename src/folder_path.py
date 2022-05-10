@@ -4,7 +4,7 @@ PROJECT_PATH = ''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/
 
 
 CONFIGURATION_FILE_PATH = PROJECT_PATH + 'configuration/'
-CONFIGURATION_ROUTE_PATH = CONFIGURATION_FILE_PATH + 'route/'
+CONFIGURATION_SCENARIO_PATH = CONFIGURATION_FILE_PATH + 'scenario/'
 SRC_PATH = PROJECT_PATH + 'src/'
 
 OUT_PATH = PROJECT_PATH + 'out/'
