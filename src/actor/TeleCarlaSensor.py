@@ -11,11 +11,12 @@ from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkNode import NetworkNode
 
 
-class TeleCarlaSensor:
+class TeleCarlaSensor(ABC):
 
     def stop(self):
         ...
 
+    @abstractmethod
     def destroy(self):
         ...
 
@@ -188,6 +189,9 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         if self.surface is not None:
             display.blit(self.surface, (0, 0))
 
+    def destroy(self):
+        self.sensor.destroy()
+        
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
@@ -241,6 +245,7 @@ class TeleGnssSensor(TeleCarlaSensor):
         self.sensor.stop()
 
     def destroy(self):
+        print("*********" * 5)
         self.sensor.destroy()
         self.sensor = None
         self.index = None

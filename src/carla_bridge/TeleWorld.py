@@ -107,22 +107,8 @@ class TeleWorld:
         #                                0.01)  # TODO change delay hardcoded here
         # self.player.apply_control(command)
 
-    def render(self, display):
-        """Render world"""
-        for sensor in self._sensors:
-            if isinstance(sensor, TeleCarlaRenderingSensor):
-                sensor.render(display)
-
-        # self.camera_manager.render(display)
-        # self.hud.render(display)
-
-    def destroy(self):
-        for sensor in self._sensors:
-            if sensor is not None:
-                sensor.stop()
-                sensor.destroy()
-        # if self.player is not None:
-        #     self.player.destroy()
+    def quit(self):
+        self._tick_callbacks.clear()
 
     @property
     def timestamp(self):

@@ -709,90 +709,88 @@ def game_loop(args):
     pygame.font.init()
     world = None
 
-    try:
-        if args.seed:
-            random.seed(args.seed)
+    if args.seed:
+        random.seed(args.seed)
 
-        client = carla.Client(args.host, args.port)
-        client.set_timeout(8.0)
+    client = carla.Client(args.host, args.port)
+    client.set_timeout(8.0)
 
 
-        traffic_manager = client.get_trafficmanager()
-        sim_world = client.load_world('Town01_Opt')
+    traffic_manager = client.get_trafficmanager()
+    sim_world = client.load_world('Town01_Opt')
 
+    if args.sync:
+        settings = sim_world.get_settings()
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = 0.05
+        sim_world.apply_settings(settings)
+
+        traffic_manager.set_synchronous_mode(True)
+
+    display = pygame.display.set_mode(
+        (args.width, args.height),
+        pygame.HWSURFACE | pygame.DOUBLEBUF)
+
+    hud = HUD(args.width, args.height)
+    world = World(client.get_world(), hud, args)
+    controller = KeyboardControl(world)
+    if args.agent == "Basic":
+        agent = BasicAgent(world.player)
+    else:
+        agent = BehaviorAgent(world.player, behavior=args.behavior)
+
+    # Set the agent destination
+
+    destination_position = Location(x=359., y=-2., z=0.3)
+
+    spawn_points = world.map.get_spawn_points()
+    destination = random.choice(spawn_points).location
+
+    destination = destination_position
+
+    agent.set_destination(destination)
+
+    clock = pygame.time.Clock()
+
+    while True:
+        agent.update_vehicle_state(world.player)
+        clock.tick()
         if args.sync:
-            settings = sim_world.get_settings()
-            settings.synchronous_mode = True
-            settings.fixed_delta_seconds = 0.05
-            sim_world.apply_settings(settings)
-
-            traffic_manager.set_synchronous_mode(True)
-
-        display = pygame.display.set_mode(
-            (args.width, args.height),
-            pygame.HWSURFACE | pygame.DOUBLEBUF)
-
-        hud = HUD(args.width, args.height)
-        world = World(client.get_world(), hud, args)
-        controller = KeyboardControl(world)
-        if args.agent == "Basic":
-            agent = BasicAgent(world.player)
+            world.world.tick()
         else:
-            agent = BehaviorAgent(world.player, behavior=args.behavior)
+            world.world.wait_for_tick()
+        if controller.parse_events():
+            return
 
-        # Set the agent destination
+        world.tick(clock)
+        world.render(display)
+        pygame.display.flip()
 
-        destination_position = Location(x=359., y=-2., z=0.3)
-
-        spawn_points = world.map.get_spawn_points()
-        destination = random.choice(spawn_points).location
-
-        destination = destination_position
-
-        agent.set_destination(destination)
-
-        clock = pygame.time.Clock()
-
-        while True:
-            agent.update_vehicle_state(world.player)
-            clock.tick()
-            if args.sync:
-                world.world.tick()
+        if agent.done():
+            if args.loop:
+                agent.set_destination(random.choice(spawn_points).location)
+                world.hud.notification("The target has been reached, searching for another target", seconds=4.0)
+                print("The target has been reached, searching for another target")
             else:
-                world.world.wait_for_tick()
-            if controller.parse_events():
-                return
+                print("The target has been reached, stopping the simulation")
+                break
 
-            world.tick(clock)
-            world.render(display)
-            pygame.display.flip()
+        control = agent.run_step(True)
+        print(world.player.get_location())
+        control.manual_gear_shift = False
+        world.player.apply_control(control)
 
-            if agent.done():
-                if args.loop:
-                    agent.set_destination(random.choice(spawn_points).location)
-                    world.hud.notification("The target has been reached, searching for another target", seconds=4.0)
-                    print("The target has been reached, searching for another target")
-                else:
-                    print("The target has been reached, stopping the simulation")
-                    break
 
-            control = agent.run_step(True)
-            print(world.player.get_location())
-            control.manual_gear_shift = False
-            world.player.apply_control(control)
+    if world is not None:
+        settings = world.world.get_settings()
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        world.world.apply_settings(settings)
+        traffic_manager.set_synchronous_mode(True)
 
-    finally:
+        world.destroy()
 
-        if world is not None:
-            settings = world.world.get_settings()
-            settings.synchronous_mode = False
-            settings.fixed_delta_seconds = None
-            world.world.apply_settings(settings)
-            traffic_manager.set_synchronous_mode(True)
-
-            world.destroy()
-
-        pygame.quit()
+    pygame.quit()
 
 
 # ==============================================================================

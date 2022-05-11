@@ -63,3 +63,8 @@ class InfoUpdateNetworkMessage(NetworkMessage):
 class AugmentedInfoUpdateNetworkMessage(NetworkMessage):
     def action(self, destination):
         ...
+
+
+class ArrivedToDestinationNetworkMessage(NetworkMessage):
+    def action(self, destination):
+        destination.arrived()

@@ -5,6 +5,7 @@ class TeleContext:
     def __init__(self, initial_timestamp):
         self._queue = PriorityQueue()
         self._timestamp = initial_timestamp
+        self._finished = False
 
     @property
     def timestamp(self):
@@ -19,9 +20,16 @@ class TeleContext:
         self._timestamp = timing_event.timestamp
         timing_event.event()
 
+    def has_scheduled_events(self):
+        return not self._queue.empty()
+
     def schedule(self, event, s):
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
-        self._queue.put(self.TimingEvent(event, self._timestamp + s))
+        if not self._finished:
+            self._queue.put(self.TimingEvent(event, self._timestamp + s))
+
+    def finish(self):
+        self._finished = True
 
     class TimingEvent:
         def __init__(self, event, timestamp):

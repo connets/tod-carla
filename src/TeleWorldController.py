@@ -62,6 +62,10 @@ class TeleController(ABC):
     def do_action(self, vehicle_state=None):
         ...
 
+    @abstractmethod
+    def done(self):
+        ...
+
     @staticmethod
     def _is_quit_shortcut(key):
         return (key == K_ESCAPE) or (key == K_q and pygame.key.get_mods() & KMOD_CTRL)
@@ -75,6 +79,7 @@ class TeleController(ABC):
 
 class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
+
 
     def __init__(self, camera_manager, clock):
         # self._autopilot_enabled = start_in_autopilot
@@ -269,6 +274,8 @@ class KeyboardTeleWorldController(TeleController):
         self._control.steer = round(self._steer_cache, 1)
         self._control.hand_brake = keys[K_SPACE]
 
+    def done(self):
+        return False
 
 class BasicAgentTeleWorldController(TeleController):
 
@@ -288,6 +295,9 @@ class BasicAgentTeleWorldController(TeleController):
         control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control
+
+    def done(self):
+        return self.carla_agent.done()
 
 
 class BehaviorAgentTeleWorldController(TeleController):
@@ -324,3 +334,6 @@ class BehaviorAgentTeleWorldController(TeleController):
     @needs_member('carla_agent')
     def get_trajectory(self):
         return self._waypoints
+
+    def done(self):
+        return self.carla_agent.done()

@@ -208,7 +208,6 @@ class LocalPlanner(object):
 
         for elem in current_plan:
             self._waypoints_queue.append(elem)
-        print("*******", len(self._waypoints_queue))
 
         self._stop_waypoint_creation = stop_waypoint_creation
 
@@ -220,6 +219,7 @@ class LocalPlanner(object):
         :param debug: boolean flag to activate waypoints debugging
         :return: control to be applied
         """
+
         if self._follow_speed_limits:
             self._target_speed = self._last_vehicle_state.get_speed_limit()
 
@@ -237,6 +237,7 @@ class LocalPlanner(object):
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
                 min_distance = 1  # Don't remove the last waypoint until very close by
+                min_distance = 1.5  # Don't remove the last waypoint until very close by
             else:
                 min_distance = self._min_distance
 
@@ -263,7 +264,6 @@ class LocalPlanner(object):
 
         if debug:
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
-
         return control
 
     def get_incoming_waypoint_and_direction(self, steps=3):

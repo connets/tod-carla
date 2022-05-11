@@ -42,10 +42,10 @@ class TeleSimulator:
     def _do_sync_simulation(self):
         finish = False
 
-        while not finish:
+        while self._tele_context.has_scheduled_events():
             # network_delay.tick()
             simulator_timestamp = round(self._tele_context.timestamp, 6)
-            while not finish and simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
+            while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
                 self._tele_world.tick(self._clock)
 
@@ -56,7 +56,9 @@ class TeleSimulator:
             # data_collector.tick()
             # print(sim_world.get_snapshot().timestamp)
 
-        return
+        self._tele_world.quit()
+        for actor in self._actors:
+            actor.quit()
 
     def _do_async_simulation(self):
         finish = False

@@ -31,6 +31,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self._sensors = set()
 
+        self._sending_info_thread = None
+
     def run(self):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
@@ -49,8 +51,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
                                                                timestamp=self._tele_context.timestamp))
                     sleep(self._sending_interval)
 
-            sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
-            sending_info_thread.start()
+            self._sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
+            self._sending_info_thread.start()
 
     def attach_sensor(self, tele_carla_sensor):
         self._sensors.add(tele_carla_sensor)
@@ -109,3 +111,12 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     def receive_instruction_network_message(self, command):
         self.apply_control(command)
+
+    def quit(self):
+        if self._sending_info_thread is not None:
+            self._sending_info_thread.exit()
+        for sensor in self._sensors:
+            sensor.destroy()
+        self.model.destroy()
+
+

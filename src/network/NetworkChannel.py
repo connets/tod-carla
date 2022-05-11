@@ -47,7 +47,7 @@ class NetworkChannel(ABC):
         ...
 
 
-class PhysicNetworkChannel(NetworkChannel):
+class PhysicNetworkChannel(NetworkChannel, ABC):
     def __init__(self, destination_node, distr_func, interval):
         super().__init__(destination_node, distr_func, interval)
         self._last_tick_timestamp = 0
@@ -109,11 +109,11 @@ class TcNetworkInterface(PhysicNetworkChannel):
         super().__init__(destination_node, distr_func, interval)
         self._network_interface = network_interface
 
-
     def _apply_delay(self):
         tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change"""  # TODO change stderr
         # print(tc_config)
         os.system(tc_config)
+
 
 class DiscreteNetworkChannel(NetworkChannel):
 

@@ -29,7 +29,7 @@ def parse_configuration_files(args=None):
     parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for Carla server',
                default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
     parser.add('--carla_scenario_file', metavar='CF', help='Configuration file path for simulation',
-               default=CONFIGURATION_SCENARIO_PATH + 'mountain_street.yaml')
+               default=CONFIGURATION_SCENARIO_PATH + 'simple_curve.yaml')
     # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
     #            required=True)
     return _parse_unit_measurement(parser.parse(args=args))

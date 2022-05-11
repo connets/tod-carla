@@ -56,14 +56,22 @@ def create_sim_world(host, port, timeout, world, sync, time_step=None):
     if sync:
         traffic_manager = client.get_trafficmanager()
         traffic_manager.set_synchronous_mode(sync)  # TODO move from here, check if sync is active or not
-
         settings = sim_world.get_settings()
         settings.synchronous_mode = sync
         settings.fixed_delta_seconds = time_step
         sim_world.apply_settings(settings)
     # traffic_manager.set_synchronous_mode(True)
 
-    return sim_world
+    return client, sim_world
+
+
+def destroy_sim_world(client, sim_world):
+    settings = sim_world.get_settings()
+    settings.synchronous_mode = False
+    settings.fixed_delta_seconds = None
+    sim_world.apply_settings(settings)
+    traffic_manager = client.get_trafficmanager()
+    traffic_manager.set_synchronous_mode(True)
 
 
 def create_route(tele_world, scenario_conf):
@@ -102,9 +110,9 @@ def main():
 
     display = create_display(simulation_conf)
 
-    sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
-                                 scenario_conf['world'], simulation_conf['synchronicity'],
-                                 simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
+    client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
+                                         scenario_conf['world'], simulation_conf['synchronicity'],
+                                         simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
 
     def elapsed_seconds():
         return round(sim_world.get_snapshot().timestamp.elapsed_seconds * 1000, 3)
@@ -137,8 +145,8 @@ def main():
     mec = TeleMEC('127.0.0.1', find_free_port())
 
     if simulation_conf['synchronicity']:
-        vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.15), 0.1)
-        operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.15), 0.1)
+        vehicle_operator_channel = DiscreteNetworkChannel(tele_operator, delay_family_to_func['constant'](0.08), 0.1)
+        operator_vehicle_channel = DiscreteNetworkChannel(player, delay_family_to_func['constant'](0.08), 0.1)
     else:
         vehicle_operator_channel = TcNetworkInterface(tele_operator, delay_family_to_func['constant'](0.1), 0.1, 'lo')
         operator_vehicle_channel = TcNetworkInterface(player, delay_family_to_func['constant'](0.1), 0.1, 'lo')
@@ -201,13 +209,16 @@ def main():
     tele_sim.add_tick_listener(render)
     tele_sim.add_tick_listener(hud.tick)
     controller.add_player_in_world(player)
-    waypoints = controller.get_trajectory()
-    x, y, z = map(lambda it: lambda: next(it), map(iter, [*zip(*[item.values() for item in waypoints])]))
+    anchor_points = controller.get_trajectory()
+    x, y, z = map(lambda it: lambda: next(it), map(iter, zip(*[item.values() for item in anchor_points])))
     optimal_trajectory_collector = DataCollector(CURRENT_OUT_PATH + 'optimal_trajectory.csv', {'x': x, 'y': y, 'z': z})
-    for _ in range(len(waypoints)):
+    for _ in range(len(anchor_points)):
         optimal_trajectory_collector.write()
 
     tele_sim.do_simulation(simulation_conf['synchronicity'])
+
+    destroy_sim_world(client, sim_world)
+    pygame.quit()
 
 
 if __name__ == '__main__':
