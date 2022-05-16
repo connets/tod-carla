@@ -118,3 +118,6 @@ class TeleWorld:
 
     def get_snapshot(self):
         return self.sim_world.get_snapshot()
+
+    def apply_sync_command(self):
+        ...

@@ -40,11 +40,13 @@ def parse_carla_server_args(configuration_path, args=None):
     parser.add('--host', metavar='H', help='IP of the host server', required=True)
     parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
     parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
+    parser.add('--render', metavar='T', type=bool, help='Timeout of connection', default=False)
     parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
     parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
     parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
                required=True)
     parser.add('--time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
+    parser.add('--seed', metavar='S', type=int, help='simulation seed')
 
     return _parse_unit_measurement(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 
@@ -53,6 +55,8 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser = ConfigurationParser(configuration_path)
     parser.add('--world', metavar='W', help='Using world')
     parser.add('--vehicle_player', metavar='V', help='model vehicle to drive', required=True)
+
+    parser.add('--delay', metavar='D', help='Using world', required=True)
 
     parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
 
