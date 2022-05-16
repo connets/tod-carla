@@ -321,7 +321,7 @@ class BehaviorAgentTeleWorldController(TeleController):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
     def do_action(self, vehicle_state=None):
-        if any(self._quit(e) for e in pygame.event.get()):
+        if pygame.get_init() and any(self._quit(e) for e in pygame.event.get()):
             return None
 
         if vehicle_state is not None:

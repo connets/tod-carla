@@ -63,16 +63,10 @@ class DataCollector():
         self._writer.writerow(func() for func in self._items.values())
         self._file.flush()
 
+    def write_args(self, *args):
+        self._writer.writerow(args)
+        self._file.flush()
 
-class PeriodicDataCollectorActor(TeleActor):
-    def __init__(self, file_path, items: dict, writing_interval):
-        super().__init__()
-        self._data_collector = DataCollector(file_path, items)
-        self._writing_interval = writing_interval
 
-    def run(self):
-        def daemon_write():
-            self._data_collector.write()
-            self._tele_context.schedule(daemon_write, self._writing_interval)
 
-        daemon_write()
+

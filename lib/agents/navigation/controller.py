@@ -10,6 +10,8 @@ import math
 import numpy as np
 import carla
 from lib.agents.tools.misc import get_speed
+from src.TeleOutputWriter import DataCollector
+from src.folder_path import CURRENT_OUT_PATH
 
 
 class VehiclePIDController():
@@ -185,6 +187,21 @@ class PIDLateralController():
             :param K_I: Integral term
             :param dt: time differential in seconds
         """
+        #        return np.clip((self._k_p * _dot) + (self._k_d * _de) + (self._k_i * _ie), -1.0, 1.0)
+
+        _dot = -1
+        _de = -1
+        _ie = -1
+        self.data_collector = DataCollector(CURRENT_OUT_PATH + "steer_data.csv",
+                                       {'k_p': lambda: 0,
+                                        'dot': lambda: 0,
+                                        'k_d': lambda: 0,
+                                        'de': lambda: 0,
+                                        'k_i': lambda: 0,
+                                        'ie': lambda: 0})
+
+
+
         self._k_p = K_P
         self._k_i = K_I
         self._k_d = K_D
@@ -248,6 +265,8 @@ class PIDLateralController():
         else:
             _de = 0.0
             _ie = 0.0
+
+        self.data_collector.write_args(w_vec, v_vec, w_loc.x - ego_loc.x, w_loc.y, ego_loc.y, vehicle_transform.get_forward_vector().x, vehicle_transform.get_forward_vector().y)
 
         return np.clip((self._k_p * _dot) + (self._k_d * _de) + (self._k_i * _ie), -1.0, 1.0)
 

@@ -7,7 +7,7 @@
 
 from enum import Enum
 from collections import deque
-import random
+import numpy.random as random
 
 import carla
 from lib.agents.navigation.controller import VehiclePIDController
@@ -178,6 +178,7 @@ class LocalPlanner(object):
                 # random choice between the possible options
                 road_options_list = _retrieve_options(
                     next_waypoints, last_waypoint)
+
                 road_option = random.choice(road_options_list)
                 next_waypoint = next_waypoints[road_options_list.index(
                     road_option)]
