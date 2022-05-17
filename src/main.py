@@ -237,7 +237,7 @@ def main():
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
-    # tele_sim.do_simulation(simulation_conf['synchronicity'])
+    tele_sim.do_simulation(simulation_conf['synchronicity'])
 
     destroy_sim_world(client, sim_world)
     pygame.quit()
