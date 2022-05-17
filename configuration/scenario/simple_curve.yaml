@@ -14,3 +14,4 @@ route:
     x: 359.
     y: -2.
     z: 0.
+delay: 10ms

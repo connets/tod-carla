@@ -22,9 +22,7 @@ from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChanne
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
     BasicAgentTeleWorldController
-from src.utils.distribution_utils import delay_family_to_func
-from src.utils.utils import find_free_port
-
+import utils
 
 def parse_configurations():
     res = dict()
@@ -151,17 +149,17 @@ def main():
         camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720)
         player.attach_sensor(camera_sensor)
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
-    tele_operator = TeleOperator('127.0.0.1', find_free_port(), controller)
-    mec = TeleMEC('127.0.0.1', find_free_port())
+    tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
+    mec = TeleMEC('127.0.0.1', utils.find_free_port())
 
     if simulation_conf['synchronicity']:
         vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
-                                                          delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
+                                                          utils.delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
         operator_vehicle_channel = DiscreteNetworkChannel(player,
-                                                          delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
+                                                          utils.delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
     else:
-        vehicle_operator_channel = TcNetworkInterface(tele_operator, delay_family_to_func['constant'](0.1), 0.1, 'lo')
-        operator_vehicle_channel = TcNetworkInterface(player, delay_family_to_func['constant'](0.1), 0.1, 'lo')
+        vehicle_operator_channel = TcNetworkInterface(tele_operator, utils.delay_family_to_func['constant'](0.1), 0.1, 'lo')
+        operator_vehicle_channel = TcNetworkInterface(player, utils.delay_family_to_func['constant'](0.1), 0.1, 'lo')
 
     player.add_channel(vehicle_operator_channel)
     tele_operator.add_channel(operator_vehicle_channel)
@@ -184,23 +182,23 @@ def main():
     # tele_world.start()
 
     data_collector = PeriodicDataCollectorActor(CURRENT_OUT_PATH + "sensors.csv",
-                                                {'timestamp': lambda: round(tele_world.timestamp.elapsed_seconds, 5),
-                                                 'velocity_x': lambda: round(player.get_velocity().x, 5),
-                                                 'velocity_y': lambda: round(player.get_velocity().y, 5),
-                                                 'velocity_z': lambda: round(player.get_velocity().z, 5),
-                                                 'acceleration_x': lambda: round(player.get_acceleration().x, 5),
-                                                 'acceleration_y': lambda: round(player.get_acceleration().y, 5),
-                                                 'acceleration_z': lambda: round(player.get_acceleration().z, 5),
-                                                 'location_x': lambda: round(player.get_location().x, 5),
-                                                 'location_y': lambda: round(player.get_location().y, 5),
-                                                 'location_z': lambda: round(player.get_location().z, 5),
+                                                {'timestamp': lambda: utils.format_number(tele_world.timestamp.elapsed_seconds, 5),
+                                                 'velocity_x': lambda: utils.format_number(player.get_velocity().x, 5),
+                                                 'velocity_y': lambda: utils.format_number(player.get_velocity().y, 5),
+                                                 'velocity_z': lambda: utils.format_number(player.get_velocity().z, 5),
+                                                 'acceleration_x': lambda: utils.format_number(player.get_acceleration().x, 5),
+                                                 'acceleration_y': lambda: utils.format_number(player.get_acceleration().y, 5),
+                                                 'acceleration_z': lambda: utils.format_number(player.get_acceleration().z, 5),
+                                                 'location_x': lambda: utils.format_number(player.get_location().x, 5),
+                                                 'location_y': lambda: utils.format_number(player.get_location().y, 5),
+                                                 'location_z': lambda: utils.format_number(player.get_location().z, 5),
                                                  # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                                                  # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                                                  # 'latitude': lambda: round(gnss_sensor.latitude, 5),
                                                  # 'throttle': lambda: round(player.get_control().throttle, 5),
                                                  # 'steer': lambda: round(player.get_control().steer, 5),
                                                  # 'brake': lambda: round(player.get_control().brake, 5)
-                                                 }, 0.02)
+                                                 }, 0.005)
 
     # data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     #

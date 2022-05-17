@@ -10,11 +10,15 @@ class PeriodicDataCollectorActor(TeleActor):
         self._data_collector = DataCollector(file_path)
         self._items = items
         self._writing_interval = writing_interval
-        self._data_collector.write(func() for func in self._items.values())
+        self._data_collector.write(*(key for key in self._items.keys()))
+        self._last_rows = None
 
     def run(self):
         def daemon_write():
-            self._data_collector.write()
+            current_rows = [func() for func in self._items.values()]
+            if self._last_rows != current_rows:
+                self._data_collector.write(*current_rows)
+                self._last_rows = current_rows
             self._tele_context.schedule(daemon_write, self._writing_interval)
 
         daemon_write()
