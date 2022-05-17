@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from queue import PriorityQueue
 
-from src.TeleContext import TeleContext
 from src.network.NetworkMessage import NetworkMessage
 from src.utils.decorators import needs_member
 from src.utils.distribution_utils import _constant_family

@@ -14,10 +14,12 @@ def stretch_dict(d, keys_sep='.'):
             return [('', d_p)]
         res = []
         for k_p, v_p in d_p.items():
-            res = res + [(f'{k_p}{keys_sep if item[0] != "" else ""}{item[0]}', item[1]) for item in stretch_dict_aux(v_p)]
+            res = res + [(f'{k_p}{keys_sep if item[0] != "" else ""}{item[0]}', item[1]) for item in
+                         stretch_dict_aux(v_p)]
         return res
 
     return dict(stretch_dict_aux(d))
+
 
 @closure
 def expand_dict(d, keys_sep='.'):
@@ -46,8 +48,14 @@ def find_free_port():
         return s.getsockname()[1]
 
 
+def format_number(n, digits):
+    formatter = '{:.' + '{}'.format(digits) + 'f}'
+    x = round(n, digits)
+    return formatter.format(x)
+
+
 if __name__ == '__main__':
-    tmp = {'ciao.come': {'stai': 3, 'va': {'bene.grazie': 'prego'}}, 'ciao': {'com': 'tu'}, 'easy':0}
+    tmp = {'ciao.come': {'stai': 3, 'va': {'bene.grazie': 'prego'}}, 'ciao': {'com': 'tu'}, 'easy': 0}
     print(expand_dict(tmp))
 
     # flat_dictionary()

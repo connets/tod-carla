@@ -185,6 +185,15 @@ class PIDLateralController():
             :param K_I: Integral term
             :param dt: time differential in seconds
         """
+        #        return np.clip((self._k_p * _dot) + (self._k_d * _de) + (self._k_i * _ie), -1.0, 1.0)
+
+        _dot = -1
+        _de = -1
+        _ie = -1
+
+
+
+
         self._k_p = K_P
         self._k_i = K_I
         self._k_d = K_D
@@ -248,6 +257,7 @@ class PIDLateralController():
         else:
             _de = 0.0
             _ie = 0.0
+
 
         return np.clip((self._k_p * _dot) + (self._k_d * _de) + (self._k_i * _ie), -1.0, 1.0)
 

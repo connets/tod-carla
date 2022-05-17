@@ -50,29 +50,14 @@ event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
 
 
 class DataCollector():
-    def __init__(self, file_path, items: dict):
+    def __init__(self, file_path):
         super().__init__()
         self._file = open(file_path, 'w', newline='')
         self._writer = csv.writer(self._file)
-        self._items = items
 
-        self._writer.writerow(self._items.keys())
-        self._file.flush()
-
-    def write(self):
-        self._writer.writerow(func() for func in self._items.values())
+    def write(self, *args):
+        self._writer.writerow(args)
         self._file.flush()
 
 
-class PeriodicDataCollectorActor(TeleActor):
-    def __init__(self, file_path, items: dict, writing_interval):
-        super().__init__()
-        self._data_collector = DataCollector(file_path, items)
-        self._writing_interval = writing_interval
 
-    def run(self):
-        def daemon_write():
-            self._data_collector.write()
-            self._tele_context.schedule(daemon_write, self._writing_interval)
-
-        daemon_write()
