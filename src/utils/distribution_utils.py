@@ -17,7 +17,9 @@ def generate_instance(func):
 @generate_instance
 def _uniform_family(min_value, max_value):
     return random.random() * (max_value - min_value) + min_value
-#simpy
+
+
+# simpy
 
 @generate_instance
 def _discrete_uniform_family(min_value=None, max_value=None, value_step=None, values=None):
@@ -67,6 +69,11 @@ def _erlang_family(k, u, min_value=0):
 @generate_instance
 def _gamma_family(k, u, min_value=0):
     return np.random.gamma(shape=k, scale=u) / 1000.0 + min_value
+
+
+@generate_instance
+def _hypoexponential_family(*rates, min_value=0):
+    return sum(np.random.exponential(scale=rate) for rate in rates) + min_value
 
 
 delay_family_to_func = {'uniform': _uniform_family,
