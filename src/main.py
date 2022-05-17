@@ -24,6 +24,7 @@ from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTe
     BasicAgentTeleWorldController
 import src.utils as utils
 
+
 def parse_configurations():
     res = dict()
     conf_files = my_parser.parse_configuration_files()
@@ -47,9 +48,7 @@ def create_display(carla_simulation_conf):
     return display
 
 
-
 ...
-
 
 
 def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
@@ -84,7 +83,6 @@ def destroy_sim_world(client, sim_world):
     traffic_manager = client.get_trafficmanager()
     traffic_manager.set_synchronous_mode(False)
     client.reload_world(False)  # reload map keeping the world settings
-
 
 
 def create_route(tele_world, scenario_conf):
@@ -128,9 +126,6 @@ def main():
                                          simulation_conf['synchronicity'],
                                          simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
 
-
-
-    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
     # traffic_manager = client.get_trafficmanager()
 
     tele_world: TeleWorld = TeleWorld(client, simulation_conf['synchronicity'])
@@ -142,7 +137,6 @@ def main():
                               player_attrs,
                               start_transform=start_transform,
                               modify_vehicle_physics=True)
-    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
 
     # controller = BasicAgentTeleWorldController()  # TODO change here
     controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
@@ -158,18 +152,23 @@ def main():
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec = TeleMEC('127.0.0.1', utils.find_free_port())
 
+    backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
+    backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
+
     if simulation_conf['synchronicity']:
         vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
-                                                          utils.delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
+                                                          utils.delay_family_to_func[backhaul_uplink_delay['family']](
+                                                              **backhaul_uplink_delay['parameters']), 0.1)
         operator_vehicle_channel = DiscreteNetworkChannel(player,
-                                                          utils.delay_family_to_func['constant'](scenario_conf['delay']), 0.1)
+                                                          utils.delay_family_to_func[backhaul_downlink_delay['family']](
+                                                              **backhaul_downlink_delay['parameters']), 0.1)
     else:
-        vehicle_operator_channel = TcNetworkInterface(tele_operator, utils.delay_family_to_func['constant'](0.1), 0.1, 'lo')
+        vehicle_operator_channel = TcNetworkInterface(tele_operator, utils.delay_family_to_func['constant'](0.1), 0.1,
+                                                      'lo')
         operator_vehicle_channel = TcNetworkInterface(player, utils.delay_family_to_func['constant'](0.1), 0.1, 'lo')
 
     player.add_channel(vehicle_operator_channel)
     tele_operator.add_channel(operator_vehicle_channel)
-    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
 
     # player.set_context(tele_context)
     # player.start(tele_world)
@@ -189,13 +188,17 @@ def main():
     # tele_world.start()
 
     data_collector = PeriodicDataCollectorActor(CURRENT_OUT_PATH + "sensors.csv",
-                                                {'timestamp': lambda: utils.format_number(tele_world.timestamp.elapsed_seconds, 5),
+                                                {'timestamp': lambda: utils.format_number(
+                                                    tele_world.timestamp.elapsed_seconds, 5),
                                                  'velocity_x': lambda: utils.format_number(player.get_velocity().x, 5),
                                                  'velocity_y': lambda: utils.format_number(player.get_velocity().y, 5),
                                                  'velocity_z': lambda: utils.format_number(player.get_velocity().z, 5),
-                                                 'acceleration_x': lambda: utils.format_number(player.get_acceleration().x, 5),
-                                                 'acceleration_y': lambda: utils.format_number(player.get_acceleration().y, 5),
-                                                 'acceleration_z': lambda: utils.format_number(player.get_acceleration().z, 5),
+                                                 'acceleration_x': lambda: utils.format_number(
+                                                     player.get_acceleration().x, 5),
+                                                 'acceleration_y': lambda: utils.format_number(
+                                                     player.get_acceleration().y, 5),
+                                                 'acceleration_z': lambda: utils.format_number(
+                                                     player.get_acceleration().z, 5),
                                                  'location_x': lambda: utils.format_number(player.get_location().x, 5),
                                                  'location_y': lambda: utils.format_number(player.get_location().y, 5),
                                                  'location_z': lambda: utils.format_number(player.get_location().z, 5),
@@ -214,7 +217,7 @@ def main():
     tele_sim.add_actor(mec)
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
-    # tele_sim.add_actor(InfoSpeedSimulationActor(1))
+    tele_sim.add_actor(InfoSpeedSimulationActor(1))
     # camera_sensor.spawn_in_the_world(sim_world)
     tele_sim.start()
 
@@ -234,7 +237,7 @@ def main():
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
-    tele_sim.do_simulation(simulation_conf['synchronicity'])
+    # tele_sim.do_simulation(simulation_conf['synchronicity'])
 
     destroy_sim_world(client, sim_world)
     pygame.quit()

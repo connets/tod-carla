@@ -16,6 +16,39 @@ _re_pattern_compact_trace_leader_maneuvers = re.compile(
     r'^(?P<maneuvers_type>[a-z_]+\b)\s*\(\s*(?P<params>[\w/\.-]+\s*,\s*(?:False|True)\s*)\)\s*$')
 
 
+def parse_unit_measurement(config_dict):
+    """
+    :param config_dict:
+    :return update the config_dict using the international system:
+    """
+    for k, v in config_dict.items():
+        if isinstance(v, dict):
+            config_dict[k] = parse_unit_measurement(v)
+        elif isinstance(v, list):
+            config_dict[k] = [
+                parse_and_convert_value(e) if isinstance(e, str) else parse_unit_measurement(e) for e in v]
+        elif isinstance(v, str):
+            config_dict[k] = parse_and_convert_value(v)
+        else:
+            config_dict[k] = v
+    return config_dict
+
+
+def parse_and_convert_value(value):
+    if isinstance(value, str):
+        # _re_pattern_composition_compact_distribution.match(value)
+        comp_compact_dist_res, comp_err = parse_composition_compact_distribution(value)
+        if comp_compact_dist_res is not None:
+            return comp_compact_dist_res
+
+        compact_dist_res, dist_err = parse_distribution_compact(value)
+        if compact_dist_res is not None:
+            return compact_dist_res
+
+        return _parse_single_unit_value(value)
+    return value
+
+
 def _parse_single_unit_value(value_str):
     """
     Convert human values in International System Units
@@ -90,21 +123,6 @@ def parse_composition_compact_distribution(value):
     return None, None  # no match, no error
 
 
-def parse_and_convert_value(value):
-    if isinstance(value, str):
-        # _re_pattern_composition_compact_distribution.match(value)
-        comp_compact_dist_res, comp_err = parse_composition_compact_distribution(value)
-        if comp_compact_dist_res is not None:
-            return comp_compact_dist_res
-
-        compact_dist_res, dist_err = parse_distribution_compact(value)
-        if compact_dist_res is not None:
-            return compact_dist_res
-
-        return _parse_single_unit_value(value)
-    return value
-
-
 # def _split_and_convert_param(param_str):
 #     p_name, p_value = param_str.split('=')
 #     return p_name, float(_parse_single_unit_value(p_value))
@@ -118,40 +136,40 @@ class DistributionParserAction(argparse.Action):
 
 
 def _expand_constant(value):
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'constant',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'value': value}}
+    return {'family': 'constant',
+            'parameters': {'value': value}}
 
 
 def _expand_uniform(min_value, max_value):
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'uniform',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'min_value': min_value,
-                                                      'max_value': max_value}}
+    return {'family': 'uniform',
+            'parameters': {'min_value': min_value,
+                           'max_value': max_value}}
 
 
 def _expand_normal(mu, sigma):  # TODO min/max values <optional>
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'normal',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'mu': mu,
-                                                      'sigma': sigma}}
+    return {'family': 'normal',
+            'parameters': {'mu': mu,
+                           'sigma': sigma}}
 
 
 def _expand_exponential(rate, min_value=0):
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'exponential',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'rate': rate,
-                                                      'min_value': min_value}}
+    return {'family': 'exponential',
+            'parameters': {'rate': rate,
+                           'min_value': min_value}}
 
 
 def _expand_lognormal(mu, sigma, min_value=0):
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'lognormal',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'mu': mu,
-                                                      'sigma': sigma,
-                                                      'min_value': min_value}}
+    return {'family': 'lognormal',
+            'parameters': {'mu': mu,
+                           'sigma': sigma,
+                           'min_value': min_value}}
 
 
 def _expand_erlang(k, u, min_value=0):
-    return {config_cs.DELAY_DISTRIBUTION_FAMILY: 'erlang',
-            config_cs.DELAY_DISTRIBUTION_PARAMETERS: {'k': k,
-                                                      'u': u,
-                                                      'min_value': min_value}}
+    return {'family': 'erlang',
+            'parameters': {'k': k,
+                           'u': u,
+                           'min_value': min_value}}
 
 
 # family : (expansion function, function arity)
@@ -161,6 +179,14 @@ _distribution_dict = {'constant': (_expand_constant, [1]),
                       'exponential': (_expand_exponential, [1, 2]),
                       'lognormal': (_expand_lognormal, [2, 3]),
                       'erlang': (_expand_erlang, [2, 3])}
+
+
+class ProbabilityDistributionNotImplemented(Exception):
+    pass
+
+
+class ProbabilityDistributionWrongArity(Exception):
+    pass
 
 
 def expand_compact_distribution_format(family, args, sample_duration):

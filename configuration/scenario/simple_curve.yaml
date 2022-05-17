@@ -14,4 +14,20 @@ route:
     x: 359.
     y: -2.
     z: 0.
-delay: 10ms
+
+delay:
+#    ran:
+#      base_station_processing_distribution: constant(0.0)
+#      uplink_urllc_distribution: constant(0.0)
+#      uplink_embb_distribution: constant(0.0)
+#      downlink_embb_distribution: constant(0.0)
+
+    backhaul:
+#      queue_urllc_distribution: constant(0.0)
+#      queue_embb_distribution: constant(0.0)
+
+      uplink_extra_delay: uniform(10ms, 20ms)
+      downlink_extra_delay: lognormal(10ms, 2ms,10ms)H 1ms  #+  uniform(-1ms, 1ms)
+#      extra_delay: uniform(1ms, 5ms)
+
+#      M_node_processing_time_distribution: constant(0.0)
