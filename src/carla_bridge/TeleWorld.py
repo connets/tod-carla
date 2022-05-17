@@ -122,4 +122,4 @@ class TeleWorld:
         return self.sim_world.get_snapshot()
 
     def apply_sync_command(self, *commands):
-        self.client.apply_batch_sync(commands)
+        return self.client.apply_batch_sync(commands)

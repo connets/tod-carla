@@ -22,7 +22,7 @@ from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChanne
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
     BasicAgentTeleWorldController
-import utils
+import src.utils as utils
 
 def parse_configurations():
     res = dict()
@@ -47,6 +47,11 @@ def create_display(carla_simulation_conf):
     return display
 
 
+
+...
+
+
+
 def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
@@ -56,14 +61,15 @@ def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
     random.seed(seed)
 
     if sync:
-        traffic_manager = client.get_trafficmanager()
-        traffic_manager.set_synchronous_mode(True)  # TODO move from here, check if sync is active or not
-        traffic_manager.set_random_device_seed(seed)
         settings = sim_world.get_settings()
         settings.synchronous_mode = True
         settings.fixed_delta_seconds = time_step
         sim_world.apply_settings(settings)
+        traffic_manager = client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(True)  # TODO move from here, check if sync is active or not
+        traffic_manager.set_random_device_seed(seed)
     client.reload_world(False)  # reload map keeping the world settings
+    sim_world.tick()
 
     # traffic_manager.set_synchronous_mode(True)
 
@@ -76,7 +82,8 @@ def destroy_sim_world(client, sim_world):
     settings.fixed_delta_seconds = None
     sim_world.apply_settings(settings)
     traffic_manager = client.get_trafficmanager()
-    traffic_manager.set_synchronous_mode(True)
+    traffic_manager.set_synchronous_mode(False)
+    client.reload_world(False)  # reload map keeping the world settings
 
 
 
@@ -121,11 +128,9 @@ def main():
                                          simulation_conf['synchronicity'],
                                          simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
 
-    def elapsed_seconds():
-        return round(sim_world.get_snapshot().timestamp.elapsed_seconds * 1000, 3)
 
-    TeleContext(elapsed_seconds)
 
+    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
     # traffic_manager = client.get_trafficmanager()
 
     tele_world: TeleWorld = TeleWorld(client, simulation_conf['synchronicity'])
@@ -137,6 +142,7 @@ def main():
                               player_attrs,
                               start_transform=start_transform,
                               modify_vehicle_physics=True)
+    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
 
     # controller = BasicAgentTeleWorldController()  # TODO change here
     controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
@@ -163,6 +169,7 @@ def main():
 
     player.add_channel(vehicle_operator_channel)
     tele_operator.add_channel(operator_vehicle_channel)
+    print(sim_world.get_snapshot().timestamp.elapsed_seconds)
 
     # player.set_context(tele_context)
     # player.start(tele_world)
@@ -207,7 +214,7 @@ def main():
     tele_sim.add_actor(mec)
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
-    tele_sim.add_actor(InfoSpeedSimulationActor(1))
+    # tele_sim.add_actor(InfoSpeedSimulationActor(1))
     # camera_sensor.spawn_in_the_world(sim_world)
     tele_sim.start()
 

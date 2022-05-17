@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from time import sleep
 
 import carla
-from carla import ActorBlueprint, Transform, Location, Rotation
+from carla import ActorBlueprint, Transform, Location, Rotation, VehicleControl
 
 from src.TeleContext import TeleContext
 from src.TeleVehicleState import TeleVehicleState
@@ -94,16 +94,21 @@ class TeleCarlaVehicle(TeleCarlaActor):
             # spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
             # x=29.911945, y=-2.026154, z=0.000000
             # spawn_point = Transform(Location(x=299.399994, y=133.240036, z=0.300000), Rotation(pitch=0.000000, yaw=-0.000092, roll=0.000000))
-            self.model = sim_world.try_spawn_actor(blueprint, spawn_point)
+            response =  tele_world.apply_sync_command(carla.command.SpawnActor(blueprint, spawn_point))
+
+            self.model = sim_world.get_actor(response.actor_id)
+
             if self._modify_vehicle_physics:
                 physics_control = self.get_physics_control()
                 physics_control.use_sweep_wheel_collision = True
                 self._tele_world.apply_sync_command(carla.command.ApplyVehiclePhysicsControl(self.id, physics_control))
-        self.set_light_state(carla.VehicleLightState.Position)
+        self._tele_world.apply_sync_command(carla.command.SetVehicleLightState(self.id, carla.VehicleLightState.Position))
+        # Per far si che si parta da una stessa situazione, necessario?
+        self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, VehicleControl()))
         sim_world.tick()
 
         for sensor in self._sensors:
-            sensor.spawn_in_the_world(self)
+            sensor.spawn_in_the_world(tele_world, self)
 
     @needs_member('_tele_world')
     def receive_instruction_network_message(self, command):
@@ -114,4 +119,5 @@ class TeleCarlaVehicle(TeleCarlaActor):
             self._sending_info_thread.exit()
         for sensor in self._sensors:
             sensor.destroy()
-        self.model.destroy()
+        self._tele_world.apply_sync_command(carla.command.DestroyActor(self.id))
+

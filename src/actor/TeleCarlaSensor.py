@@ -30,6 +30,7 @@ class TeleCarlaRenderingSensor(TeleCarlaSensor):
 class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
     def __init__(self, gamma_correction, hud, width, height):
+        self._tele_world = None
         self._gamma_correction = gamma_correction
         self.hud = hud
         self.width = width
@@ -64,8 +65,8 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
         self.parent_actor = None
 
-    def spawn_in_the_world(self, parent_actor):
-        print("====> ")
+    def spawn_in_the_world(self, tele_world, parent_actor):
+        self._tele_world = tele_world
         self.parent_actor = parent_actor
         # self.sensor = None
         # self.surface = None
