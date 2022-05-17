@@ -1,10 +1,12 @@
 host: ubiquity
 port: 3000
-timeout: 4
+timeout: 16
+render: False
 camera:
   width: 1280
   height: 720
 synchronicity: true
 time_step: 50ms. #milliseconds
+seed: 9
 
 
