@@ -74,6 +74,7 @@ def destroy_sim_world(client, sim_world):
     traffic_manager.set_synchronous_mode(True)
 
 
+
 def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
@@ -121,7 +122,7 @@ def main():
 
     # traffic_manager = client.get_trafficmanager()
 
-    tele_world: TeleWorld = TeleWorld(sim_world, simulation_conf['synchronicity'])
+    tele_world: TeleWorld = TeleWorld(client, simulation_conf['synchronicity'])
 
     start_transform, destination_location = create_route(tele_world, scenario_conf)
     player_attrs = {'role_name': 'hero'}
@@ -210,10 +211,11 @@ def main():
     tele_sim.add_tick_listener(hud.tick)
     controller.add_player_in_world(player)
     anchor_points = controller.get_trajectory()
-    x, y, z = map(lambda it: lambda: next(it), map(iter, zip(*[item.values() for item in anchor_points])))
-    optimal_trajectory_collector = DataCollector(CURRENT_OUT_PATH + 'optimal_trajectory.csv', {'x': x, 'y': y, 'z': z})
-    for _ in range(len(anchor_points)):
-        optimal_trajectory_collector.write()
+
+    optimal_trajectory_collector = DataCollector(CURRENT_OUT_PATH + 'optimal_trajectory.csv')
+    optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
+    for point in anchor_points:
+        optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     tele_sim.do_simulation(simulation_conf['synchronicity'])
 

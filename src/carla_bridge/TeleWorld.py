@@ -3,6 +3,7 @@ import sys
 import threading
 
 import carla
+from carla import libcarla
 
 from src.actor.TeleCarlaSensor import TeleCarlaRenderingSensor
 from src.utils.carla_utils import find_weather_presets
@@ -12,12 +13,13 @@ from carla.libcarla import World
 class TeleWorld:
     """ Class representing the surrounding environment """
 
-    def __init__(self, carla_world: World, sync):
+    def __init__(self, client: libcarla.Client, sync):
         """Constructor method"""
-        self._last_snapshot: carla.WorldSnapshot = carla_world.get_snapshot()
 
-        self.sim_world: World = carla_world
+        self.client = client
+        self.sim_world: World = self.client.get_world()
         self._sync = sync
+        self._last_snapshot: carla.WorldSnapshot = self.sim_world.get_snapshot()
 
         builds = self.sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
         objects_to_toggle = {build.id for build in builds}
@@ -118,3 +120,6 @@ class TeleWorld:
 
     def get_snapshot(self):
         return self.sim_world.get_snapshot()
+
+    def apply_sync_command(self, *commands):
+        self.client.apply_batch_sync(commands)

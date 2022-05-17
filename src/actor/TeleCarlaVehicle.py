@@ -19,6 +19,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def __init__(self, host, port, sync, sending_interval,
                  actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None, modify_vehicle_physics=False):
         super().__init__(host, port)
+        self._tele_world = None
         self._sync = sync
         self._sending_interval = sending_interval
         if attrs is None:
@@ -62,6 +63,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         return self.model.__getattribute__(*args)
 
     def spawn_in_the_world(self, tele_world):
+        self._tele_world = tele_world
         sim_world = tele_world.sim_world
         carla_map = tele_world.carla_map
         blueprint: ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(self._actor_filter))
@@ -94,23 +96,18 @@ class TeleCarlaVehicle(TeleCarlaActor):
             # spawn_point = Transform(Location(x=299.399994, y=133.240036, z=0.300000), Rotation(pitch=0.000000, yaw=-0.000092, roll=0.000000))
             self.model = sim_world.try_spawn_actor(blueprint, spawn_point)
             if self._modify_vehicle_physics:
-                self.modify_vehicle_physics()
+                physics_control = self.get_physics_control()
+                physics_control.use_sweep_wheel_collision = True
+                self._tele_world.apply_sync_command(carla.command.ApplyVehiclePhysicsControl(self.id, physics_control))
         self.set_light_state(carla.VehicleLightState.Position)
         sim_world.tick()
 
         for sensor in self._sensors:
             sensor.spawn_in_the_world(self)
 
-    def modify_vehicle_physics(self):
-        try:
-            physics_control = self.get_physics_control()
-            physics_control.use_sweep_wheel_collision = True
-            self.apply_physics_control(physics_control)
-        except Exception:
-            pass
-
+    @needs_member('_tele_world')
     def receive_instruction_network_message(self, command):
-        self.apply_control(command)
+        self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
 
     def quit(self):
         if self._sending_info_thread is not None:
@@ -118,5 +115,3 @@ class TeleCarlaVehicle(TeleCarlaActor):
         for sensor in self._sensors:
             sensor.destroy()
         self.model.destroy()
-
-
