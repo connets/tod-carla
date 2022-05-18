@@ -49,7 +49,7 @@ class BehaviorAgent(BasicAgent):
         self._incoming_waypoint = None
         self._min_speed = 5
         self._behavior = None
-        self._sampling_resolution = 4.5
+        self._sampling_resolution = 0.05
 
         # Parameters for agent behavior
         if behavior == 'cautious':
@@ -303,7 +303,7 @@ class BehaviorAgent(BasicAgent):
                 self._behavior.max_speed,
                 self._speed_limit - self._behavior.speed_lim_dist])
             self._local_planner.set_speed(target_speed)
-        control = self._local_planner.run_step(debug=debug)
+            control = self._local_planner.run_step(debug=debug)
 
         return control
 

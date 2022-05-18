@@ -10,7 +10,7 @@ from carla import libcarla, Transform, Location, Rotation
 from src.TeleContext import TeleContext
 from src.TeleOutputWriter import DataCollector
 from src.TeleSimulator import TeleSimulator
-from src.actor.InfoSimulationActor import InfoSpeedSimulationActor, PeriodicDataCollectorActor
+from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaVehicle import TeleCarlaVehicle
@@ -89,7 +89,7 @@ def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
         # for spawn_point in carla_map.get_spawn_points():
-        #     if abs(72.794968 - spawn_point.location.x) < 6:
+        #     if abs(367.227295 - spawn_point.location.x) < 6:
         #         print(spawn_point)
         start_transform = Transform(
             Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],
@@ -132,7 +132,7 @@ def main():
 
     start_transform, destination_location = create_route(tele_world, scenario_conf)
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('127.0.0.1', 28007, simulation_conf['synchronicity'], 0.03,
+    player = TeleCarlaVehicle('127.0.0.1', 28007, simulation_conf['synchronicity'], 0.05,
                               scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
@@ -217,7 +217,7 @@ def main():
     tele_sim.add_actor(mec)
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
-    tele_sim.add_actor(InfoSpeedSimulationActor(1))
+    tele_sim.add_actor(SimulationRatioActor(1))
     # camera_sensor.spawn_in_the_world(sim_world)
     tele_sim.start()
 
@@ -237,10 +237,13 @@ def main():
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
-    tele_sim.do_simulation(simulation_conf['synchronicity'])
-
-    destroy_sim_world(client, sim_world)
-    pygame.quit()
+    try:
+        tele_sim.do_simulation(simulation_conf['synchronicity'])
+    except Exception as e:
+        ...
+    finally:
+        destroy_sim_world(client, sim_world)
+        pygame.quit()
 
 
 if __name__ == '__main__':

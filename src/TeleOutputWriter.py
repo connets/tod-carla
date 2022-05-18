@@ -47,6 +47,7 @@ class _EventLogger:
 
 network_logger = _NetworkLogger(f'{CURRENT_LOG_PATH}network.log')
 event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
+simulation_ratio_logger = _EventLogger(f'{CURRENT_LOG_PATH}simulation_ratio.log')
 
 
 class DataCollector():

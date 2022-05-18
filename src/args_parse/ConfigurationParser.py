@@ -44,8 +44,8 @@ class ConfigurationParser:
                 if parser_arg.type is not None:
                     expected_type = parser_arg.type
 
-                if not isinstance(config_default, expected_type):
-                    parser.error(f'YAML configuration entry {parser_arg.dest} does not have type {expected_type}')
+                # if not isinstance(config_default, expected_type):
+                #     parser.error(f'YAML configuration entry {parser_arg.dest} does not have type {expected_type}')
                 parser_arg.default = config_default
                 parser_arg.required = False
 

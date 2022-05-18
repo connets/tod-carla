@@ -220,7 +220,6 @@ class LocalPlanner(object):
         :param debug: boolean flag to activate waypoints debugging
         :return: control to be applied
         """
-
         if self._follow_speed_limits:
             self._target_speed = self._last_vehicle_state.get_speed_limit()
 
@@ -238,10 +237,11 @@ class LocalPlanner(object):
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
                 min_distance = 1  # Don't remove the last waypoint until very close by
-                min_distance = 1.5  # Don't remove the last waypoint until very close by
+                # min_distance = 2.5  # Don't remove the last waypoint until very close by
+                # min_distance = self._min_distance
             else:
                 min_distance = self._min_distance
-
+            # print(len(self._waypoints_queue) - num_waypoint_removed, veh_location.distance(waypoint.transform.location))
             if veh_location.distance(waypoint.transform.location) < min_distance:
                 num_waypoint_removed += 1
             else:
@@ -293,6 +293,7 @@ class LocalPlanner(object):
 
         :return: boolean
         """
+        # return len(self._waypoints_queue) == 0
         return len(self._waypoints_queue) == 0
 
 

@@ -24,7 +24,7 @@ class PeriodicDataCollectorActor(TeleActor):
         daemon_write()
 
 
-class InfoSpeedSimulationActor(TeleActor):
+class SimulationRatioActor(TeleActor):
     def __init__(self, writing_interval: float):
         super().__init__()
         self._writing_interval = writing_interval

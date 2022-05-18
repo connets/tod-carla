@@ -1,8 +1,10 @@
 import argparse
+from typing import Any
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
 from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_SCENARIO_PATH
 from src.utils import parser_utils
+
 
 
 def parse_configuration_files(args=None):
@@ -62,8 +64,7 @@ def parse_carla_simulation_args(configuration_path, args=None):
     parser.add('--seedw', metavar='S', type=int, help='Set the seed for pedestrians module')
     parser.add('--no-rendering', help='Activate no rendering mode')
 
-    return parser_utils.parse_unit_measurement(
-        parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+    return parser_utils.parse_unit_measurement(parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 
 
 if __name__ == '__main__':
@@ -75,4 +76,4 @@ if __name__ == '__main__':
     #                      carla_server_conf.items()}
     # carla_simulation_conf = {k: parser_utils._parse_single_unit_value(v) if isinstance(v, str) else v for k, v in
     #                          carla_simulation_conf.items()}
-    print(res['carla_scenario_file'])
+    print(type(res['carla_simulation_file']['time_step']))

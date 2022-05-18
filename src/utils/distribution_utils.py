@@ -84,7 +84,8 @@ delay_family_to_func = {'uniform': _uniform_family,
                         'lognormal': _lognormal_family,
                         'pareto': _pareto,
                         'erlang': _erlang_family,
-                        'gamma': _gamma_family}
+                        'gamma': _gamma_family,
+                        'hypoexponential': _hypoexponential_family}
 
 max_delay_family_to_func = {'discrete_uniform': _max_discrete_uniform_family,
                             'constant': _constant_family}
