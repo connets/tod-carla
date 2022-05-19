@@ -50,7 +50,7 @@ event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
 simulation_ratio_logger = _EventLogger(f'{CURRENT_LOG_PATH}simulation_ratio.log')
 
 
-class DataCollector():
+class DataCollector:
     def __init__(self, file_path):
         super().__init__()
         self._file = open(file_path, 'w', newline='')

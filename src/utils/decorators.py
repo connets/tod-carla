@@ -41,15 +41,11 @@ def synchronized(lock: threading.RLock):
 class Singleton(type):
     _instances = {}
 
-    def __init__(self, *args, **kwargs):
-
-        super().__init__()
-        print("èciao")
 
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+        if cls not in Singleton._instances:
+            Singleton._instances[cls] = super().__call__(*args, **kwargs)
+        return Singleton._instances[cls]
 
 
 class OldSingleton:

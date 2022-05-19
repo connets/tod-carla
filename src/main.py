@@ -16,6 +16,7 @@ from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaVehicle import TeleCarlaVehicle
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleGnssSensor
 from src.args_parse import my_parser
+from src.args_parse.my_parser import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.folder_path import CURRENT_OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
@@ -26,10 +27,10 @@ import src.utils as utils
 
 
 def parse_configurations():
-    res = dict()
-    conf_files = my_parser.parse_configuration_files()
-    res['carla_simulation_file'] = my_parser.parse_carla_server_args(conf_files['carla_simulation_file'])
-    res['carla_scenario_file'] = my_parser.parse_carla_simulation_args(conf_files['carla_scenario_file'])
+    res = TeleConfiguration()
+    # conf_files = my_parser.parse_configuration_files()
+    # res['carla_simulation_file'] = my_parser.parse_carla_server_args(conf_files['carla_simulation_file'])
+    # res['carla_scenario_file'] = my_parser.parse_carla_simulation_args(conf_files['carla_scenario_file'])
     with open(CURRENT_OUT_PATH + 'carla_simulation_file.yaml', 'w') as outfile:
         yaml.dump(res['carla_simulation_file'], outfile, default_flow_style=False)
     with open(CURRENT_OUT_PATH + 'carla_scenario_file.yaml', 'w') as outfile:
