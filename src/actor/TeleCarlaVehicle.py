@@ -7,6 +7,7 @@ import carla
 from carla import ActorBlueprint, Transform, Location, Rotation, VehicleControl
 
 from src.TeleContext import TeleContext
+from src.TeleEvent import tele_event
 from src.TeleVehicleState import TeleVehicleState
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
@@ -30,7 +31,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self.model = None
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
-        self._sensors = set()
+        self.sensors = set()
 
         self._sending_info_thread = None
 
@@ -38,6 +39,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
         if self._sync:
+            @tele_event('sending_info_state')
             def daemon_state():
 
                 self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
@@ -46,6 +48,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
             daemon_state()
         else:
+            @tele_event('sending_info_state')
             def send_info_state():
                 while True:
                     self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
@@ -56,7 +59,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
             self._sending_info_thread.start()
 
     def attach_sensor(self, tele_carla_sensor):
-        self._sensors.add(tele_carla_sensor)
+        self.sensors.add(tele_carla_sensor)
 
     @needs_member('model')
     def __getattr__(self, *args):
@@ -107,8 +110,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, VehicleControl()))
         sim_world.tick()
 
-        for sensor in self._sensors:
-            sensor.spawn_in_the_world(tele_world, self)
+        for sensor in self.sensors:
+            sensor.attach_to_actor(tele_world, self)
 
     @needs_member('_tele_world')
     def receive_instruction_network_message(self, command):
@@ -117,7 +120,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def quit(self):
         if self._sending_info_thread is not None:
             self._sending_info_thread.exit()
-        for sensor in self._sensors:
+        for sensor in self.sensors:
             sensor.destroy()
         self._tele_world.apply_sync_command(carla.command.DestroyActor(self.id))
 

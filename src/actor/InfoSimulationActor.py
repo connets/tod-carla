@@ -1,5 +1,6 @@
 import time
 
+from src.TeleEvent import tele_event
 from src.TeleOutputWriter import DataCollector
 from src.actor.TeleActor import TeleActor
 
@@ -14,6 +15,7 @@ class PeriodicDataCollectorActor(TeleActor):
         self._last_rows = None
 
     def run(self):
+        @tele_event('writing_out', log=False)
         def daemon_write():
             current_rows = [func() for func in self._items.values()]
             if self._last_rows != current_rows:
@@ -24,19 +26,20 @@ class PeriodicDataCollectorActor(TeleActor):
         daemon_write()
 
 
-class InfoSpeedSimulationActor(TeleActor):
+class SimulationRatioActor(TeleActor):
     def __init__(self, writing_interval: float):
         super().__init__()
+        self._begin_time = None
         self._writing_interval = writing_interval
-        self._begin_time = time.time()
 
     def run(self):
+        @tele_event('log_simulation_ratio', log=False)
         def print_simulation_state():
             current_real_time = time.time()
             total_elapsed_time = round(current_real_time - self._begin_time, 2)
             simulation_duration = self._tele_context.current_duration()
             whole_speed = round(simulation_duration / total_elapsed_time, 2)
-            print(f'simulation speed ratio: {whole_speed}x')
+            print(f'simulation ratio: {whole_speed}x')
             self._tele_context.schedule(print_simulation_state, self._writing_interval)
-
-        print_simulation_state()
+        self._begin_time = time.time()
+        self._tele_context.schedule(print_simulation_state, self._writing_interval)

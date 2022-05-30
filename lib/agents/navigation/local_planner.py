@@ -7,7 +7,7 @@
 
 from enum import Enum
 from collections import deque
-import numpy.random as random
+import random
 
 import carla
 from lib.agents.navigation.controller import VehiclePIDController
@@ -220,7 +220,6 @@ class LocalPlanner(object):
         :param debug: boolean flag to activate waypoints debugging
         :return: control to be applied
         """
-
         if self._follow_speed_limits:
             self._target_speed = self._last_vehicle_state.get_speed_limit()
 
@@ -231,17 +230,18 @@ class LocalPlanner(object):
         # Purge the queue of obsolete waypoints
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
-        self._min_distance = self._base_min_distance + 0.5 * vehicle_speed
+        self._min_distance = self._base_min_distance + 0.3 * vehicle_speed
 
         num_waypoint_removed = 0
         for waypoint, _ in self._waypoints_queue:
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
                 min_distance = 1  # Don't remove the last waypoint until very close by
-                min_distance = 1.5  # Don't remove the last waypoint until very close by
+                # min_distance = 2.5  # Don't remove the last waypoint until very close by
+                # min_distance = self._min_distance
             else:
                 min_distance = self._min_distance
-
+            # print(len(self._waypoints_queue) - num_waypoint_removed, veh_location.distance(waypoint.transform.location))
             if veh_location.distance(waypoint.transform.location) < min_distance:
                 num_waypoint_removed += 1
             else:
@@ -265,6 +265,7 @@ class LocalPlanner(object):
 
         if debug:
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
+            # draw_waypoints(self._world, [wp for wp, _ in self._waypoints_queue], 1.0)
         return control
 
     def get_incoming_waypoint_and_direction(self, steps=3):
@@ -293,6 +294,7 @@ class LocalPlanner(object):
 
         :return: boolean
         """
+        # return len(self._waypoints_queue) == 0
         return len(self._waypoints_queue) == 0
 
 

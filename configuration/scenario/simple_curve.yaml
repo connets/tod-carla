@@ -11,7 +11,25 @@ route:
     yaw: -90.000298
     roll: 0.
   end:
-    x: 359.
+    x: 365.
     y: -2.
     z: 0.
-delay: 10ms
+
+delay:
+#    ran:
+#      base_station_processing_distribution: constant(0.0)
+#      uplink_urllc_distribution: constant(0.0)
+#      uplink_embb_distribution: constant(0.0)
+#      downlink_embb_distribution: constant(0.0)
+
+    backhaul:
+#      queue_urllc_distribution: constant(0.0)
+#      queue_embb_distribution: constant(0.0)
+
+      uplink_extra_delay: uniform(200ms, 300ms)
+
+      downlink_extra_delay: uniform(200ms, 300ms)
+ #+  uniform(-1ms, 1ms)
+#      extra_delay: uniform(1ms, 5ms)
+
+#      M_node_processing_time_distribution: constant(0.0)

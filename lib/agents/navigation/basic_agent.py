@@ -53,10 +53,10 @@ class BasicAgent(object):
         self._ignore_stop_signs = False
         self._ignore_vehicles = False
         self._target_speed = target_speed
-        self._sampling_resolution = 2.0
+        self._sampling_resolution = 0.05
         self._base_tlight_threshold = 5.0  # meters
         self._base_vehicle_threshold = 5.0  # meters
-        self._max_brake = 0.5
+        self._max_brake = 0.2
 
         # Change parameters according to the dictionary
         opt_dict['target_speed'] = target_speed

@@ -8,11 +8,15 @@ class TeleVehicleState:
         self.transform = transform
         self.speed_limit = speed_limit
         self.bounding_box = bounding_box
+        self.collisions = []
 
     @staticmethod
     def generate_current_state(vehicle):
-        return TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(), vehicle.get_speed_limit(),
+        vehicle_state = TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(), vehicle.get_speed_limit(),
                                 vehicle.bounding_box)
+        for sensor in vehicle.sensors:
+            sensor.attach_data(vehicle_state)
+        return vehicle_state
 
     def get_location(self):
         return self.transform.location
@@ -25,6 +29,7 @@ class TeleVehicleState:
 
     def get_speed_limit(self):
         return self.speed_limit
+
 
     def __getstate__(self):
         return {

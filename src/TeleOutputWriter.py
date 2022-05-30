@@ -1,9 +1,25 @@
 import csv
 import logging
 import os
+from datetime import datetime
 
+from src import utils
 from src.actor.TeleActor import TeleActor
-from src.folder_path import CURRENT_LOG_PATH
+from src.args_parse.TeleConfiguration import TeleConfiguration
+from src.folder_path import GENERAL_OUT_PATH, GENERAL_LOG_PATH
+
+DIR_SIMULATION = TeleConfiguration()['carla_scenario_file']['delay']['backhaul']['uplink_extra_delay'][
+                     'family'] + '_' + '_'.join(str(v) for v in
+                                                TeleConfiguration()['carla_scenario_file']['delay']['backhaul'][
+                                                    'uplink_extra_delay'][
+                                                    'parameters'].values()) + '|' + datetime.now().strftime(
+    "%Y-%m-%d_%H:%M:%S")
+
+CURRENT_OUT_PATH = GENERAL_OUT_PATH + DIR_SIMULATION + '/'
+os.mkdir(CURRENT_OUT_PATH)
+
+CURRENT_LOG_PATH = GENERAL_LOG_PATH + DIR_SIMULATION + '/'
+os.mkdir(CURRENT_LOG_PATH)
 
 
 def _configure_logger(name, log_format="%(asctime)s [%(threadName)-12.12s] %(message)s", output_file_path=None):
@@ -39,17 +55,19 @@ class _EventLogger:
         self._logger = _configure_logger('event', log_format='%(message)s',
                                          output_file_path=file_path)
 
-        self._logger.info('scheduled_timestamp, event')
+        self._logger.info('scheduled_timestamp, type, event')
 
-    def write(self, scheduled_timestamp, event):
-        self._logger.info(f'{scheduled_timestamp}, {event.__name__}')
-
-
-network_logger = _NetworkLogger(f'{CURRENT_LOG_PATH}network.log')
-event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
+    def write(self, scheduled_timestamp, event_type, event):
+        self._logger.info(f'{(scheduled_timestamp)}, {event_type}, {event.name_event}')
 
 
-class DataCollector():
+class TeleLogger():
+    network_logger = _NetworkLogger(f'{CURRENT_LOG_PATH}network.log')
+    event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
+    # simulation_ratio_logger = _EventLogger(f'{CURRENT_LOG_PATH}simulation_ratio.log')
+
+
+class DataCollector:
     def __init__(self, file_path):
         super().__init__()
         self._file = open(file_path, 'w', newline='')
@@ -58,6 +76,3 @@ class DataCollector():
     def write(self, *args):
         self._writer.writerow(args)
         self._file.flush()
-
-
-

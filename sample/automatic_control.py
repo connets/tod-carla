@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 # Copyright (c) 2018 Intel Labs.
@@ -477,6 +478,7 @@ class CollisionSensor(object):
         self._parent = parent_actor
         self.hud = hud
         world = self._parent.get_world()
+        print("***** ")
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self.sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self._parent)
         # We need to pass the lambda a weak reference to
@@ -498,6 +500,7 @@ class CollisionSensor(object):
         if not self:
             return
         actor_type = get_actor_display_name(event.other_actor)
+        print(actor_type)
         self.hud.notification('Collision with %r' % actor_type)
         impulse = event.normal_impulse
         intensity = math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
@@ -585,7 +588,7 @@ class CameraManager(object):
         self.surface = None
         self._parent = parent_actor
         self.hud = hud
-        self.recording = False
+        self.recording = True
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         attachment = carla.AttachmentType
         self._camera_transforms = [
@@ -713,7 +716,7 @@ def game_loop(args):
         random.seed(args.seed)
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(8.0)
+    client.set_timeout(28.0)
 
 
     traffic_manager = client.get_trafficmanager()
@@ -726,6 +729,7 @@ def game_loop(args):
         sim_world.apply_settings(settings)
 
         traffic_manager.set_synchronous_mode(True)
+    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
     display = pygame.display.set_mode(
         (args.width, args.height),
