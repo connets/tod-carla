@@ -32,7 +32,7 @@ class TeleConfiguration(dict, metaclass=Singleton):
         parser = ConfigurationParser(configuration_path)
         parser.add('--host', metavar='H', help='IP of the host server', required=True)
         parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
-        parser.add('--timeout', metavar='T', type=int, help='Timeout of connection', required=True)
+        parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)
         parser.add('--render', metavar='T', type=bool, help='Timeout of connection', default=False)
         parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
@@ -80,7 +80,7 @@ class TeleConfiguration(dict, metaclass=Singleton):
 
 if __name__ == '__main__':
     res = TeleConfiguration()
-    print(res['carla_simulation_file'])
+    print(res['carla_scenario_file'])
     # TeleConfiguration
     # res = dict()
     # conf_files = parse_configuration_files()

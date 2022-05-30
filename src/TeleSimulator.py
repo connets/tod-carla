@@ -40,8 +40,6 @@ class TeleSimulator:
             self._do_async_simulation()
 
     def _do_sync_simulation(self):
-        finish = False
-
         while self._tele_context.has_scheduled_events():
             # network_delay.tick()
             simulator_timestamp = round(self._tele_context.timestamp, 6)

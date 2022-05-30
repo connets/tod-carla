@@ -8,17 +8,16 @@ import yaml
 from carla import libcarla, Transform, Location, Rotation
 
 from src.TeleContext import TeleContext
-from src.TeleOutputWriter import DataCollector
+from src.TeleOutputWriter import DataCollector, CURRENT_OUT_PATH
 from src.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaVehicle import TeleCarlaVehicle
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleGnssSensor
-from src.args_parse import my_parser
-from src.args_parse.my_parser import TeleConfiguration
+from src.args_parse import TeleConfiguration
+from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
-from src.folder_path import CURRENT_OUT_PATH
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.Hud import HUD
 from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
@@ -47,10 +46,6 @@ def create_display(carla_simulation_conf):
     # display.fill((0, 0, 0))
     pygame.display.flip()
     return display
-
-
-...
-
 
 def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
@@ -119,11 +114,11 @@ def main():
     configurations = parse_configurations()
     simulation_conf = configurations['carla_simulation_file']
     scenario_conf = configurations['carla_scenario_file']
+    seed = simulation_conf['seed'] if 'seed' in simulation_conf else int(time.time())
 
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
-                                         simulation_conf['seed'] if simulation_conf['seed'] is not None else int(
-                                             time.time()),
+                                         seed,
                                          simulation_conf['synchronicity'],
                                          simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
 
@@ -147,7 +142,7 @@ def main():
         display = create_display(simulation_conf)
         hud = HUD(tele_world, player, clock, simulation_conf['camera']['width'],
                   simulation_conf['camera']['height'])
-        camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720)
+        camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720, output_path=CURRENT_OUT_PATH )
         player.attach_sensor(camera_sensor)
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
@@ -240,8 +235,10 @@ def main():
 
     try:
         tele_sim.do_simulation(simulation_conf['synchronicity'])
+        with open(CURRENT_OUT_PATH + 'finish', 'w') as f:
+            f.write('*** FINISHED ***')
     except Exception as e:
-        ...
+        raise e
     finally:
         destroy_sim_world(client, sim_world)
         pygame.quit()

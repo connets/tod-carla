@@ -7,7 +7,7 @@
 
 from enum import Enum
 from collections import deque
-import numpy.random as random
+import random
 
 import carla
 from lib.agents.navigation.controller import VehiclePIDController
@@ -230,7 +230,7 @@ class LocalPlanner(object):
         # Purge the queue of obsolete waypoints
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
-        self._min_distance = self._base_min_distance + 0.5 * vehicle_speed
+        self._min_distance = self._base_min_distance + 0.3 * vehicle_speed
 
         num_waypoint_removed = 0
         for waypoint, _ in self._waypoints_queue:
@@ -265,6 +265,7 @@ class LocalPlanner(object):
 
         if debug:
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
+            # draw_waypoints(self._world, [wp for wp, _ in self._waypoints_queue], 1.0)
         return control
 
     def get_incoming_waypoint_and_direction(self, steps=3):

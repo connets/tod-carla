@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from queue import PriorityQueue
 
+from src.TeleEvent import tele_event
 from src.network.NetworkMessage import NetworkMessage
 from src.utils.decorators import needs_member
 from src.utils.distribution_utils import _constant_family
@@ -24,6 +25,7 @@ class NetworkChannel(ABC):
     def start(self, tele_context):
         self._tele_context = tele_context
 
+        @tele_event('change_delay_network_channel')
         def change_delay():
             self._apply_delay()
             self._tele_context.schedule(change_delay, self._interval)
@@ -127,10 +129,9 @@ class DiscreteNetworkChannel(NetworkChannel):
     def send(self, msg):
         super().send(msg)
 
+        @tele_event('send_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower())
         def send_message():
             msg.action(self.destination_node)
-
-        send_message.__name__ += '_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower()
 
         self._tele_context.schedule(send_message, self._delay)
 

@@ -1,6 +1,6 @@
 import carla
 
-from src.args_parse import my_parser
+from src.args_parse import TeleConfiguration
 from src.args_parse.ConfigurationParser import ConfigurationParser
 
 

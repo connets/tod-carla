@@ -29,7 +29,7 @@ class TeleCarlaRenderingSensor(TeleCarlaSensor):
 
 class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
-    def __init__(self, gamma_correction, hud, width, height):
+    def __init__(self, gamma_correction, hud, width, height, output_path=None):
         self._tele_world = None
         self._gamma_correction = gamma_correction
         self.hud = hud
@@ -37,7 +37,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         self.height = height
         self.sensor = None
         self.surface = None
-        self.recording = False
+        self._output_path = output_path
         self.lidar_range = None
 
         self._camera_transforms = None
@@ -180,11 +180,6 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         """Get the next sensor"""
         self.set_sensor(self.index + 1)
 
-    def toggle_recording(self):
-        """Toggle recording on or off"""
-        self.recording = not self.recording
-        # self.hud.notification('Recording %s' % ('On' if self.recording else 'Off'))
-
     def render(self, display):
         """Render method"""
         if self.surface is not None:
@@ -192,7 +187,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
     def destroy(self):
         self.sensor.destroy()
-        
+
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
@@ -218,8 +213,8 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
             array = array[:, :, :3]
             array = array[:, :, ::-1]
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if self.recording:
-            image.save_to_disk('_out/%08d' % image.frame)
+        if self._output_path is not None:
+            image.save_to_disk(f'{self._output_path}{image.frame}')
 
 
 class TeleGnssSensor(TeleCarlaSensor):

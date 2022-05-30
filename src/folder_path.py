@@ -13,11 +13,3 @@ Path(GENERAL_OUT_PATH).mkdir(parents=True, exist_ok=True)
 
 GENERAL_LOG_PATH = PROJECT_PATH + 'log/'
 Path(GENERAL_LOG_PATH).mkdir(parents=True, exist_ok=True)
-
-DIR_SIMULATION = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-
-CURRENT_OUT_PATH = GENERAL_OUT_PATH + DIR_SIMULATION + '/'
-os.mkdir(CURRENT_OUT_PATH)
-
-CURRENT_LOG_PATH = GENERAL_LOG_PATH + DIR_SIMULATION + '/'
-os.mkdir(CURRENT_LOG_PATH)

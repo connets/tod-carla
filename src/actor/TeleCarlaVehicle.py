@@ -7,6 +7,7 @@ import carla
 from carla import ActorBlueprint, Transform, Location, Rotation, VehicleControl
 
 from src.TeleContext import TeleContext
+from src.TeleEvent import tele_event
 from src.TeleVehicleState import TeleVehicleState
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
@@ -38,6 +39,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
         if self._sync:
+            @tele_event('sending_info_state')
             def daemon_state():
 
                 self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
@@ -46,6 +48,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
             daemon_state()
         else:
+            @tele_event('sending_info_state')
             def send_info_state():
                 while True:
                     self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),

@@ -13,7 +13,7 @@ class TeleOperator(NetworkNode):
         self._controller = controller
 
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
-        if not self._controller.done():
+        if timestamp < 40 and not self._controller.done():
 
             command = self._controller.do_action(tele_vehicle_state)
             self.send_message(InstructionNetworkMessage(command))

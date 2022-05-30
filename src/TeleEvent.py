@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
 
 
-class TeleEvent(ABC):
+def tele_event(name, log=True):
+    def tele_event_aux(f):
+        f.name_event = name
+        f.log_event = log
+        return f
 
-    @abstractmethod
-    def exec(self, world):
-        pass
+    return tele_event_aux
 
-    def __call__(self, *args, **kwargs):
-        print("*******", args, kwargs)
-        self.exec(args[0])
+if __name__ == '__main__':
+    @tele_event('ciao')
+    def tmp():
+        print('i am tmp')
+        return 'ciao'
+    print(tmp())

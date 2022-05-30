@@ -70,3 +70,4 @@ class OldSingleton:
     def destroy(self):
         del self._instance
         self._instance = None
+

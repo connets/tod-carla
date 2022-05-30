@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 # Copyright (c) 2018 Intel Labs.
@@ -585,7 +586,7 @@ class CameraManager(object):
         self.surface = None
         self._parent = parent_actor
         self.hud = hud
-        self.recording = False
+        self.recording = True
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         attachment = carla.AttachmentType
         self._camera_transforms = [
@@ -713,7 +714,7 @@ def game_loop(args):
         random.seed(args.seed)
 
     client = carla.Client(args.host, args.port)
-    client.set_timeout(8.0)
+    client.set_timeout(28.0)
 
 
     traffic_manager = client.get_trafficmanager()
@@ -726,6 +727,7 @@ def game_loop(args):
         sim_world.apply_settings(settings)
 
         traffic_manager.set_synchronous_mode(True)
+    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
     display = pygame.display.set_mode(
         (args.width, args.height),
