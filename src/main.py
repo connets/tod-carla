@@ -7,6 +7,7 @@ import pygame
 import yaml
 from carla import libcarla, Transform, Location, Rotation
 
+from src.TeleConstant import FinishCode
 from src.TeleContext import TeleContext
 from src.TeleOutputWriter import DataCollector, CURRENT_OUT_PATH
 from src.TeleSimulator import TeleSimulator
@@ -14,7 +15,7 @@ from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataColl
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaVehicle import TeleCarlaVehicle
-from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleGnssSensor
+from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaGnssSensor, TeleCarlaCollisionSensor
 from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
@@ -46,6 +47,7 @@ def create_display(carla_simulation_conf):
     # display.fill((0, 0, 0))
     pygame.display.flip()
     return display
+
 
 def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
@@ -142,8 +144,11 @@ def main():
         display = create_display(simulation_conf)
         hud = HUD(tele_world, player, clock, simulation_conf['camera']['width'],
                   simulation_conf['camera']['height'])
-        camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720, output_path=CURRENT_OUT_PATH )
+        camera_sensor = TeleCarlaCameraSensor(hud, 2.2, 1280, 720)
         player.attach_sensor(camera_sensor)
+    collisions_sensor = TeleCarlaCollisionSensor()
+    player.attach_sensor(collisions_sensor)
+
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec = TeleMEC('127.0.0.1', utils.find_free_port())
@@ -218,13 +223,13 @@ def main():
     tele_sim.start()
 
     if simulation_conf['render']:
-        def render(_):
+        def render():
             camera_sensor.render(display)
             hud.render(display)
             pygame.display.flip()
 
-        tele_sim.add_tick_listener(render)
-        tele_sim.add_tick_listener(hud.tick)
+        tele_sim.add_sync_tick_listener(render)
+        tele_sim.add_async_tick_listener(hud.tick)
     controller.add_player_in_world(player)
     anchor_points = controller.get_trajectory()
 
@@ -234,14 +239,20 @@ def main():
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     try:
-        tele_sim.do_simulation(simulation_conf['synchronicity'])
-        with open(CURRENT_OUT_PATH + 'finish', 'w') as f:
-            f.write('*** FINISHED ***')
+        status_code = tele_sim.do_simulation(simulation_conf['synchronicity'])
+
+        finished_status_sim = {
+            FinishCode.ACCIDENT: 'ACCIDENT',
+            FinishCode.OK: 'FINISH',
+        }[status_code]
     except Exception as e:
+        finished_status_sim = 'ERROR'
         raise e
     finally:
         destroy_sim_world(client, sim_world)
         pygame.quit()
+        with open(CURRENT_OUT_PATH + 'finish_status.txt', 'w') as f:
+            f.write(finished_status_sim)
 
 
 if __name__ == '__main__':

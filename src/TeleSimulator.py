@@ -9,9 +9,18 @@ class TeleSimulator:
         self._tele_world = tele_world
         self._clock = clock
 
-        self._tele_context = TeleContext(tele_world.timestamp.elapsed_seconds)
+        self._tick_listeners = set()
         self._step_callbacks = set()
+        self._finished = False
+        self._finish_code = None
+
         self._actors = []
+
+        self._tele_context = TeleContext(tele_world.timestamp.elapsed_seconds, self.finish)
+
+    def finish(self, finish_code):
+        self._finish_code = finish_code
+        self._finished = True
 
     @property
     def tele_world(self):
@@ -20,8 +29,11 @@ class TeleSimulator:
     def add_actor(self, *actors):
         self._actors += actors
 
-    def add_tick_listener(self, callback):
-        self._tele_world.add_tick_listener(callback)
+    def add_async_tick_listener(self, listener):
+        self._tele_world.add_tick_listener(listener)
+
+    def add_sync_tick_listener(self, listener):
+        self._tick_listeners.add(listener)
 
     def add_step_listener(self, callback):
         self._step_callbacks.add(callback)
@@ -38,15 +50,16 @@ class TeleSimulator:
             self._do_sync_simulation()
         else:
             self._do_async_simulation()
+        return self._finish_code
 
     def _do_sync_simulation(self):
-        while self._tele_context.has_scheduled_events():
+        while not self._finished and self._tele_context.has_scheduled_events():
             # network_delay.tick()
             simulator_timestamp = round(self._tele_context.timestamp, 6)
             while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
                 self._tele_world.tick(self._clock)
-
+                for listener in self._tick_listeners: listener()
             for callback in self._step_callbacks: callback()
 
             self._tele_context.run_next_event()

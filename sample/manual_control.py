@@ -76,7 +76,7 @@ import sys
 
 import carla
 
-from carla import ColorConverter as cc
+from carla import ColorConverter as cc, Transform, Location, Rotation
 
 import argparse
 import collections
@@ -270,6 +270,10 @@ class World(object):
                 sys.exit(1)
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            spawn_point = Transform(
+                Location(x=396.449982, y=87.529510, z=0.3),
+                Rotation(pitch=0., yaw=-90.000298, roll=0.)
+            )
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
@@ -842,6 +846,7 @@ class CollisionSensor(object):
         if not self:
             return
         actor_type = get_actor_display_name(event.other_actor)
+        print(actor_type)
         self.hud.notification('Collision with %r' % actor_type)
         impulse = event.normal_impulse
         intensity = math.sqrt(impulse.x**2 + impulse.y**2 + impulse.z**2)
@@ -1185,7 +1190,7 @@ def game_loop(args):
 
         client.set_timeout(20.0)
 
-        sim_world = client.get_world()
+        sim_world = client.load_world('Town01_Opt')
 
         if args.sync:
             original_settings = sim_world.get_settings()
@@ -1257,12 +1262,12 @@ def main():
     argparser.add_argument(
         '--host',
         metavar='H',
-        default='127.0.0.1',
+        default='ubiquity',
         help='IP of the host server (default: 127.0.0.1)')
     argparser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=2000,
+        default=3000,
         type=int,
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(

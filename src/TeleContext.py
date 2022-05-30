@@ -4,12 +4,13 @@ from src.TeleOutputWriter import TeleLogger
 
 
 class TeleContext:
-    def __init__(self, initial_timestamp):
+    def __init__(self, initial_timestamp, finish_callback):
+        self._finish_code = 0
         self._queue = PriorityQueue()
         self._initial_timestamp = initial_timestamp
         self._timestamp = initial_timestamp
-
-        self._finished = False
+        self.finish = finish_callback
+        # self._finished = False
 
     @property
     def timestamp(self):
@@ -38,11 +39,9 @@ class TeleContext:
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         if all(hasattr(event, attr) for attr in ['log_event', 'name_event']) and event.log_event:
             TeleLogger.event_logger.write(self._timestamp, 'scheduled', event)
-        if not self._finished:
-            self._queue.put(self.TimingEvent(event, self._timestamp + s))
+        # if not self._finished:
+        self._queue.put(self.TimingEvent(event, self._timestamp + s))
 
-    def finish(self):
-        self._finished = True
 
     class TimingEvent:
         def __init__(self, event, timestamp):

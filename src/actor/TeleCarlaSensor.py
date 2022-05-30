@@ -1,4 +1,6 @@
 import abc
+import collections
+import math
 import weakref
 from abc import ABC, abstractmethod
 
@@ -9,6 +11,7 @@ from carla import ColorConverter as cc
 
 from src.actor.TeleCarlaActor import TeleCarlaActor
 from src.network.NetworkNode import NetworkNode
+from src.utils.carla_utils import get_actor_display_name
 
 
 class TeleCarlaSensor(ABC):
@@ -18,6 +21,12 @@ class TeleCarlaSensor(ABC):
 
     @abstractmethod
     def destroy(self):
+        ...
+
+    def attach_to_actor(self, tele_world, parent_actor):
+        ...
+
+    def attach_data(self, vehicle_state):
         ...
 
 
@@ -65,7 +74,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
         self.parent_actor = None
 
-    def spawn_in_the_world(self, tele_world, parent_actor):
+    def attach_to_actor(self, tele_world, parent_actor):
         self._tele_world = tele_world
         self.parent_actor = parent_actor
         # self.sensor = None
@@ -217,7 +226,51 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
             image.save_to_disk(f'{self._output_path}{image.frame}')
 
 
-class TeleGnssSensor(TeleCarlaSensor):
+class TeleCarlaCollisionSensor(TeleCarlaSensor):
+    """ Class for collision sensors"""
+    def __init__(self):
+        self._parent = None
+        self.sensor = None
+        self.history = []
+
+    def attach_to_actor(self, tele_world, parent_actor):
+        """Constructor method"""
+        self._parent = parent_actor
+        world = self._parent.get_world()
+        blueprint = world.get_blueprint_library().find('sensor.other.collision')
+        self.sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self._parent.model)
+        # We need to pass the lambda a weak reference to
+        # self to avoid circular reference.
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda event: self._on_collision(weak_self, event))
+
+    def get_collision_history(self):
+        """Gets the history of collisions"""
+        history = collections.defaultdict(int)
+        for frame, intensity in self.history:
+            history[frame] += intensity
+        return history
+
+    @staticmethod
+    def _on_collision(weak_self, event):
+        """On collision method"""
+        self = weak_self()
+        if not self:
+            return
+        actor_type = get_actor_display_name(event.other_actor)
+        impulse = event.normal_impulse
+        intensity = math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
+        self.history.append((event.frame, intensity))
+        if len(self.history) > 4000:
+            self.history.pop(0)
+
+    def destroy(self):
+        self.sensor.destroy()
+
+    def attach_data(self, vehicle_state):
+        vehicle_state.collisions = self.history
+
+class TeleCarlaGnssSensor(TeleCarlaSensor):
 
     def __init__(self):
         self.sensor = None
@@ -235,7 +288,7 @@ class TeleGnssSensor(TeleCarlaSensor):
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.
         weak_self = weakref.ref(self)
-        self.sensor.listen(lambda event: TeleGnssSensor._on_gnss_event(weak_self, event))
+        self.sensor.listen(lambda event: TeleCarlaGnssSensor._on_gnss_event(weak_self, event))
 
     def stop(self):
         self.sensor.stop()

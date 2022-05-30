@@ -478,6 +478,7 @@ class CollisionSensor(object):
         self._parent = parent_actor
         self.hud = hud
         world = self._parent.get_world()
+        print("***** ")
         blueprint = world.get_blueprint_library().find('sensor.other.collision')
         self.sensor = world.spawn_actor(blueprint, carla.Transform(), attach_to=self._parent)
         # We need to pass the lambda a weak reference to
@@ -499,6 +500,7 @@ class CollisionSensor(object):
         if not self:
             return
         actor_type = get_actor_display_name(event.other_actor)
+        print(actor_type)
         self.hud.notification('Collision with %r' % actor_type)
         impulse = event.normal_impulse
         intensity = math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
