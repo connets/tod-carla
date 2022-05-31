@@ -23,7 +23,7 @@ class PeriodicDataCollectorActor(TeleActor):
                 self._last_rows = current_rows
             self._tele_context.schedule(daemon_write, self._writing_interval)
 
-        daemon_write()
+        self._tele_context.schedule(daemon_write, self._writing_interval)
 
 
 class SimulationRatioActor(TeleActor):
