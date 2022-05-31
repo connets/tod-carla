@@ -84,7 +84,7 @@ class PhysicNetworkChannel(NetworkChannel, ABC):
                     try:
                         data, addr = self._socket.recvfrom(4096)
                         msg = NetworkMessage.from_bytes(data)
-                        print('Got connection', source_node.host, source_node.port)
+                        # print('Got connection', source_node.host, source_node.port)
                         msg.action(source_node)
                     except socket.timeout:
                         ...
@@ -113,7 +113,7 @@ class TcNetworkInterface(PhysicNetworkChannel):
     def _apply_delay(self):
         tc_config = f"""tcset {self._network_interface} --delay {self._distr_func()}ms --network {self.destination_node.host} --port {self.destination_node.port} --change"""  # TODO change stderr
         # print(tc_config)
-        print(tc_config)
+        # print(tc_config)
         os.system(tc_config)
 
 

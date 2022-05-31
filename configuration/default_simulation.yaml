@@ -5,14 +5,14 @@ render: False
 camera:
   width: 1280
   height: 720
-synchronicity: true
+synchronicity: False
 
 
 time_step: 0.05 #milliseconds
 
-controller:
-  type: auto
-  behavior: normal
+#controller:
+#  type: auto
+#  behavior: normal
 
 
 #seed: 9

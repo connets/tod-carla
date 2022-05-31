@@ -16,7 +16,7 @@ from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaGnssSensor, TeleCarlaCollisionSensor
 from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
-from src.build_world import create_sim_world, create_route
+from src.build_world import create_sim_world, create_route, destroy_sim_world
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.network.NetworkChannel import TcNetworkInterface, DiscreteNetworkChannel
 from src.utils.Hud import HUD
@@ -169,6 +169,7 @@ def main():
     tele_sim.start()
 
     if simulation_conf['render']:
+
         def render():
             camera_sensor.render(display)
             hud.render(display)

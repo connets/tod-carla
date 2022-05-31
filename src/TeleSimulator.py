@@ -74,12 +74,15 @@ class TeleSimulator:
     def _do_async_simulation(self):
         finish = False
 
+        class TickController(threading.Thread):
+            while True:
+                self._clock.tick()
+                self._tele_world.tick(self._clock)
+                for listener in self._tick_listeners: listener()
+
+        TickController().start()
         while not finish:
-            simulator_timestamp = round(self._tele_context.timestamp, 6)
-            self._clock.tick()
-            self._tele_world.tick(self._clock)
-
-            for callback in self._step_callbacks: callback()
-
             while self._tele_world.timestamp.elapsed_seconds > self._tele_context.next_timestamp_event():
                 self._tele_context.run_next_event()
+                for callback in self._step_callbacks: callback()
+
