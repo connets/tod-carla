@@ -1,13 +1,18 @@
+import os
+import sys
 import time
 from copy import deepcopy
+from datetime import datetime
 
 import carla
 import pygame
 import yaml
+from pathlib import Path
 
+from src.FolderPath import FolderPath
 from src.TeleConstant import FinishCode
 from src.TeleContext import TeleContext
-from src.TeleOutputWriter import DataCollector, CURRENT_OUT_PATH
+from src.TeleOutputWriter import DataCollector
 from src.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
@@ -25,15 +30,6 @@ from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTe
 import src.utils as utils
 
 
-def parse_configurations():
-    res = TeleConfiguration()
-    with open(CURRENT_OUT_PATH + 'carla_simulation_file.yaml', 'w') as outfile:
-        yaml.dump(res['carla_simulation_file'], outfile, default_flow_style=False)
-    with open(CURRENT_OUT_PATH + 'carla_scenario_file.yaml', 'w') as outfile:
-        yaml.dump(res['carla_scenario_file'], outfile, default_flow_style=False)
-    return res
-
-
 def create_display(carla_simulation_conf):
     pygame.init()
     pygame.font.init()
@@ -45,24 +41,20 @@ def create_display(carla_simulation_conf):
     return display
 
 
-
-
-def main():
+def main(simulation_conf, scenario_conf):
     """
     get configurations for simulation:
     - carla_server_file (default: configuration/default_server.yaml),
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
-    configurations = parse_configurations()
-    simulation_conf = configurations['carla_simulation_file']
-    scenario_conf = configurations['carla_scenario_file']
-
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
                                          simulation_conf['seed'],
                                          simulation_conf['synchronicity'],
-                                         simulation_conf['time_step'] if 'time_step' in simulation_conf else None)
+                                         simulation_conf['timing'][
+                                             'time_step'] if 'timing' in simulation_conf and 'time_step' in
+                                                             simulation_conf['timing'] else None)
 
     # traffic_manager = client.get_trafficmanager()
 
@@ -83,7 +75,9 @@ def main():
     controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
     # controller = BasicAgentTeleWorldController()
     clock = pygame.time.Clock()
-    if simulation_conf['render']:
+
+    show_camera = simulation_conf['render'] or simulation_conf['controller']['type'] == 'manual'
+    if show_camera:
         display = create_display(simulation_conf)
         hud = HUD(tele_world, player, clock, simulation_conf['camera']['width'],
                   simulation_conf['camera']['height'])
@@ -93,7 +87,7 @@ def main():
     player.attach_sensor(collisions_sensor)
 
     # controller = KeyboardTeleWorldController(camera_sensor, clock)
-    controller = KeyboardTeleWorldController(camera_sensor, clock)
+    # controller = KeyboardTeleWorldController(clock)
 
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec = TeleMEC('127.0.0.1', utils.find_free_port())
@@ -133,7 +127,7 @@ def main():
 
     # tele_world.start()
 
-    data_collector = PeriodicDataCollectorActor(CURRENT_OUT_PATH + "sensors.csv",
+    data_collector = PeriodicDataCollectorActor(FolderPath.OUTPUT_RESULTS_PATH + "sensors.csv",
                                                 {'timestamp': lambda: utils.format_number(
                                                     tele_world.timestamp.elapsed_seconds, 5),
                                                  'velocity_x': lambda: utils.format_number(player.get_velocity().x, 5),
@@ -168,8 +162,7 @@ def main():
     # camera_sensor.spawn_in_the_world(sim_world)
     tele_sim.start()
 
-    if simulation_conf['render']:
-
+    if show_camera:
         def render():
             camera_sensor.render(display)
             hud.render(display)
@@ -182,7 +175,7 @@ def main():
     controller.add_player_in_world(player)
     anchor_points = controller.get_trajectory()
 
-    optimal_trajectory_collector = DataCollector(CURRENT_OUT_PATH + 'optimal_trajectory.csv')
+    optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')
     optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
     # for point in anchor_points:
     #     optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
@@ -200,9 +193,42 @@ def main():
     finally:
         destroy_sim_world(client, sim_world)
         pygame.quit()
-        with open(CURRENT_OUT_PATH + 'finish_status.txt', 'w') as f:
+        with open(FolderPath.OUTPUT_RESULTS_PATH + 'finish_status.txt', 'w') as f:
             f.write(finished_status_sim)
 
 
+def parse_configurations(carla_simulation_config_path, carla_scenario_config_path):
+    res = TeleConfiguration(carla_simulation_config_path, carla_scenario_config_path)
+
+    return res
+
+
 if __name__ == '__main__':
-    main()
+    configuration = TeleConfiguration(sys.argv[1], sys.argv[2])
+
+    simulation_conf = configuration['carla_simulation_file']
+    scenario_conf = configuration['carla_scenario_file']
+
+    FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH = scenario_conf['delay']['backhaul']['uplink_extra_delay'][
+                                                       'family'] + '_' + '_'.join(
+        str(v) for v in
+        scenario_conf['delay']['backhaul']['uplink_extra_delay']['parameters'] \
+            .values()) + '|' + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+    Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
+    Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
+
+    FolderPath.OUTPUT_RESULTS_PATH = scenario_conf['output'][
+                                         'results'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
+    FolderPath.OUTPUT_LOG_PATH = scenario_conf['output']['log'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
+
+    os.mkdir(FolderPath.OUTPUT_RESULTS_PATH)
+    os.mkdir(FolderPath.OUTPUT_LOG_PATH)
+    os.mkdir(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/')
+
+    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation_file.yaml', 'w') as outfile:
+        yaml.dump(simulation_conf, outfile, default_flow_style=False)
+    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario_file.yaml', 'w') as outfile:
+        yaml.dump(scenario_conf, outfile, default_flow_style=False)
+
+    main(simulation_conf, scenario_conf)

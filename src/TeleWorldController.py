@@ -81,7 +81,7 @@ class KeyboardTeleWorldController(TeleController):
     """Class that handles keyboard input."""
 
 
-    def __init__(self, camera_manager, clock):
+    def __init__(self, clock):
         # self._autopilot_enabled = start_in_autopilot
         super().__init__()
         self._control = carla.VehicleControl()
@@ -89,7 +89,6 @@ class KeyboardTeleWorldController(TeleController):
         # world.player.set_autopilot(self._autopilot_enabled)
         # world.player.set_light_state(self._lights)
         self._steer_cache = 0.0
-        self._camera_manager = camera_manager
         self._clock = clock
 
     def add_player_in_world(self, player):

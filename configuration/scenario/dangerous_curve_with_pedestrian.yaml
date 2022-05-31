@@ -1,3 +1,9 @@
+IMPORT:
+  $cmd$: 'import os'
+
+_PROJECT_PATH :
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
 world: Town01_Opt
 vehicle_player: vehicle.tesla.model3
 bot:
@@ -33,3 +39,9 @@ delay:
 #      extra_delay: uniform(1ms, 5ms)
 
 #      M_node_processing_time_distribution: constant(0.0)
+
+output:
+  log:
+    $cmd$: "self['_PROJECT_PATH'] + 'log/'"
+  results:
+    $cmd$: "self['_PROJECT_PATH'] + 'out/'"

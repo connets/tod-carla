@@ -3,15 +3,17 @@ import time
 from typing import Any
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
-from src.folder_path import CONFIGURATION_FILE_PATH, CONFIGURATION_SCENARIO_PATH
 from src.utils import parser_utils
-from src.utils.decorators import Singleton
+from src.utils.decorators import DecoratorSingleton
 
 
-class TeleConfiguration(dict, metaclass=Singleton):
+@DecoratorSingleton
+class TeleConfiguration(dict):
 
-    def __init__(self) -> None:
+    def __init__(self, carla_simulation_config_path, carla_scenario_config_path) -> None:
         super().__init__()
+        self._carla_simulation_config_path = carla_simulation_config_path
+        self._carla_scenario_config_path = carla_scenario_config_path
         self._parse()
 
     def _parse(self):
@@ -22,9 +24,9 @@ class TeleConfiguration(dict, metaclass=Singleton):
     def _parse_configuration_files(self, args=None):
         parser = ConfigurationParser()
         parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for Carla server',
-                   default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
+                   default=self._carla_simulation_config_path)
         parser.add('--carla_scenario_file', metavar='CF', help='Configuration file path for simulation',
-                   default=CONFIGURATION_SCENARIO_PATH + 'dangerous_curve_with_pedestrian.yaml')
+                   default=self._carla_scenario_config_path)
         # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
         #            required=True)
         return parser_utils.parse_unit_measurement(parser.parse(args=args))
@@ -39,8 +41,10 @@ class TeleConfiguration(dict, metaclass=Singleton):
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
         parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
                    required=True)
-        parser.add('--time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
+        parser.add('--timing.time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
+        parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
+        parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')
 
         return parser_utils.parse_unit_measurement(
             parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
@@ -69,19 +73,18 @@ class TeleConfiguration(dict, metaclass=Singleton):
 
         parser.add('-n', '--number-of-vehicles', metavar='N', type=int, help='Number of vehicles')
         parser.add('-w', '--number-of-walkers', metavar='W', type=int, help='Number of walkers (default: 10)')
-        parser.add('-s', '--seed', metavar='S', type=int,
-                   help='Set random device seed and deterministic mode for Traffic Manager')
-        parser.add('--seedw', metavar='S', type=int, help='Set the seed for pedestrians module')
         parser.add('--no-rendering', help='Activate no rendering mode')
 
+        parser.add('--output.log', type=str, help='Log output directory', required=True)
+        parser.add('--output.results', type=str, help='Result output directory', required=True)
         return parser_utils.parse_unit_measurement(
             parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 
 
-
 if __name__ == '__main__':
-    res = TeleConfiguration()
-    print(res['carla_scenario_file'])
+    ...
+    # res = TeleConfiguration(PROJECT_PATH + 'configuration/default_simulation.yaml', PROJECT_PATH + 'configuration/scenario/dangerous_curve_with_pedestrian.yaml')
+    # print(res['carla_scenario_file'])
     # TeleConfiguration
     # res = dict()
     # conf_files = parse_configuration_files()

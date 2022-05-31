@@ -4,22 +4,9 @@ import os
 from datetime import datetime
 
 from src import utils
+from src.FolderPath import FolderPath
 from src.actor.TeleActor import TeleActor
 from src.args_parse.TeleConfiguration import TeleConfiguration
-from src.folder_path import GENERAL_OUT_PATH, GENERAL_LOG_PATH
-
-DIR_SIMULATION = TeleConfiguration()['carla_scenario_file']['delay']['backhaul']['uplink_extra_delay'][
-                     'family'] + '_' + '_'.join(str(v) for v in
-                                                TeleConfiguration()['carla_scenario_file']['delay']['backhaul'][
-                                                    'uplink_extra_delay'][
-                                                    'parameters'].values()) + '|' + datetime.now().strftime(
-    "%Y-%m-%d_%H:%M:%S")
-
-CURRENT_OUT_PATH = GENERAL_OUT_PATH + DIR_SIMULATION + '/'
-os.mkdir(CURRENT_OUT_PATH)
-
-CURRENT_LOG_PATH = GENERAL_LOG_PATH + DIR_SIMULATION + '/'
-os.mkdir(CURRENT_LOG_PATH)
 
 
 def _configure_logger(name, log_format="%(asctime)s [%(threadName)-12.12s] %(message)s", output_file_path=None):
@@ -62,8 +49,8 @@ class _EventLogger:
 
 
 class TeleLogger():
-    network_logger = _NetworkLogger(f'{CURRENT_LOG_PATH}network.log')
-    event_logger = _EventLogger(f'{CURRENT_LOG_PATH}event.log')
+    network_logger = _NetworkLogger(f'{FolderPath.OUTPUT_LOG_PATH}network.log')
+    event_logger = _EventLogger(f'{FolderPath.OUTPUT_LOG_PATH}event.log')
     # simulation_ratio_logger = _EventLogger(f'{CURRENT_LOG_PATH}simulation_ratio.log')
 
 

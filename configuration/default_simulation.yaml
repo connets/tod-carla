@@ -1,18 +1,22 @@
 host: ubiquity
 port: 3000
-timeout: 20s
-render: False
+timeout: 8s
+render: True
 camera:
   width: 1280
   height: 720
-synchronicity: False
+synchronicity: True
 
 
-time_step: 0.05 #milliseconds
+timing:
+  time_step: 0.05 #milliseconds
+#  sensors_data: 0.005
+#  interval_channel_change_delay: 0.01
 
-#controller:
-#  type: auto
-#  behavior: normal
+
+controller:
+  type: auto
+  behavior: normal
 
 
 #seed: 9
