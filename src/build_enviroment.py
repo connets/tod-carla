@@ -34,22 +34,22 @@ def create_display(player, clock, tele_sim, camera_width, camera_height):
     return display
 
 
-def create_sim_world(host, port, timeout, world, seed, sync, time_step=None):
+def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
-    random.seed(seed)
 
-    if sync:
-        settings = sim_world.get_settings()
-        settings.synchronous_mode = True
-        settings.fixed_delta_seconds = time_step
-        sim_world.apply_settings(settings)
-        traffic_manager = client.get_trafficmanager()
-        traffic_manager.set_synchronous_mode(True)  # TODO move from here, check if sync is active or not
-        traffic_manager.set_random_device_seed(seed)
+    settings = sim_world.get_settings()
+    settings.synchronous_mode = sync
+    settings.fixed_delta_seconds = time_step
+    settings.no_rendering_mode = render
+    sim_world.apply_settings(settings)
+    traffic_manager = client.get_trafficmanager()
+    traffic_manager.set_synchronous_mode(sync)
+    traffic_manager.set_random_device_seed(seed)
+
     client.reload_world(False)  # reload map keeping the world settings
     sim_world.tick()
 

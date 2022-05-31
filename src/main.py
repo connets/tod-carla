@@ -9,6 +9,8 @@ import pygame
 import yaml
 from pathlib import Path
 
+from numpy import random
+
 from src.FolderPath import FolderPath
 from src.TeleConstant import FinishCode
 from src.TeleOutputWriter import DataCollector
@@ -34,26 +36,37 @@ def main(simulation_conf, scenario_conf):
     - carla_server_file (default: configuration/default_server.yaml),
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
+
+    sync = not simulation_conf['asynchronicity']
+    random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
+
+    render = simulation_conf['render'] or simulation_conf['controller']['type'] == 'manual'
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
                                          simulation_conf['seed'],
-                                         simulation_conf['synchronicity'],
+                                         sync,
+                                         render,
                                          simulation_conf['timing'][
                                              'time_step'] if 'timing' in simulation_conf and 'time_step' in
                                                              simulation_conf['timing'] else None)
 
-    tele_world: TeleWorld = TeleWorld(client, simulation_conf['synchronicity'])
+    tele_world: TeleWorld = TeleWorld(client, sync)
 
     start_transform, destination_location = create_route(tele_world, scenario_conf)
-    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
+
+    if simulation_conf['controller']['type'] == 'auto':
+        controller = BehaviorAgentTeleWorldController(simulation_conf['controller']['behavior'],
+                                                      start_transform.location, destination_location)
+    else:
+        controller = KeyboardTeleWorldController(clock)
 
     # ACTORS
     pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
                                      carla.Location(x=376, y=-1.990084, z=0.001838))
 
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), simulation_conf['synchronicity'], 0.05,
+    player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), sync, 0.05,
                               scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
@@ -65,11 +78,11 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec_server = TeleMEC('127.0.0.1', utils.find_free_port())
 
-    create_network_topology(simulation_conf['synchronicity'], scenario_conf, player, mec_server, tele_operator)
+    create_network_topology(sync, scenario_conf, player, mec_server, tele_operator)
 
     tele_sim = TeleSimulator(tele_world, clock)
 
-    if simulation_conf['render'] or simulation_conf['controller']['type'] == 'manual':
+    if render:
         create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'])
 
     data_collector = create_data_collector(tele_world, player)
@@ -81,16 +94,14 @@ def main(simulation_conf, scenario_conf):
     tele_sim.add_actor(player)
 
     controller.add_player_in_world(player)
-
-    anchor_points = controller.get_trajectory()
-
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')
     optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
-    # for point in anchor_points:
-    #     optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
+    anchor_points = controller.get_trajectory()
+    for point in anchor_points:
+        optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     try:
-        status_code = tele_sim.do_simulation(simulation_conf['synchronicity'])
+        status_code = tele_sim.do_simulation(sync)
 
         finished_status_sim = {
             FinishCode.ACCIDENT: 'ACCIDENT',
@@ -104,12 +115,6 @@ def main(simulation_conf, scenario_conf):
         pygame.quit()
         with open(FolderPath.OUTPUT_RESULTS_PATH + 'finish_status.txt', 'w') as f:
             f.write(finished_status_sim)
-
-
-def parse_configurations(carla_simulation_config_path, carla_scenario_config_path):
-    res = TeleConfiguration(carla_simulation_config_path, carla_scenario_config_path)
-
-    return res
 
 
 if __name__ == '__main__':

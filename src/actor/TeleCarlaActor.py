@@ -48,25 +48,24 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def run(self):
         # self._spawn_in_world(tele_world)
         # self._controller.add_player_in_world(self)
-        if self._sync:
-            @tele_event('sending_info_state')
-            def daemon_state():
+        @tele_event('sending_info_state')
+        def daemon_state():
 
-                self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
-                                                           timestamp=self._tele_context.timestamp))
-                self._tele_context.schedule(daemon_state, self._sending_interval)
+            self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
+                                                       timestamp=self._tele_context.timestamp))
+            self._tele_context.schedule(daemon_state, self._sending_interval)
 
-            daemon_state()
-        else:
-            @tele_event('sending_info_state')
-            def send_info_state():
-                while True:
-                    self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
-                                                               timestamp=self._tele_context.timestamp))
-                    sleep(self._sending_interval)
-
-            self._sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
-            self._sending_info_thread.start()
+        daemon_state()
+        # else:
+        #     @tele_event('sending_info_state')
+        #     def send_info_state():
+        #         while True:
+        #             self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
+        #                                                        timestamp=self._tele_context.timestamp))
+        #             sleep(self._sending_interval)
+        #
+        #     self._sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
+        #     self._sending_info_thread.start()
 
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)

@@ -50,11 +50,7 @@ class TeleWorld:
 
         self._tick_callbacks = set()
 
-        def call_on_tick(timestamp):
-            for callback in self._tick_callbacks:
-                callback(timestamp)
 
-        self.sim_world.on_tick(call_on_tick)
         self.camera_manager = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
@@ -81,7 +77,12 @@ class TeleWorld:
 
         self._sensors = []
 
+
     def start(self):
+        def call_on_tick(timestamp):
+            for callback in self._tick_callbacks:
+                callback(timestamp)
+        self.sim_world.on_tick(call_on_tick)
         if self._sync:
             self.sim_world.tick()
         else:

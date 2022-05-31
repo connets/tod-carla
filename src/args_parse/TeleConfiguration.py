@@ -36,16 +36,14 @@ class TeleConfiguration(dict):
         parser.add('--host', metavar='H', help='IP of the host server', required=True)
         parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)
-        parser.add('--render', metavar='T', type=bool, help='Timeout of connection', default=False)
-        parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles')
-        parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', required=True)
-        parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
-                   required=True)
+        parser.add('--render',  help='show display', default=False, action='store_true')
+        parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1280)
+        parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
+        parser.add('--asynchronicity', default=False, action='store_true', help='asynchronicity of simulation')
         parser.add('--timing.time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
         parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
         parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')
-
         return parser_utils.parse_unit_measurement(
             parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 

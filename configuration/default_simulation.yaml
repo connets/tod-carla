@@ -1,11 +1,10 @@
 host: ubiquity
 port: 3000
 timeout: 8s
+#camera:
+#  width: 1280
+#  height: 720
 render: True
-camera:
-  width: 1280
-  height: 720
-synchronicity: True
 
 
 timing:

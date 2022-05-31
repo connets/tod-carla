@@ -268,7 +268,6 @@ class BehaviorAgent(BasicAgent):
             distance = w_distance - max(
                 walker.bounding_box.extent.y, walker.bounding_box.extent.x) - max(
                     self._vehicle_extent.y, self._vehicle_extent.x)
-            print(distance)
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
