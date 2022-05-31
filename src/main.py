@@ -72,7 +72,6 @@ def main(simulation_conf, scenario_conf):
                               modify_vehicle_physics=True)
 
     # controller = BasicAgentTeleWorldController()  # TODO change here
-    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
     # controller = BasicAgentTeleWorldController()
     clock = pygame.time.Clock()
 
@@ -86,8 +85,9 @@ def main(simulation_conf, scenario_conf):
     collisions_sensor = TeleCarlaCollisionSensor()
     player.attach_sensor(collisions_sensor)
 
-    # controller = KeyboardTeleWorldController(camera_sensor, clock)
     # controller = KeyboardTeleWorldController(clock)
+
+    controller = BehaviorAgentTeleWorldController('normal', start_transform.location, destination_location)
 
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec = TeleMEC('127.0.0.1', utils.find_free_port())
@@ -152,6 +152,8 @@ def main(simulation_conf, scenario_conf):
 
     # data_collector.add_interval_logging(lambda: tele_world.timestamp.elapsed_seconds, 0.1)
     #
+    # here the order is important
+
     tele_sim = TeleSimulator(tele_world, clock)
     tele_sim.add_actor(player)
     tele_sim.add_actor(mec)
@@ -160,7 +162,7 @@ def main(simulation_conf, scenario_conf):
     tele_sim.add_actor(SimulationRatioActor(1))
     tele_sim.add_actor(pedestrian)
     # camera_sensor.spawn_in_the_world(sim_world)
-    tele_sim.start()
+    # tele_sim.start()
 
     if show_camera:
         def render():

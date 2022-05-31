@@ -26,8 +26,12 @@ class TeleSimulator:
     def tele_world(self):
         return self._tele_world
 
-    def add_actor(self, *actors):
-        self._actors += actors
+    def add_actor(self, actor):
+        self._actors.append(actor)
+        actor.set_context(self._tele_context)
+        if isinstance(actor, TeleCarlaActor):
+            actor.spawn_in_the_world(self._tele_world)
+        actor.start()
 
     def add_async_tick_listener(self, listener):
         self._tele_world.add_tick_listener(listener)
@@ -38,12 +42,12 @@ class TeleSimulator:
     def add_step_listener(self, callback):
         self._step_callbacks.add(callback)
 
-    def start(self):
-        for actor in self._actors:
-            actor.set_context(self._tele_context)
-            if isinstance(actor, TeleCarlaActor):
-                actor.spawn_in_the_world(self._tele_world)
-            actor.start()
+    # def start(self):
+    #     for actor in self._actors:
+    #         actor.set_context(self._tele_context)
+    #         if isinstance(actor, TeleCarlaActor):
+    #             actor.spawn_in_the_world(self._tele_world)
+    #         actor.start()
 
     def do_simulation(self, sync):
         if sync:
