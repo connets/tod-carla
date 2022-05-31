@@ -38,17 +38,17 @@ def synchronized(lock: threading.RLock):
     return _decorator
 
 
-class Singleton(type):
+class MetaClassSingleton(type):
     _instances = {}
 
 
     def __call__(cls, *args, **kwargs):
-        if cls not in Singleton._instances:
-            Singleton._instances[cls] = super().__call__(*args, **kwargs)
-        return Singleton._instances[cls]
+        if cls not in MetaClassSingleton._instances:
+            MetaClassSingleton._instances[cls] = super().__call__(*args, **kwargs)
+        return MetaClassSingleton._instances[cls]
 
 
-class OldSingleton:
+class DecoratorSingleton:
     def __init__(self, decorated_type):
         self._decorated_type = decorated_type
         self._instance = None

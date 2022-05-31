@@ -588,7 +588,7 @@ class CameraManager(object):
         self.surface = None
         self._parent = parent_actor
         self.hud = hud
-        self.recording = True
+        self.recording = False
         bound_y = 0.5 + self._parent.bounding_box.extent.y
         attachment = carla.AttachmentType
         self._camera_transforms = [

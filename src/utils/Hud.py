@@ -11,10 +11,9 @@ from src.utils.carla_utils import get_actor_display_name
 class HUD(object):
     """Class for HUD text"""
 
-    def __init__(self, tele_world, player, clock, width, height):
+    def __init__(self, player, clock, width, height):
         """Constructor method"""
         self.dim = (width, height)
-        self.tele_world = tele_world
         self.player = player
         self.clock = clock
 
@@ -70,7 +69,6 @@ class HUD(object):
             'Client:  % 16.0f FPS' % self.clock.get_fps(),
             '',
             'Vehicle: % 20s' % get_actor_display_name(self.player, truncate=20),
-            'Map:     % 20s' % self.tele_world.carla_map.name.split('/')[-1],
             'Simulation time: % 12s' % datetime.timedelta(seconds=int(self.simulation_time)),
             '',
             'Speed:   % 15.0f km/h' % (3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)),
