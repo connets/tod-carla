@@ -1,4 +1,5 @@
 import argparse
+import time
 from typing import Any
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
@@ -23,7 +24,7 @@ class TeleConfiguration(dict, metaclass=Singleton):
         parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for Carla server',
                    default=CONFIGURATION_FILE_PATH + 'default_simulation.yaml')
         parser.add('--carla_scenario_file', metavar='CF', help='Configuration file path for simulation',
-                   default=CONFIGURATION_SCENARIO_PATH + 'simple_curve.yaml')
+                   default=CONFIGURATION_SCENARIO_PATH + 'dangerous_curve_with_pedestrian.yaml')
         # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
         #            required=True)
         return parser_utils.parse_unit_measurement(parser.parse(args=args))
@@ -39,7 +40,7 @@ class TeleConfiguration(dict, metaclass=Singleton):
         parser.add('--synchronicity', metavar='S', type=bool, help='synchronicity of simulation',
                    required=True)
         parser.add('--time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
-        parser.add('--seed', metavar='S', type=int, help='simulation seed')
+        parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
 
         return parser_utils.parse_unit_measurement(
             parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))

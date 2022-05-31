@@ -68,3 +68,4 @@ class TeleVehicleState:
             Location(state['bounding_box_location_x'], state['bounding_box_location_y'],
                      state['bounding_box_location_z']),
             Vector3D(state['bounding_box_extent_x'], state['bounding_box_extent_y'], state['bounding_box_extent_z']))
+        self.collisions = [] #TODO change for (un)marshalling of the object

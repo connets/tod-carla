@@ -233,7 +233,7 @@ class LocalPlanner(object):
         self._min_distance = self._base_min_distance + 0.3 * vehicle_speed
 
         num_waypoint_removed = 0
-        for waypoint, _ in self._waypoints_queue:
+        for i, (waypoint, _) in enumerate(self._waypoints_queue, start=1):
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
                 min_distance = 1  # Don't remove the last waypoint until very close by
@@ -243,7 +243,7 @@ class LocalPlanner(object):
                 min_distance = self._min_distance
             # print(len(self._waypoints_queue) - num_waypoint_removed, veh_location.distance(waypoint.transform.location))
             if veh_location.distance(waypoint.transform.location) < min_distance:
-                num_waypoint_removed += 1
+                num_waypoint_removed = i
             else:
                 break
 
