@@ -197,6 +197,12 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
     def destroy(self):
         self.sensor.destroy()
 
+    """
+    This method causes the simulator to misbehave with rendering option, because this method is on another thread,
+    so the main thread doesn't wait this one to complete, and it could happen that finishes before that the last frame 
+    is rendered. if the option to save the image is enabled is also slower, maybe because it's an hard operation and cpu is full. 
+    """
+
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
@@ -228,6 +234,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
 class TeleCarlaCollisionSensor(TeleCarlaSensor):
     """ Class for collision sensors"""
+
     def __init__(self):
         self._parent = None
         self.sensor = None
@@ -270,6 +277,7 @@ class TeleCarlaCollisionSensor(TeleCarlaSensor):
 
     def attach_data(self, vehicle_state):
         vehicle_state.collisions = self.history
+
 
 class TeleCarlaGnssSensor(TeleCarlaSensor):
 
