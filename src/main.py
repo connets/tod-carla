@@ -83,7 +83,8 @@ def main(simulation_conf, scenario_conf):
     tele_sim = TeleSimulator(tele_world, clock)
 
     if render:
-        create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'])
+        create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'],
+                       FolderPath.OUTPUT_IMAGES_PATH)
 
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
@@ -93,7 +94,6 @@ def main(simulation_conf, scenario_conf):
     tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
 
-    tele_sim.add_sync_tick_listener(lambda: print(player.get_location()))
     controller.add_player_in_world(player)
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')
     optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
@@ -139,6 +139,14 @@ if __name__ == '__main__':
 
     os.mkdir(FolderPath.OUTPUT_RESULTS_PATH)
     os.mkdir(FolderPath.OUTPUT_LOG_PATH)
+
+    if 'images' in scenario_conf['output']:
+        Path(scenario_conf['output']['images']).mkdir(parents=True, exist_ok=True)
+
+        FolderPath.OUTPUT_IMAGES_PATH = scenario_conf['output'][
+                                            'images'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
+        os.mkdir(FolderPath.OUTPUT_IMAGES_PATH)
+
     os.mkdir(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/')
 
     with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation_file.yaml', 'w') as outfile:

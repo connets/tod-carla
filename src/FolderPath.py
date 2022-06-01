@@ -10,6 +10,7 @@ class FolderPath:
 
     OUTPUT_RESULTS_PATH = None
     OUTPUT_LOG_PATH = None
+    OUTPUT_IMAGES_PATH = None
 
     def __new__(cls: Type):
         raise Exception("Can't create instance of this class")

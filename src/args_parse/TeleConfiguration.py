@@ -75,6 +75,7 @@ class TeleConfiguration(dict):
 
         parser.add('--output.log', type=str, help='Log output directory', required=True)
         parser.add('--output.results', type=str, help='Result output directory', required=True)
+        parser.add('--output.images', type=str, help='Images output directory')
         return parser_utils.parse_unit_measurement(
             parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
 

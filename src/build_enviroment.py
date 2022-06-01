@@ -11,7 +11,7 @@ from src.utils.Hud import HUD
 import pygame
 
 
-def create_display(player, clock, tele_sim, camera_width, camera_height):
+def create_display(player, clock, tele_sim, camera_width, camera_height, output_path=None):
     print("***")
     pygame.init()
     pygame.font.init()
@@ -20,15 +20,15 @@ def create_display(player, clock, tele_sim, camera_width, camera_height):
     pygame.display.flip()
 
     hud = HUD(player, clock, camera_width, camera_height)
-    camera_sensor = TeleCarlaCameraSensor(hud, 2.2, camera_width, camera_height)
+    camera_sensor = TeleCarlaCameraSensor(hud, 2.2, camera_width, camera_height, output_path)
     player.attach_sensor(camera_sensor)
 
-    def render():
+    def render(_):
         camera_sensor.render(display)
         hud.render(display)
         pygame.display.flip()
 
-    tele_sim.add_sync_tick_listener(render)
+    tele_sim.add_async_tick_listener(render)
     tele_sim.add_async_tick_listener(hud.tick)
 
     return display

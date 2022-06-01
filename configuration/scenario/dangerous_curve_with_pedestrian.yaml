@@ -9,6 +9,8 @@ output:
     $cmd$: "self['_PROJECT_PATH'] + 'log/'"
   results:
     $cmd$: "self['_PROJECT_PATH'] + 'out/'"
+#  images:
+#    $cmd$: "self['_PROJECT_PATH'] + 'images/'"
 
 world: Town01_Opt
 vehicle_player: vehicle.tesla.model3
