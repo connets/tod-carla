@@ -31,7 +31,6 @@ class TeleSimulator:
         actor.set_context(self._tele_context)
         if isinstance(actor, TeleCarlaActor):
             actor.spawn_in_the_world(self._tele_world)
-        actor.start()
 
     def add_async_tick_listener(self, listener):
         self._tele_world.add_tick_listener(listener)
@@ -50,6 +49,9 @@ class TeleSimulator:
     #         actor.start()
 
     def do_simulation(self, sync):
+        for actor in self._actors:
+            actor.start()
+
         if sync:
             self._do_sync_simulation()
         else:

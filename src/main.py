@@ -13,7 +13,7 @@ from numpy import random
 
 from src.FolderPath import FolderPath
 from src.TeleConstant import FinishCode
-from src.TeleOutputWriter import DataCollector
+from src.TeleOutputWriter import DataCollector, TeleLogger
 from src.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
@@ -37,7 +37,7 @@ def main(simulation_conf, scenario_conf):
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
-    sync = not simulation_conf['asynchronicity']
+    sync = not simulation_conf['async']
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
@@ -145,4 +145,5 @@ if __name__ == '__main__':
     with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario_file.yaml', 'w') as outfile:
         yaml.dump(scenario_conf, outfile, default_flow_style=False)
 
+    TeleLogger(FolderPath.OUTPUT_LOG_PATH)
     main(simulation_conf, scenario_conf)

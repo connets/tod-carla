@@ -7,6 +7,7 @@ from src import utils
 from src.FolderPath import FolderPath
 from src.actor.TeleActor import TeleActor
 from src.args_parse.TeleConfiguration import TeleConfiguration
+from src.utils.decorators import DecoratorSingleton
 
 
 def _configure_logger(name, log_format="%(asctime)s [%(threadName)-12.12s] %(message)s", output_file_path=None):
@@ -48,9 +49,11 @@ class _EventLogger:
         self._logger.info(f'{(scheduled_timestamp)}, {event_type}, {event.name_event}')
 
 
+@DecoratorSingleton
 class TeleLogger():
-    network_logger = _NetworkLogger(f'{FolderPath.OUTPUT_LOG_PATH}network.log')
-    event_logger = _EventLogger(f'{FolderPath.OUTPUT_LOG_PATH}event.log')
+    def __init__(self, log_path):
+        self.network_logger = _NetworkLogger(f'{log_path}network.log')
+        self.event_logger = _EventLogger(f'{log_path}event.log')
     # simulation_ratio_logger = _EventLogger(f'{CURRENT_LOG_PATH}simulation_ratio.log')
 
 

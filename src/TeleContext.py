@@ -29,7 +29,7 @@ class TeleContext:
         self._timestamp = timing_event.timestamp
 
         if all(hasattr(event, attr) for attr in ['log_event', 'name_event']) and event.log_event:
-            TeleLogger.event_logger.write(self._timestamp, 'executed', event)
+            TeleLogger.instance.event_logger.write(self._timestamp, 'executed', event)
         event()
 
     def has_scheduled_events(self):
@@ -38,7 +38,7 @@ class TeleContext:
     def schedule(self, event, s):
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         if all(hasattr(event, attr) for attr in ['log_event', 'name_event']) and event.log_event:
-            TeleLogger.event_logger.write(self._timestamp, 'scheduled', event)
+            TeleLogger.instance.event_logger.write(self._timestamp, 'scheduled', event)
         # if not self._finished:
         self._queue.put(self.TimingEvent(event, self._timestamp + s))
 

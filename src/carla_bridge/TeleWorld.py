@@ -123,4 +123,7 @@ class TeleWorld:
         return self.sim_world.get_snapshot()
 
     def apply_sync_command(self, *commands):
-        return self.client.apply_batch_sync(commands)
+        results = self.client.apply_batch_sync(commands)
+        if not self._sync:
+            self.sim_world.wait_for_tick()
+        return results

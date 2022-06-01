@@ -204,6 +204,7 @@ class BehaviorAgentTeleWorldController(TeleController):
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
         self._waypoints = self.carla_agent.set_destination(self._destination_location,
                                                            start_location=self._start_location)
+        print("*****")
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
