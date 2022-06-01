@@ -258,6 +258,7 @@ class TeleCarlaCollisionSensor(TeleCarlaSensor):
         if not self:
             return
         actor_type = get_actor_display_name(event.other_actor)
+        print("**** ACCIDENT ****", actor_type)
         impulse = event.normal_impulse
         intensity = math.sqrt(impulse.x ** 2 + impulse.y ** 2 + impulse.z ** 2)
         self.history.append((event.frame, intensity))

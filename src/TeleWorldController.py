@@ -162,7 +162,7 @@ class KeyboardTeleWorldController(TeleController):
         return False
 
     def get_trajectory(self):
-        []
+        return []
 
 
 class BasicAgentTeleWorldController(TeleController):

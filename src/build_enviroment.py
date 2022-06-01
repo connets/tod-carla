@@ -41,14 +41,15 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
 
-    settings = sim_world.get_settings()
-    settings.synchronous_mode = sync
-    settings.fixed_delta_seconds = time_step
-    settings.no_rendering_mode = render
-    sim_world.apply_settings(settings)
-    traffic_manager = client.get_trafficmanager()
-    traffic_manager.set_synchronous_mode(sync)
-    traffic_manager.set_random_device_seed(seed)
+    if sync:
+        settings = sim_world.get_settings()
+        settings.synchronous_mode = sync
+        settings.fixed_delta_seconds = time_step
+        settings.no_rendering_mode = not render
+        sim_world.apply_settings(settings)
+        traffic_manager = client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(sync)
+        traffic_manager.set_random_device_seed(seed)
 
     client.reload_world(False)  # reload map keeping the world settings
     sim_world.tick()
@@ -56,6 +57,7 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     # traffic_manager.set_synchronous_mode(True)
 
     return client, sim_world
+
 
 
 def destroy_sim_world(client, sim_world):
