@@ -41,6 +41,7 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
 
+
     if sync:
         settings = sim_world.get_settings()
         settings.synchronous_mode = sync
@@ -53,6 +54,13 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
 
     client.reload_world(False)  # reload map keeping the world settings
     sim_world.tick()
+    # env_objs = sim_world.get_environment_objects(carla.CityObjectLabel.Any)
+    # building_01 = env_objs[0]
+    # building_02 = env_objs[1]
+    # objects_to_toggle = {building_01.id, building_02.id}
+    #
+    # # Toggle buildings off
+    # sim_world.enable_environment_objects(objects_to_toggle, True)
 
     # traffic_manager.set_synchronous_mode(True)
 
@@ -74,7 +82,7 @@ def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
         # for spawn_point in carla_map.get_spawn_points():
-        #     if abs(367.227295 - spawn_point.location.x) < 6:
+        #     if abs(-102.523941 - spawn_point.location.x) < 6:
         #         print(spawn_point)
         start_transform = Transform(
             Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],

@@ -62,8 +62,6 @@ def main(simulation_conf, scenario_conf):
         controller = KeyboardTeleWorldController(clock)
 
     # ACTORS
-    pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
-                                     carla.Location(x=376, y=-1.990084, z=0.001838))
 
     player_attrs = {'role_name': 'hero'}
     player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), sync, 0.05,
@@ -91,8 +89,13 @@ def main(simulation_conf, scenario_conf):
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
     tele_sim.add_actor(SimulationRatioActor(1))
-    tele_sim.add_actor(pedestrian)
+    for pedestrian in scenario_conf['pedestrians']:
+        pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
+                                         carla.Location(x=pedestrian['x'], y=pedestrian['y'], z=pedestrian['z']))
+        tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
+
+    tele_sim.add_sync_tick_listener(lambda: print(player.get_location()))
 
     controller.add_player_in_world(player)
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')

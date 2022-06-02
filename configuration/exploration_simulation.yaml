@@ -4,7 +4,7 @@ timeout: 8s
 #camera:
 #  width: 1280
 #  height: 720
-render: False
+render: True
 
 
 timing:
@@ -14,9 +14,7 @@ timing:
 
 
 controller:
-  type: auto
-  behavior: normal
-
+  type: controller
 
 #seed: 9
 
