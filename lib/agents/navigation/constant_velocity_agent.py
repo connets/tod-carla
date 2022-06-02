@@ -14,6 +14,8 @@ import carla
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.tools.misc import get_speed
 
+
+# TODO adapt this class to our simulator
 class ConstantVelocityAgent(BasicAgent):
     """
     ConstantVelocityAgent implements an agent that navigates the scene at a fixed velocity.
