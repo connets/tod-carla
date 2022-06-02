@@ -8,14 +8,13 @@
 waypoints and avoiding other vehicles. The agent also responds to traffic lights,
 traffic signs, and has different possible configurations. """
 
-import random
 import numpy as np
 import carla
-from lib.agents.navigation.basic_agent import BasicAgent
-from lib.agents.navigation.local_planner import RoadOption
-from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
+from old_lib.agents.navigation.basic_agent import BasicAgent
+from old_lib.agents.navigation.local_planner import RoadOption
+from old_lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
 
-from lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
+from old_lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
 
 class BehaviorAgent(BasicAgent):
     """
@@ -30,15 +29,16 @@ class BehaviorAgent(BasicAgent):
     are encoded in the agent, from cautious to a more aggressive ones.
     """
 
-    def __init__(self, vehicle, behavior='normal', opt_dict={}, map_inst=None, grp_inst=None):
+    def __init__(self, vehicle, behavior='normal'):
         """
         Constructor method.
 
             :param vehicle: actor to apply to local planner logic onto
+            :param ignore_traffic_light: boolean to ignore any traffic light
             :param behavior: type of agent to apply
         """
 
-        super().__init__(vehicle, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
+        super(BehaviorAgent, self).__init__(vehicle)
         self._look_ahead_steps = 0
 
         # Vehicle information
@@ -77,8 +77,10 @@ class BehaviorAgent(BasicAgent):
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
+        # print(self._vehicle.get_location(), self._incoming_waypoint)
         if self._incoming_direction is None:
             self._incoming_direction = RoadOption.LANEFOLLOW
+
 
     def traffic_light_manager(self):
         """
@@ -259,12 +261,14 @@ class BehaviorAgent(BasicAgent):
         # 2.1: Pedestrian avoidance behaviors
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
 
+        print('******' * 10 if walker_state else '')
         if walker_state:
             # Distance is computed from the center of the two cars,
             # we use bounding boxes to calculate the actual distance
             distance = w_distance - max(
                 walker.bounding_box.extent.y, walker.bounding_box.extent.x) - max(
-                self._vehicle_extent.y, self._vehicle_extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
+
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
                 return self.emergency_stop()
@@ -277,7 +281,7 @@ class BehaviorAgent(BasicAgent):
             # we use bounding boxes to calculate the actual distance
             distance = distance - max(
                 vehicle.bounding_box.extent.y, vehicle.bounding_box.extent.x) - max(
-                self._vehicle_extent.y, self._vehicle_extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:

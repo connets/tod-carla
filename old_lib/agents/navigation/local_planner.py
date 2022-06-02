@@ -10,8 +10,8 @@ from collections import deque
 import random
 
 import carla
-from lib.agents.navigation.controller import VehiclePIDController
-from lib.agents.tools.misc import draw_waypoints, get_speed
+from old_lib.agents.navigation.controller import VehiclePIDController
+from old_lib.agents.tools.misc import draw_waypoints, get_speed
 
 
 class RoadOption(Enum):
@@ -40,7 +40,7 @@ class LocalPlanner(object):
     unless a given global plan has already been specified.
     """
 
-    def __init__(self, vehicle, opt_dict={}, map_inst=None):
+    def __init__(self, vehicle, opt_dict={}):
         """
         :param vehicle: actor to apply to local planner logic onto
         :param opt_dict: dictionary of arguments with different parameters:
@@ -53,19 +53,11 @@ class LocalPlanner(object):
             max_brake: maximum brake applied to the vehicle
             max_steering: maximum steering applied to the vehicle
             offset: distance between the route waypoints and the center of the lane
-        :param map_inst: carla.Map instance to avoid the expensive call of getting it.
         """
+        # self._last_vehicle_state = vehicle
         self._last_vehicle_state = None
-
         self._world = vehicle.get_world()
-        if map_inst:
-            if isinstance(map_inst, carla.Map):
-                self._map = map_inst
-            else:
-                print("Warning: Ignoring the given map as it is not a 'carla.Map'")
-                self._map = self._world.get_map()
-        else:
-            self._map = self._world.get_map()
+        self._map = self._world.get_map()
 
         self._vehicle_controller = None
         self.target_waypoint = None
@@ -85,8 +77,7 @@ class LocalPlanner(object):
         self._max_brake = 0.3
         self._max_steer = 0.8
         self._offset = 0
-        self._base_min_distance = 0
-        self._distance_ratio = 0.3
+        self._base_min_distance = 0.0
         self._follow_speed_limits = False
 
         # Overload parameters
@@ -111,8 +102,6 @@ class LocalPlanner(object):
                 self._offset = opt_dict['offset']
             if 'base_min_distance' in opt_dict:
                 self._base_min_distance = opt_dict['base_min_distance']
-            if 'distance_ratio' in opt_dict:
-                self._distance_ratio = opt_dict['distance_ratio']
             if 'follow_speed_limits' in opt_dict:
                 self._follow_speed_limits = opt_dict['follow_speed_limits']
 
@@ -188,6 +177,7 @@ class LocalPlanner(object):
                 # random choice between the possible options
                 road_options_list = _retrieve_options(
                     next_waypoints, last_waypoint)
+
                 road_option = random.choice(road_options_list)
                 next_waypoint = next_waypoints[road_options_list.index(
                     road_option)]
@@ -239,16 +229,18 @@ class LocalPlanner(object):
         # Purge the queue of obsolete waypoints
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
-        self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
+        self._min_distance = self._base_min_distance + 0.3 * vehicle_speed
 
         num_waypoint_removed = 0
         for i, (waypoint, _) in enumerate(self._waypoints_queue, start=1):
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
                 min_distance = 1  # Don't remove the last waypoint until very close by
+                # min_distance = 2.5  # Don't remove the last waypoint until very close by
+                # min_distance = self._min_distance
             else:
                 min_distance = self._min_distance
-
+            # print(len(self._waypoints_queue) - num_waypoint_removed, veh_location.distance(waypoint.transform.location))
             if veh_location.distance(waypoint.transform.location) < min_distance:
                 num_waypoint_removed = i
             else:
@@ -272,7 +264,7 @@ class LocalPlanner(object):
 
         if debug:
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
-
+            # draw_waypoints(self._world, [wp for wp, _ in self._waypoints_queue], 1.0)
         return control
 
     def get_incoming_waypoint_and_direction(self, steps=3):
@@ -301,6 +293,7 @@ class LocalPlanner(object):
 
         :return: boolean
         """
+        # return len(self._waypoints_queue) == 0
         return len(self._waypoints_queue) == 0
 
 
