@@ -30,6 +30,9 @@ class TeleCarlaSensor(ABC):
     def attach_data(self, vehicle_state):
         ...
 
+    def done(self, timestamp):
+        return True
+
 
 class TeleCarlaRenderingSensor(TeleCarlaSensor):
     @abstractmethod
@@ -94,6 +97,9 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
     def destroy(self):
         self.sensor.destroy()
 
+    def done(self, timestamp):
+        return self.image is None or self.image.frame == timestamp.frame
+
     """
     This method causes the simulator to misbehave with rendering option, because this method is on another thread,
     so the main thread doesn't wait this one to complete, and it could happen that finishes before that the last frame 
@@ -123,6 +129,7 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
         self._tele_world = None
         self.sensor = None
         self.parent_actor = None
+        self.image = None
 
     def attach_to_actor(self, tele_world, parent_actor):
         self._tele_world = tele_world
@@ -150,6 +157,9 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
     def destroy(self):
         self.sensor.destroy()
 
+    def done(self, timestamp):
+        return self.image is not None and self.image.frame == timestamp.frame
+
     """
     This method causes the simulator to misbehave with rendering option, because this method is on another thread,
     so the main thread doesn't wait this one to complete, and it could happen that finishes before that the last frame 
@@ -159,17 +169,7 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
-        if not self:
-            return
-
-        image.convert(cc.Rawi)
-        array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
-        array = np.reshape(array, (image.height, image.width, 4))
-        array = array[:, :, :3]
-        array = array[:, :, ::-1]
-        self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
-        if self._output_path is not None:
-            image.save_to_disk(f'{self._output_path}{image.frame}')
+        self.image = image
 
 
 class TeleCarlaCollisionSensor(TeleCarlaSensor):

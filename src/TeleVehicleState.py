@@ -12,8 +12,9 @@ class TeleVehicleState:
 
     @staticmethod
     def generate_current_state(vehicle):
-        vehicle_state = TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(), vehicle.get_speed_limit(),
-                                vehicle.bounding_box)
+        vehicle_state = TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(),
+                                         vehicle.get_speed_limit(),
+                                         vehicle.bounding_box)
         for sensor in vehicle.sensors:
             sensor.attach_data(vehicle_state)
         return vehicle_state
@@ -29,7 +30,6 @@ class TeleVehicleState:
 
     def get_speed_limit(self):
         return self.speed_limit
-
 
     def __getstate__(self):
         return {
@@ -68,4 +68,4 @@ class TeleVehicleState:
             Location(state['bounding_box_location_x'], state['bounding_box_location_y'],
                      state['bounding_box_location_z']),
             Vector3D(state['bounding_box_extent_x'], state['bounding_box_extent_y'], state['bounding_box_extent_z']))
-        self.collisions = [] #TODO change for (un)marshalling of the object
+        self.collisions = []  # TODO change for (un)marshalling of the object

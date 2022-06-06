@@ -50,7 +50,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
         # self._controller.add_player_in_world(self)
         @tele_event('sending_info_state')
         def daemon_state():
-
             self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
                                                        timestamp=self._tele_context.timestamp))
             self._tele_context.schedule(daemon_state, self._sending_interval)
@@ -134,6 +133,9 @@ class TeleCarlaVehicle(TeleCarlaActor):
         for sensor in self.sensors:
             sensor.destroy()
         self._tele_world.apply_sync_command(carla.command.DestroyActor(self.id))
+
+    def done(self, timestamp):
+        return all(sensor.done(timestamp) for sensor in self.sensors)
 
 
 class TeleCarlaPedestrian(TeleCarlaActor):

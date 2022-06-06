@@ -32,10 +32,7 @@ class TeleSimulator:
         if isinstance(actor, TeleCarlaActor):
             actor.spawn_in_the_world(self._tele_world)
 
-    def add_async_tick_listener(self, listener):
-        self._tele_world.add_tick_listener(listener)
-
-    def add_sync_tick_listener(self, listener):
+    def add_tick_listener(self, listener):
         self._tick_listeners.add(listener)
 
     def add_step_listener(self, callback):
@@ -64,8 +61,13 @@ class TeleSimulator:
             simulator_timestamp = round(self._tele_context.timestamp, 6)
             while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
-                self._tele_world.tick(self._clock)
-                for listener in self._tick_listeners: listener()
+                self._tele_world.tick()
+                for listener in self._tick_listeners:
+                    listener(self._tele_world.timestamp)
+
+            while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
+                ...
+
             for callback in self._step_callbacks: callback()
 
             self._tele_context.run_next_event()
@@ -91,4 +93,3 @@ class TeleSimulator:
             while self._tele_world.timestamp.elapsed_seconds > self._tele_context.next_timestamp_event():
                 self._tele_context.run_next_event()
                 for callback in self._step_callbacks: callback()
-
