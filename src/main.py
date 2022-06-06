@@ -95,7 +95,6 @@ def main(simulation_conf, scenario_conf):
         tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
 
-    tele_sim.add_sync_tick_listener(lambda: print(player.get_location()))
 
     controller.add_player_in_world(player)
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')
