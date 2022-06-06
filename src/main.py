@@ -19,7 +19,7 @@ from src.actor.InfoSimulationActor import SimulationRatioActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
-from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor
+from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor
 from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import create_sim_world, create_route, destroy_sim_world, create_data_collector, \
@@ -80,9 +80,12 @@ def main(simulation_conf, scenario_conf):
 
     tele_sim = TeleSimulator(tele_world, clock)
 
+    camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
         create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'],
-                       FolderPath.OUTPUT_IMAGES_PATH)
+                       camera_sensor, FolderPath.OUTPUT_IMAGES_PATH)
+
+    player.attach_sensor(camera_sensor)
 
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
@@ -94,7 +97,6 @@ def main(simulation_conf, scenario_conf):
                                          carla.Location(x=pedestrian['x'], y=pedestrian['y'], z=pedestrian['z']))
         tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
-
 
     controller.add_player_in_world(player)
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')

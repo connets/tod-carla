@@ -11,21 +11,19 @@ from src.utils.Hud import HUD
 import pygame
 
 
-def create_display(player, clock, tele_sim, camera_width, camera_height, output_path=None):
-    print("***")
+def create_display(player, clock, tele_sim, camera_width, camera_height, camera_sensor, output_path=None):
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((camera_width, camera_height), pygame.HWSURFACE | pygame.DOUBLEBUF)
     # display.fill((0, 0, 0))
     pygame.display.flip()
 
-    hud = HUD(player, clock, camera_width, camera_height)
-    camera_sensor = TeleCarlaCameraSensor(hud, 2.2, camera_width, camera_height, output_path)
-    player.attach_sensor(camera_sensor)
+    hud = HUD(player, clock, display)
+    camera_sensor.add_display(display, output_path)
 
     def render(_):
-        camera_sensor.render(display)
-        hud.render(display)
+        camera_sensor.render()
+        hud.render()
         pygame.display.flip()
 
     tele_sim.add_async_tick_listener(render)
@@ -39,8 +37,6 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
-
-
 
     if sync:
         settings = sim_world.get_settings()
@@ -65,7 +61,6 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     # traffic_manager.set_synchronous_mode(True)
 
     return client, sim_world
-
 
 
 def destroy_sim_world(client, sim_world):

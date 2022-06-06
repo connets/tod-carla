@@ -3,6 +3,7 @@ import collections
 import math
 import weakref
 from abc import ABC, abstractmethod
+from queue import Queue
 
 import carla
 import numpy as np
@@ -32,27 +33,25 @@ class TeleCarlaSensor(ABC):
 
 class TeleCarlaRenderingSensor(TeleCarlaSensor):
     @abstractmethod
-    def render(self, display):
+    def render(self):
         ...
 
 
 class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
-    def __init__(self, gamma_correction, hud, width, height, output_path=None):
+    def __init__(self, gamma_correction):
+        self.display = None
         self._tele_world = None
         self._gamma_correction = gamma_correction
-        self.hud = hud
-        self.width = width
-        self.height = height
         self.sensor = None
         self.surface = None
-        self._output_path = output_path
-        self.lidar_range = None
-
-        self._camera_transforms = None
-        self.transform_index = 0
-
+        self._output_path = None
         self.parent_actor = None
+        self.image = None
+
+    def add_display(self, display, output_path=None):
+        self.display = display
+        self._output_path = output_path
 
     def attach_to_actor(self, tele_world, parent_actor):
         self._tele_world = tele_world
@@ -61,22 +60,12 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         bound_y = 0.5 + parent_actor.bounding_box.extent.y
         bound_z = 0.5 + parent_actor.bounding_box.extent.z
 
-        Attachment = carla.AttachmentType
-        self._camera_transforms = [
-            (carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
-                             carla.Rotation(pitch=8.0)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=+0.8 * bound_x, y=+0.0 * bound_y, z=1.3 * bound_z)), Attachment.Rigid),
-            (
-                carla.Transform(carla.Location(x=+1.9 * bound_x, y=+1.0 * bound_y, z=1.2 * bound_z)),
-                Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-2.8 * bound_x, y=+0.0 * bound_y, z=4.6 * bound_z),
-                             carla.Rotation(pitch=6.0)), Attachment.SpringArm),
-            (carla.Transform(carla.Location(x=-1.0, y=-1.0 * bound_y, z=0.4 * bound_z)), Attachment.Rigid)]
-
         bp_library = parent_actor.get_world().get_blueprint_library()
         bp = bp_library.find('sensor.camera.rgb')
-        bp.set_attribute('image_size_x', str(self.width))
-        bp.set_attribute('image_size_y', str(self.height))
+        if self.display is not None:
+            bp.set_attribute('image_size_x', str(self.display.get_width()))
+            bp.set_attribute('image_size_y', str(self.display.get_height()))
+
         # bp.set_attribute('image_size_x', str(hud.dim[0]))
         # bp.set_attribute('image_size_y', str(hud.dim[1]))
         if bp.has_attribute('gamma'):
@@ -97,12 +86,66 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         weak_self = weakref.ref(self)
         self.sensor.listen(lambda image: TeleCarlaCameraSensor._parse_image(weak_self, image))
 
-
-
-    def render(self, display):
+    def render(self):
         """Render method"""
         if self.surface is not None:
-            display.blit(self.surface, (0, 0))
+            self.display.blit(self.surface, (0, 0))
+
+    def destroy(self):
+        self.sensor.destroy()
+
+    """
+    This method causes the simulator to misbehave with rendering option, because this method is on another thread,
+    so the main thread doesn't wait this one to complete, and it could happen that finishes before that the last frame 
+    is rendered. if the option to save the image is enabled is also slower, maybe because it's an hard operation and cpu is full. 
+    """
+
+    @staticmethod
+    def _parse_image(weak_self, image):
+        self = weak_self()
+        if not self:
+            return
+        self.image = image
+        if self.display:
+            image.convert(cc.Raw)
+            array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+            array = np.reshape(array, (image.height, image.width, 4))
+            array = array[:, :, :3]
+            array = array[:, :, ::-1]
+            self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+            if self._output_path is not None:
+                image.save_to_disk(f'{self._output_path}{image.frame}')
+
+
+class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
+
+    def __init__(self):
+        self._tele_world = None
+        self.sensor = None
+        self.parent_actor = None
+
+    def attach_to_actor(self, tele_world, parent_actor):
+        self._tele_world = tele_world
+        self.parent_actor = parent_actor
+        bound_x = 0.5 + parent_actor.bounding_box.extent.x
+        bound_y = 0.5 + parent_actor.bounding_box.extent.y
+        bound_z = 0.5 + parent_actor.bounding_box.extent.z
+
+        bp_library = parent_actor.get_world().get_blueprint_library()
+        lidar_bp = bp_library.find('sensor.lidar.ray_cast_semantic')
+        lidar_bp.set_attribute('sensor_tick', '1.0')
+        lidar_bp.set_attribute('channels', '64')
+        lidar_bp.set_attribute('points_per_second', '1120000')
+        lidar_bp.set_attribute('upper_fov', '40')
+        lidar_bp.set_attribute('lower_fov', '-40')
+        lidar_bp.set_attribute('range', '100')
+        lidar_bp.set_attribute('rotation_frequency', '20')
+        lidar_transform = carla.Transform(carla.Location(x=1.5, z=2.4))
+        self.sensor = self.parent_actor.get_world().spawn_actor(lidar_bp, lidar_transform,
+                                                                attach_to=self.parent_actor.model)
+
+        weak_self = weakref.ref(self)
+        self.sensor.listen(lambda image: TeleCarlaCameraSensor._parse_image(weak_self, image))
 
     def destroy(self):
         self.sensor.destroy()
