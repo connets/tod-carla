@@ -50,12 +50,6 @@ class TeleWorld:
 
         self._tick_callbacks = set()
 
-        def call_on_tick(timestamp):
-            for callback in self._tick_callbacks:
-                callback(timestamp)
-
-        self.sim_world.on_tick(call_on_tick)
-
         self.camera_manager = None
         self._weather_presets = find_weather_presets()
         self._weather_index = 0
@@ -81,29 +75,21 @@ class TeleWorld:
         ]
 
         self._sensors = []
-
-    def start(self):
-
-        if self._sync:
-            self.sim_world.tick()
-        else:
-            self.sim_world.wait_for_tick()
-
-    def add_tick_listener(self, callback):
-        self._tick_callbacks.add(callback)
+        # useful to synchronize timestamp
 
     # def add_sensor(self, sensor: TeleSensor, parent):
     #     sensor.spawn_in_world(parent)
     #     self._sensors.append(sensor)
 
-    def tick(self, clock):  # TODO change here, put NetworkNode
+    def tick(self):  # TODO change here, put NetworkNode
         """Method for every tick"""
+        before = self.sim_world.get_snapshot().frame
         if self._sync:
-            self.sim_world.tick()
+            frame = self.sim_world.tick()
         else:
             self.sim_world.wait_for_tick()
-
         self._last_snapshot = self.sim_world.get_snapshot()
+
         # command = self._controller.do_action(clock)
         # if command is None:
         #     return -1
@@ -116,9 +102,11 @@ class TeleWorld:
 
     @property
     def timestamp(self):
-        if self._last_snapshot is None:
-            self._last_snapshot = self.sim_world.get_snapshot()
-        return self._last_snapshot.timestamp
+        """ TODO
+        don't call every time this method, but saves every tick,
+        now this instruction is mandatory for the change from async mode to sync
+        """
+        return self.get_snapshot().timestamp
 
     def get_snapshot(self):
         return self.sim_world.get_snapshot()

@@ -11,9 +11,7 @@
 
 """
 Welcome to CARLA manual control.
-
 Use ARROWS or WASD keys for control.
-
     W            : throttle
     S            : brake
     A/D          : steer left/right
@@ -23,32 +21,25 @@ Use ARROWS or WASD keys for control.
     M            : toggle manual transmission
     ,/.          : gear up/down
     CTRL + W     : toggle constant velocity mode at 60 km/h
-
     L            : toggle next light type
     SHIFT + L    : toggle high beam
     Z/X          : toggle right/left blinker
     I            : toggle interior light
-
     TAB          : change sensor position
     ` or N       : next sensor
     [1-9]        : change to sensor [1-9]
     G            : toggle radar visualization
     C            : change weather (Shift+C reverse)
     Backspace    : change vehicle
-
     O            : open/close all doors of vehicle
     T            : toggle vehicle's telemetry
-
     V            : Select next map layer (Shift+V reverse)
     B            : Load current selected map layer (Shift+B to unload)
-
     R            : toggle recording images to disk
-
     CTRL + R     : toggle recording of simulation (replacing any previous)
     CTRL + P     : start replaying last recorded simulation
     CTRL + +     : increments the start time of the replay by 1 second (+SHIFT = 10 seconds)
     CTRL + -     : decrements the start time of the replay by 1 second (+SHIFT = 10 seconds)
-
     F1           : toggle HUD
     H/?          : toggle help
     ESC          : quit
@@ -66,7 +57,13 @@ import glob
 import os
 import sys
 
-
+try:
+    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
+        sys.version_info.major,
+        sys.version_info.minor,
+        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
+except IndexError:
+    pass
 
 
 # ==============================================================================
@@ -76,7 +73,7 @@ import sys
 
 import carla
 
-from carla import ColorConverter as cc, Transform, Location, Rotation
+from carla import ColorConverter as cc
 
 import argparse
 import collections
@@ -86,7 +83,6 @@ import math
 import random
 import re
 import weakref
-import time
 
 try:
     import pygame
@@ -270,10 +266,6 @@ class World(object):
                 sys.exit(1)
             spawn_points = self.map.get_spawn_points()
             spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
-            spawn_point = Transform(
-                Location(x=396.449982, y=87.529510, z=0.3),
-                Rotation(pitch=0., yaw=-90.000298, roll=0.)
-            )
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
@@ -390,7 +382,6 @@ class KeyboardControl(object):
             if event.type == pygame.QUIT:
                 return True
             elif event.type == pygame.KEYUP:
-
                 if self._is_quit_shortcut(event.key):
                     return True
                 elif event.key == K_BACKSPACE:
@@ -846,7 +837,6 @@ class CollisionSensor(object):
         if not self:
             return
         actor_type = get_actor_display_name(event.other_actor)
-        print(actor_type)
         self.hud.notification('Collision with %r' % actor_type)
         impulse = event.normal_impulse
         intensity = math.sqrt(impulse.x**2 + impulse.y**2 + impulse.z**2)
@@ -904,6 +894,7 @@ class GnssSensor(object):
         # reference.
         weak_self = weakref.ref(self)
         self.sensor.listen(lambda event: GnssSensor._on_gnss_event(weak_self, event))
+
     @staticmethod
     def _on_gnss_event(weak_self, event):
         self = weak_self()
@@ -1185,13 +1176,10 @@ def game_loop(args):
     original_settings = None
 
     try:
-        client = carla.Client("ubiquity", 3000)
-
-
+        client = carla.Client(args.host, args.port)
         client.set_timeout(20.0)
 
-        sim_world = client.load_world('Town01_Opt')
-
+        sim_world = client.load_world("Town05")
         if args.sync:
             original_settings = sim_world.get_settings()
             settings = sim_world.get_settings()
@@ -1226,11 +1214,13 @@ def game_loop(args):
         while True:
             if args.sync:
                 sim_world.tick()
+            clock.tick_busy_loop(60)
             if controller.parse_events(client, world, clock, args.sync):
                 return
             world.tick(clock)
             world.render(display)
             pygame.display.flip()
+            print(world.player.get_location(), world.player.get_transform())
 
     finally:
 

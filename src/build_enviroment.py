@@ -11,25 +11,23 @@ from src.utils.Hud import HUD
 import pygame
 
 
-def create_display(player, clock, tele_sim, camera_width, camera_height, output_path=None):
-    print("***")
+def create_display(player, clock, tele_sim, camera_width, camera_height, camera_sensor, output_path=None):
     pygame.init()
     pygame.font.init()
     display = pygame.display.set_mode((camera_width, camera_height), pygame.HWSURFACE | pygame.DOUBLEBUF)
     # display.fill((0, 0, 0))
     pygame.display.flip()
 
-    hud = HUD(player, clock, camera_width, camera_height)
-    camera_sensor = TeleCarlaCameraSensor(hud, 2.2, camera_width, camera_height, output_path)
-    player.attach_sensor(camera_sensor)
+    hud = HUD(player, clock, display)
+    camera_sensor.add_display(display, output_path)
 
     def render(_):
-        camera_sensor.render(display)
-        hud.render(display)
+        camera_sensor.render()
+        hud.render()
         pygame.display.flip()
 
-    tele_sim.add_async_tick_listener(render)
-    tele_sim.add_async_tick_listener(hud.tick)
+    tele_sim.add_tick_listener(render)
+    tele_sim.add_tick_listener(hud.tick)
 
     return display
 
@@ -39,7 +37,6 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
-
 
     if sync:
         settings = sim_world.get_settings()
@@ -53,11 +50,17 @@ def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=N
 
     client.reload_world(False)  # reload map keeping the world settings
     sim_world.tick()
+    # env_objs = sim_world.get_environment_objects(carla.CityObjectLabel.Any)
+    # building_01 = env_objs[0]
+    # building_02 = env_objs[1]
+    # objects_to_toggle = {building_01.id, building_02.id}
+    #
+    # # Toggle buildings off
+    # sim_world.enable_environment_objects(objects_to_toggle, True)
 
     # traffic_manager.set_synchronous_mode(True)
 
     return client, sim_world
-
 
 
 def destroy_sim_world(client, sim_world):
@@ -74,7 +77,7 @@ def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
         # for spawn_point in carla_map.get_spawn_points():
-        #     if abs(367.227295 - spawn_point.location.x) < 6:
+        #     if abs(-102.523941 - spawn_point.location.x) < 6:
         #         print(spawn_point)
         start_transform = Transform(
             Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],

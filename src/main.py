@@ -19,7 +19,7 @@ from src.actor.InfoSimulationActor import SimulationRatioActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
-from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor
+from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import create_sim_world, create_route, destroy_sim_world, create_data_collector, \
@@ -62,8 +62,6 @@ def main(simulation_conf, scenario_conf):
         controller = KeyboardTeleWorldController(clock)
 
     # ACTORS
-    pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
-                                     carla.Location(x=376, y=-1.990084, z=0.001838))
 
     player_attrs = {'role_name': 'hero'}
     player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), sync, 0.05,
@@ -82,16 +80,24 @@ def main(simulation_conf, scenario_conf):
 
     tele_sim = TeleSimulator(tele_world, clock)
 
+    camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
         create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'],
-                       FolderPath.OUTPUT_IMAGES_PATH)
+                       camera_sensor, FolderPath.OUTPUT_IMAGES_PATH)
+
+    player.attach_sensor(camera_sensor)
+    lidar_sensor = TeleCarlaLidarSensor()
+    player.attach_sensor(lidar_sensor)
 
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
     tele_sim.add_actor(SimulationRatioActor(1))
-    tele_sim.add_actor(pedestrian)
+    for pedestrian in scenario_conf['pedestrians']:
+        pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
+                                         carla.Location(x=pedestrian['x'], y=pedestrian['y'], z=pedestrian['z']))
+        tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
 
     controller.add_player_in_world(player)

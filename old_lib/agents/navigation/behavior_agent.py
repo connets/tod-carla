@@ -8,15 +8,13 @@
 waypoints and avoiding other vehicles. The agent also responds to traffic lights,
 traffic signs, and has different possible configurations. """
 
-import random
 import numpy as np
 import carla
-from lib.agents.navigation.basic_agent import BasicAgent
-from lib.agents.navigation.local_planner import RoadOption
-from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
+from old_lib.agents.navigation.basic_agent import BasicAgent
+from old_lib.agents.navigation.local_planner import RoadOption
+from old_lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
 
-from lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
-
+from old_lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
 
 class BehaviorAgent(BasicAgent):
     """
@@ -31,18 +29,18 @@ class BehaviorAgent(BasicAgent):
     are encoded in the agent, from cautious to a more aggressive ones.
     """
 
-    def __init__(self, vehicle, behavior='normal', opt_dict={}, map_inst=None, grp_inst=None):
+    def __init__(self, vehicle, behavior='normal'):
         """
         Constructor method.
 
             :param vehicle: actor to apply to local planner logic onto
+            :param ignore_traffic_light: boolean to ignore any traffic light
             :param behavior: type of agent to apply
         """
 
-        super().__init__(vehicle, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
+        super(BehaviorAgent, self).__init__(vehicle)
         self._look_ahead_steps = 0
 
-        self.tmp = vehicle
         # Vehicle information
         self._speed = 0
         self._speed_limit = 0
@@ -79,8 +77,10 @@ class BehaviorAgent(BasicAgent):
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
+        # print(self._vehicle.get_location(), self._incoming_waypoint)
         if self._incoming_direction is None:
             self._incoming_direction = RoadOption.LANEFOLLOW
+
 
     def traffic_light_manager(self):
         """
@@ -111,7 +111,7 @@ class BehaviorAgent(BasicAgent):
             self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, low_angle_th=160)
         if behind_vehicle_state and self._speed < get_speed(behind_vehicle):
             if (right_turn == carla.LaneChange.Right or right_turn ==
-                carla.LaneChange.Both) and waypoint.lane_id * right_wpt.lane_id > 0 and right_wpt.lane_type == carla.LaneType.Driving:
+                    carla.LaneChange.Both) and waypoint.lane_id * right_wpt.lane_id > 0 and right_wpt.lane_type == carla.LaneType.Driving:
                 new_vehicle_state, _, _ = self._vehicle_obstacle_detected(vehicle_list, max(
                     self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, lane_offset=1)
                 if not new_vehicle_state:
@@ -143,10 +143,7 @@ class BehaviorAgent(BasicAgent):
         """
 
         vehicle_list = self._world.get_actors().filter("*vehicle*")
-
-        def dist(v):
-            return v.get_location().distance(waypoint.transform.location)
-
+        def dist(v): return v.get_location().distance(waypoint.transform.location)
         vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._last_vehicle_state.id]
 
         if self._direction == RoadOption.CHANGELANELEFT:
@@ -182,13 +179,10 @@ class BehaviorAgent(BasicAgent):
             :return distance: distance to nearby walker
         """
 
-        # walker_list = self._world.get_actors().filter("*walker.pedestrian*")
-        walker_list = self._last_vehicle_state.visible_pedestrians
-
-        def dist(w):
-            return w.get_location().distance(waypoint.transform.location)
-
+        walker_list = self._world.get_actors().filter("*walker.pedestrian*")
+        def dist(w): return w.get_location().distance(waypoint.transform.location)
         walker_list = [w for w in walker_list if dist(w) < 10]
+
         if self._direction == RoadOption.CHANGELANELEFT:
             walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
                 self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
@@ -267,12 +261,14 @@ class BehaviorAgent(BasicAgent):
         # 2.1: Pedestrian avoidance behaviors
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
 
+        print('******' * 10 if walker_state else '')
         if walker_state:
             # Distance is computed from the center of the two cars,
             # we use bounding boxes to calculate the actual distance
             distance = w_distance - max(
                 walker.bounding_box.extent.y, walker.bounding_box.extent.x) - max(
-                self._vehicle_extent.y, self._vehicle_extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
+
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
                 return self.emergency_stop()
@@ -285,7 +281,7 @@ class BehaviorAgent(BasicAgent):
             # we use bounding boxes to calculate the actual distance
             distance = distance - max(
                 vehicle.bounding_box.extent.y, vehicle.bounding_box.extent.x) - max(
-                self._vehicle_extent.y, self._vehicle_extent.x)
+                    self._vehicle_extent.y, self._vehicle_extent.x)
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:

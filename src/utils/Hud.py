@@ -11,9 +11,10 @@ from src.utils.carla_utils import get_actor_display_name
 class HUD(object):
     """Class for HUD text"""
 
-    def __init__(self, player, clock, width, height):
+    def __init__(self, player, clock, display):
         """Constructor method"""
-        self.dim = (width, height)
+        self.display = display
+        self.dim = (display.get_width(), display.get_height())
         self.player = player
         self.clock = clock
 
@@ -24,7 +25,7 @@ class HUD(object):
         mono = default_font if default_font in fonts else fonts[0]
         mono = pygame.font.match_font(mono)
         self._font_mono = pygame.font.Font(mono, 12 if os.name == 'nt' else 14)
-        self._notifications = FadingText(font, (width, 40), (0, height - 40))
+        self._notifications = FadingText(font, (display.get_width(), 40), (0, self.display.get_height() - 40))
         # self.help = HelpText(pygame.font.Font(mono, 24), width, height)
         self.server_fps = 0
         self.frame = 0
@@ -124,12 +125,12 @@ class HUD(object):
         """Error text"""
         self._notifications.set_text('Error: %s' % text, (255, 0, 0))
 
-    def render(self, display):
+    def render(self):
         """Render for HUD class"""
         if self._show_info:
             info_surface = pygame.Surface((220, self.dim[1]))
             info_surface.set_alpha(100)
-            display.blit(info_surface, (0, 0))
+            self.display.blit(info_surface, (0, 0))
             v_offset = 4
             bar_h_offset = 100
             bar_width = 106
@@ -139,29 +140,29 @@ class HUD(object):
                 if isinstance(item, list):
                     if len(item) > 1:
                         points = [(x + 8, v_offset + 8 + (1 - y) * 30) for x, y in enumerate(item)]
-                        pygame.draw.lines(display, (255, 136, 0), False, points, 2)
+                        pygame.draw.lines(self.display, (255, 136, 0), False, points, 2)
                     item = None
                     v_offset += 18
                 elif isinstance(item, tuple):
                     if isinstance(item[1], bool):
                         rect = pygame.Rect((bar_h_offset, v_offset + 8), (6, 6))
-                        pygame.draw.rect(display, (255, 255, 255), rect, 0 if item[1] else 1)
+                        pygame.draw.rect(self.display, (255, 255, 255), rect, 0 if item[1] else 1)
                     else:
                         rect_border = pygame.Rect((bar_h_offset, v_offset + 8), (bar_width, 6))
-                        pygame.draw.rect(display, (255, 255, 255), rect_border, 1)
+                        pygame.draw.rect(self.display, (255, 255, 255), rect_border, 1)
                         fig = (item[1] - item[2]) / (item[3] - item[2])
                         if item[2] < 0.0:
                             rect = pygame.Rect(
                                 (bar_h_offset + fig * (bar_width - 6), v_offset + 8), (6, 6))
                         else:
                             rect = pygame.Rect((bar_h_offset, v_offset + 8), (fig * bar_width, 6))
-                        pygame.draw.rect(display, (255, 255, 255), rect)
+                        pygame.draw.rect(self.display, (255, 255, 255), rect)
                     item = item[0]
                 if item:  # At this point has to be a str.
                     surface = self._font_mono.render(item, True, (255, 255, 255))
-                    display.blit(surface, (8, v_offset))
+                    self.display.blit(surface, (8, v_offset))
                 v_offset += 18
-        self._notifications.render(display)
+        self._notifications.render(self.display)
         # self.help.render(display)
 
 

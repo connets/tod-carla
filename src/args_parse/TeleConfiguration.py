@@ -36,7 +36,7 @@ class TeleConfiguration(dict):
         parser.add('--host', metavar='H', help='IP of the host server', required=True)
         parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)
-        parser.add('--render',  help='show display', default=False, action='store_true')
+        parser.add('--render', help='show display', default=False, action='store_true')
         parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1280)
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
         parser.add('--async', default=False, action='store_true', help='asynchronicity of simulation')
@@ -71,6 +71,9 @@ class TeleConfiguration(dict):
 
         parser.add('-n', '--number-of-vehicles', metavar='N', type=int, help='Number of vehicles')
         parser.add('-w', '--number-of-walkers', metavar='W', type=int, help='Number of walkers (default: 10)')
+
+        parser.add('--pedestrians', metavar='P', type=list, help='Pedestrians list', default=[])
+
         parser.add('--no-rendering', help='Activate no rendering mode')
 
         parser.add('--output.log', type=str, help='Log output directory', required=True)
@@ -81,9 +84,13 @@ class TeleConfiguration(dict):
 
 
 if __name__ == '__main__':
-    ...
-    # res = TeleConfiguration(PROJECT_PATH + 'configuration/default_simulation.yaml', PROJECT_PATH + 'configuration/scenario/dangerous_curve_with_pedestrian.yaml')
-    # print(res['carla_scenario_file'])
+    import os
+
+    PROJECT_PATH = ''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))
+    res = TeleConfiguration(PROJECT_PATH + 'configuration/default_simulation.yaml',
+                            PROJECT_PATH + 'configuration/scenario/dangerous_curve_with_pedestrian.yaml')
+
+    print(res['carla_scenario_file']['pedestrians'][0]['x'])
     # TeleConfiguration
     # res = dict()
     # conf_files = parse_configuration_files()

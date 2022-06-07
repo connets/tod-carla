@@ -1,7 +1,7 @@
 IMPORT:
   $cmd$: 'import os'
 
-_PROJECT_PATH :
+_PROJECT_PATH:
   $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
 
 output:
@@ -12,38 +12,44 @@ output:
 #  images:
 #    $cmd$: "self['_PROJECT_PATH'] + 'images/'"
 
-world: Town01_Opt
+world: Town05
 vehicle_player: vehicle.tesla.model3
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
 route:
   start:
-    x: 396.449982
-    y: 87.529510
-    z: 0.3
-    pitch: 0.
-    yaw: -90.000298
-    roll: 0.
+    x: -96.746132
+    y: -84.539719
+    z: 0.300000
+    pitch: 0.000000
+    yaw: 0.086306
+    roll: 0.000000
   end:
-    x: 365.
-    y: -2.
-    z: 0.
-
+    x: -54.873127
+    y: -49.073090
+    z: 0.058735
+pedestrians: [
+  {
+    x: -54.992538,
+    y: -73.757713,
+    z: 0.058768
+  }
+]
 delay:
-#    ran:
-#      base_station_processing_distribution: constant(0.0)
-#      uplink_urllc_distribution: constant(0.0)
-#      uplink_embb_distribution: constant(0.0)
-#      downlink_embb_distribution: constant(0.0)
+  #    ran:
+  #      base_station_processing_distribution: constant(0.0)
+  #      uplink_urllc_distribution: constant(0.0)
+  #      uplink_embb_distribution: constant(0.0)
+  #      downlink_embb_distribution: constant(0.0)
 
-    backhaul:
-#      queue_urllc_distribution: constant(0.0)
-#      queue_embb_distribution: constant(0.0)
+  backhaul:
+    #      queue_urllc_distribution: constant(0.0)
+    #      queue_embb_distribution: constant(0.0)
 
-      uplink_extra_delay: uniform(0ms, 0ms)
+    uplink_extra_delay: uniform(0ms, 0ms)
 
-      downlink_extra_delay: uniform(0ms, 0ms)
- #+  uniform(-1ms, 1ms)
+    downlink_extra_delay: uniform(0ms, 0ms)
+  #+  uniform(-1ms, 1ms)
 #      extra_delay: uniform(1ms, 5ms)
 
 #      M_node_processing_time_distribution: constant(0.0)

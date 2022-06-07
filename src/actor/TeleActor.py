@@ -23,3 +23,6 @@ class TeleActor(ABC):
     @needs_member('_tele_context')
     def start(self):
         self.run()
+
+    def done(self, timestamp):
+        return True
