@@ -65,6 +65,7 @@ class TeleSimulator:
                 for listener in self._tick_listeners:
                     listener(self._tele_world.timestamp)
 
+            # busy waiting for attending the last data sensors
             while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
                 ...
 

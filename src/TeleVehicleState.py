@@ -2,21 +2,46 @@ from carla import Vector3D, Transform, Location, Rotation, BoundingBox
 
 
 class TeleVehicleState:
-    def __init__(self, _id, velocity, transform, speed_limit, bounding_box):
+    class VisibleActor:
+        def __init__(self, _id, transformation, bounding_box):
+            self.id = _id
+            self.transformation = transformation
+            self.bounding_box = bounding_box
+
+        def get_transform(self):
+            return self.transformation
+
+        def get_location(self):
+            return self.transformation.location
+
+        @staticmethod
+        def generate_visible_actor(actor):
+            return TeleVehicleState.VisibleActor(actor.id, actor.get_transform(), actor.bounding_box)
+
+    def __init__(self, timestamp, _id, velocity, transform, speed_limit, bounding_box, visible_vehicles,
+                 visible_pedestrians):
+        self.timestamp = timestamp
         self.id = _id
         self.velocity = velocity
         self.transform = transform
         self.speed_limit = speed_limit
         self.bounding_box = bounding_box
         self.collisions = []
+        self.visible_vehicles = visible_vehicles
+        self.visible_pedestrians = visible_pedestrians
 
     @staticmethod
-    def generate_current_state(vehicle):
-        vehicle_state = TeleVehicleState(vehicle.id, vehicle.get_velocity(), vehicle.get_transform(),
+    def generate_vehicle_state(timestamp, vehicle, visible_vehicles, visible_pedestrians):
+        vehicle_state = TeleVehicleState(timestamp, vehicle.id, vehicle.get_velocity(), vehicle.get_transform(),
                                          vehicle.get_speed_limit(),
-                                         vehicle.bounding_box)
+                                         vehicle.bounding_box,
+                                         [TeleVehicleState.VisibleActor.generate_visible_actor(v) for v in
+                                          visible_vehicles],
+                                         [TeleVehicleState.VisibleActor.generate_visible_actor(v) for v in
+                                          visible_pedestrians])
         for sensor in vehicle.sensors:
             sensor.attach_data(vehicle_state)
+
         return vehicle_state
 
     def get_location(self):

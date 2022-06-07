@@ -1,3 +1,4 @@
+from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.network.NetworkNode import NetworkNode
 
 
@@ -22,6 +23,7 @@ from src.TeleEvent import tele_event
 from src.TeleVehicleState import TeleVehicleState
 from src.network.NetworkMessage import InfoUpdateNetworkMessage
 from threading import Thread
+import lib.camera_visibility.carla_vehicle_annotator as cva
 
 from src.utils.decorators import needs_member
 
@@ -46,25 +48,38 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._sending_info_thread = None
 
     def run(self):
-        # self._spawn_in_world(tele_world)
-        # self._controller.add_player_in_world(self)
         @tele_event('sending_info_state')
         def daemon_state():
-            self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
-                                                       timestamp=self._tele_context.timestamp))
+
+            camera_sensor = self.get_sensor_by_class(TeleCarlaCameraSensor)
+            lidar_sensor = self.get_sensor_by_class(TeleCarlaLidarSensor)
+            lidar_image = lidar_sensor.image if lidar_sensor is not None else None
+            visible_vehicles, visible_pedestrians = [], []
+            snapshot = self._tele_world.get_snapshot()
+            if lidar_image and camera_sensor:
+                vehicles_raw = [v for v in self._tele_world.sim_world.get_actors().filter('vehicle.*') if
+                                v.id != self.id]
+                # does it need snap_processing filter?
+                # vehicles = cva.snap_processing(vehicles_raw, snap)
+                if vehicles_raw:
+                    vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image)
+                    visible_vehicles = vehicles_res['vehicles']
+                pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
+                if pedestrian_raw:
+                    pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
+                    visible_pedestrians = pedestrians_res['vehicles']
+
+            self.send_message(InfoUpdateNetworkMessage(
+                TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
+                                                        visible_pedestrians),
+                timestamp=self._tele_context.timestamp))
+
             self._tele_context.schedule(daemon_state, self._sending_interval)
 
         daemon_state()
-        # else:
-        #     @tele_event('sending_info_state')
-        #     def send_info_state():
-        #         while True:
-        #             self.send_message(InfoUpdateNetworkMessage(TeleVehicleState.generate_current_state(self),
-        #                                                        timestamp=self._tele_context.timestamp))
-        #             sleep(self._sending_interval)
-        #
-        #     self._sending_info_thread = Thread(target=send_info_state)  # non mi piace per nulla :(
-        #     self._sending_info_thread.start()
+
+    def get_sensor_by_class(self, cls):
+        return next(iter([s for s in self.sensors if isinstance(s, cls)]), None)
 
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)

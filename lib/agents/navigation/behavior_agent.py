@@ -17,6 +17,7 @@ from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
 
 from lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
 
+
 class BehaviorAgent(BasicAgent):
     """
     BehaviorAgent implements an agent that navigates scenes to reach a given
@@ -41,6 +42,7 @@ class BehaviorAgent(BasicAgent):
         super().__init__(vehicle, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
         self._look_ahead_steps = 0
 
+        self.tmp = vehicle
         # Vehicle information
         self._speed = 0
         self._speed_limit = 0
@@ -109,7 +111,7 @@ class BehaviorAgent(BasicAgent):
             self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, low_angle_th=160)
         if behind_vehicle_state and self._speed < get_speed(behind_vehicle):
             if (right_turn == carla.LaneChange.Right or right_turn ==
-                    carla.LaneChange.Both) and waypoint.lane_id * right_wpt.lane_id > 0 and right_wpt.lane_type == carla.LaneType.Driving:
+                carla.LaneChange.Both) and waypoint.lane_id * right_wpt.lane_id > 0 and right_wpt.lane_type == carla.LaneType.Driving:
                 new_vehicle_state, _, _ = self._vehicle_obstacle_detected(vehicle_list, max(
                     self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, lane_offset=1)
                 if not new_vehicle_state:
@@ -141,7 +143,10 @@ class BehaviorAgent(BasicAgent):
         """
 
         vehicle_list = self._world.get_actors().filter("*vehicle*")
-        def dist(v): return v.get_location().distance(waypoint.transform.location)
+
+        def dist(v):
+            return v.get_location().distance(waypoint.transform.location)
+
         vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._last_vehicle_state.id]
 
         if self._direction == RoadOption.CHANGELANELEFT:
@@ -177,8 +182,12 @@ class BehaviorAgent(BasicAgent):
             :return distance: distance to nearby walker
         """
 
-        walker_list = self._world.get_actors().filter("*walker.pedestrian*")
-        def dist(w): return w.get_location().distance(waypoint.transform.location)
+        # walker_list = self._world.get_actors().filter("*walker.pedestrian*")
+        walker_list = self._last_vehicle_state.visible_pedestrians
+
+        def dist(w):
+            return w.get_location().distance(waypoint.transform.location)
+
         walker_list = [w for w in walker_list if dist(w) < 10]
         if self._direction == RoadOption.CHANGELANELEFT:
             walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(

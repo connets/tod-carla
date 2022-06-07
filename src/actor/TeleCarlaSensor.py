@@ -10,8 +10,6 @@ import numpy as np
 import pygame
 from carla import ColorConverter as cc
 
-from src.actor.TeleCarlaActor import TeleCarlaActor
-from src.network.NetworkNode import NetworkNode
 from src.utils.carla_utils import get_actor_display_name
 
 
