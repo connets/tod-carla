@@ -109,7 +109,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
-        if not self:
+        if not self or (self.image is not None and image.frame < self.image.frame):
             return
         self.image = image
         if self.display:
@@ -140,25 +140,27 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
 
         bp_library = parent_actor.get_world().get_blueprint_library()
         lidar_bp = bp_library.find('sensor.lidar.ray_cast_semantic')
-        lidar_bp.set_attribute('sensor_tick', '1.0')
+        # lidar_bp.set_attribute('sensor_tick', '1.0')
         lidar_bp.set_attribute('channels', '64')
         lidar_bp.set_attribute('points_per_second', '1120000')
         lidar_bp.set_attribute('upper_fov', '40')
         lidar_bp.set_attribute('lower_fov', '-40')
         lidar_bp.set_attribute('range', '100')
         lidar_bp.set_attribute('rotation_frequency', '20')
-        lidar_transform = carla.Transform(carla.Location(x=1.5, z=2.4))
+        lidar_transform = carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
+                                          carla.Rotation(pitch=8.0))
         self.sensor = self.parent_actor.get_world().spawn_actor(lidar_bp, lidar_transform,
                                                                 attach_to=self.parent_actor.model)
 
+        # print("====>", self.sensor)>
         weak_self = weakref.ref(self)
-        self.sensor.listen(lambda image: TeleCarlaCameraSensor._parse_image(weak_self, image))
+        self.sensor.listen(lambda image: TeleCarlaLidarSensor._parse_image(weak_self, image))
 
     def destroy(self):
         self.sensor.destroy()
 
-    def done(self, timestamp):
-        return self.image is not None and self.image.frame == timestamp.frame
+    # def done(self, timestamp):
+    #     return self.image is not None and self.image.frame == timestamp.frame
 
     """
     This method causes the simulator to misbehave with rendering option, because this method is on another thread,
@@ -169,7 +171,15 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
     @staticmethod
     def _parse_image(weak_self, image):
         self = weak_self()
-        self.image = image
+        if self.image is None or self.image.frame < image.frame:
+            self.image = image
+
+    def done(self, timestamp):
+        return self.image is None or self.image.frame == timestamp.frame
+
+
+    def render(self):
+        pass
 
 
 class TeleCarlaCollisionSensor(TeleCarlaSensor):

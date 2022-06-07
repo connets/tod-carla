@@ -19,7 +19,7 @@ from src.actor.InfoSimulationActor import SimulationRatioActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
-from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor
+from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import create_sim_world, create_route, destroy_sim_world, create_data_collector, \
@@ -86,6 +86,8 @@ def main(simulation_conf, scenario_conf):
                        camera_sensor, FolderPath.OUTPUT_IMAGES_PATH)
 
     player.attach_sensor(camera_sensor)
+    lidar_sensor = TeleCarlaLidarSensor()
+    player.attach_sensor(lidar_sensor)
 
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
