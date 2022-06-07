@@ -7,6 +7,7 @@
 
 from enum import Enum
 from collections import deque
+import itertools
 import random
 
 import carla
@@ -274,6 +275,11 @@ class LocalPlanner(object):
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
 
         return control
+
+    def get_next_waypoint_and_direction(self, count):
+        if len(self._waypoints_queue) >= count:
+            return itertools.islice(self._waypoints_queue, count)
+        return itertools.islice(self._waypoints_queue, -1)
 
     def get_incoming_waypoint_and_direction(self, steps=3):
         """

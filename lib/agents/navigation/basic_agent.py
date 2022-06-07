@@ -8,6 +8,7 @@ This module implements an agent that roams around a track following random
 waypoints and avoiding other vehicles. The agent also responds to traffic lights.
 It can also make use of the global route planner to follow a specifed route
 """
+import itertools
 
 import carla
 from carla import Transform
@@ -62,6 +63,13 @@ class BasicAgent(object):
         self._ignore_vehicles = False
         self._target_speed = target_speed
         self._sampling_resolution = 0.05
+
+        self.reaction_time = 1.5
+        self.response_time = 1.5
+        self.g = 9.80665  # m/s^2
+        self.t_pr = 1.5  # s
+        self.u = 0.7
+
         self._base_tlight_threshold = 5.0  # meters
         self._base_vehicle_threshold = 5.0  # meters
         self._max_brake = 0.2
@@ -297,7 +305,8 @@ class BasicAgent(object):
             if traffic_light.state != carla.TrafficLightState.Red:
                 continue
 
-            if is_within_distance(object_waypoint.transform, self._last_vehicle_state.get_transform(), max_distance, [0, 90]):
+            if is_within_distance(object_waypoint.transform, self._last_vehicle_state.get_transform(), max_distance,
+                                  [0, 90]):
                 self._last_traffic_light = traffic_light
                 return (True, traffic_light)
 
@@ -305,6 +314,28 @@ class BasicAgent(object):
 
     def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                    lane_offset=0):
+        speed = get_speed(self._last_vehicle_state) / 3.6
+        d_pr = speed * self.t_pr
+        d_braking = speed ** 2 / (2 * self.u * self.g)
+        d_total = d_pr + d_braking
+
+        safe_distance_waypoints = [self._map.get_waypoint(self._last_vehicle_state.get_location(),
+                                                          lane_type=carla.LaneType.Any)] + \
+                                  [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
+                                      int(d_total / self._sampling_resolution))]
+
+        print(d_total, int(d_total / self._sampling_resolution))
+        for path_wpt, vehicle in itertools.product(safe_distance_waypoints, vehicle_list):
+            vehicle_transform = vehicle.get_transform()
+            vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
+            if vehicle_wpt.road_id != path_wpt.road_id: continue
+            distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
+            if distance <= max_distance:
+                return True, vehicle, distance
+        return False, None, -1
+
+    def _vehicle_obstacle_detected_old(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+                                       lane_offset=0):
         """
         Method to check if there is a vehicle in front of the agent blocking its path.
 
@@ -313,6 +344,7 @@ class BasicAgent(object):
             :param max_distance: max freespace to check for obstacles.
                 If None, the base threshold value is used
         """
+
         if self._ignore_vehicles:
             return (False, None, -1)
 
