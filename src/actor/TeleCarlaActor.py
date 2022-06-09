@@ -29,11 +29,10 @@ from src.utils.decorators import needs_member
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, host, port, sync, sending_interval,
+    def __init__(self, host, port, sending_interval,
                  actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None, modify_vehicle_physics=False):
         super().__init__(host, port)
         self._tele_world = None
-        self._sync = sync
         self._sending_interval = sending_interval
         if attrs is None:
             attrs = dict()

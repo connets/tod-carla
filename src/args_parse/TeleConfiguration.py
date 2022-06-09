@@ -39,7 +39,6 @@ class TeleConfiguration(dict):
         parser.add('--render', help='show display', default=False, action='store_true')
         parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1280)
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
-        parser.add('--async', default=False, action='store_true', help='asynchronicity of simulation')
         parser.add('--timing.time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
         parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)

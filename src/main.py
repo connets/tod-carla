@@ -37,7 +37,6 @@ def main(simulation_conf, scenario_conf):
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
-    sync = not simulation_conf['async']
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
@@ -45,13 +44,12 @@ def main(simulation_conf, scenario_conf):
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
                                          simulation_conf['seed'],
-                                         sync,
                                          render,
                                          simulation_conf['timing'][
                                              'time_step'] if 'timing' in simulation_conf and 'time_step' in
                                                              simulation_conf['timing'] else None)
 
-    tele_world: TeleWorld = TeleWorld(client, sync)
+    tele_world: TeleWorld = TeleWorld(client)
 
     start_transform, destination_location = create_route(tele_world, scenario_conf)
 
@@ -64,7 +62,7 @@ def main(simulation_conf, scenario_conf):
     # ACTORS
 
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), sync, 0.05,
+    player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), 0.05,
                               scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
@@ -76,7 +74,7 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
     mec_server = TeleMEC('127.0.0.1', utils.find_free_port())
 
-    create_network_topology(sync, scenario_conf, player, mec_server, tele_operator)
+    create_network_topology(scenario_conf, player, mec_server, tele_operator)
 
     tele_sim = TeleSimulator(tele_world, clock)
 
@@ -108,7 +106,7 @@ def main(simulation_conf, scenario_conf):
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     try:
-        status_code = tele_sim.do_simulation(sync)
+        status_code = tele_sim.do_simulation()
 
         finished_status_sim = {
             FinishCode.ACCIDENT: 'ACCIDENT',

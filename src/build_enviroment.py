@@ -32,21 +32,20 @@ def create_display(player, clock, tele_sim, camera_width, camera_height, camera_
     return display
 
 
-def create_sim_world(host, port, timeout, world, seed, sync, render, time_step=None):
+def create_sim_world(host, port, timeout, world, seed, render, time_step=None):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
     sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
-    if sync:
-        settings = sim_world.get_settings()
-        settings.synchronous_mode = sync
-        settings.fixed_delta_seconds = time_step
-        settings.no_rendering_mode = not render
-        sim_world.apply_settings(settings)
-        traffic_manager = client.get_trafficmanager()
-        traffic_manager.set_synchronous_mode(sync)
-        traffic_manager.set_random_device_seed(seed)
+    settings = sim_world.get_settings()
+    settings.synchronous_mode = True
+    settings.fixed_delta_seconds = time_step
+    settings.no_rendering_mode = not render
+    sim_world.apply_settings(settings)
+    traffic_manager = client.get_trafficmanager()
+    traffic_manager.set_synchronous_mode(True)
+    traffic_manager.set_random_device_seed(seed)
 
     client.reload_world(False)  # reload map keeping the world settings
     sim_world.tick()
@@ -121,22 +120,17 @@ def create_data_collector(tele_world, player):
                                        }, 0.005)
 
 
-def create_network_topology(sync, scenario_conf, player, mec_server, tele_operator):
+def create_network_topology(scenario_conf, player, mec_server, tele_operator):
     backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
     backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
 
-    if sync:
-        channel_class = DiscreteNetworkChannel
-        args = []
-    else:
-        channel_class = TcNetworkInterface
-        args = ['lo']
-    vehicle_operator_channel = channel_class(tele_operator,
+
+    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
                                              utils.delay_family_to_func[backhaul_uplink_delay['family']](
-                                                 **backhaul_uplink_delay['parameters']), 0.1, *args)
+                                                 **backhaul_uplink_delay['parameters']), 0.1)
     player.add_channel(vehicle_operator_channel)
 
-    operator_vehicle_channel = channel_class(player,
+    operator_vehicle_channel = DiscreteNetworkChannel(player,
                                              utils.delay_family_to_func[backhaul_downlink_delay['family']](
-                                                 **backhaul_downlink_delay['parameters']), 0.1, *args)
+                                                 **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)
