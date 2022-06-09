@@ -1,8 +1,8 @@
 import threading
 
-from src.TeleConstant import FinishCode
-from src.network.NetworkMessage import InstructionNetworkMessage
-from src.network.NetworkNode import NetworkNode
+from src.communication.NetworkMessage import InstructionNetworkMessage
+from src.communication.NetworkNode import NetworkNode
+from src.core.TeleSimulator import FinishCode
 
 
 class TeleOperator(NetworkNode):

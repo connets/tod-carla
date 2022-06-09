@@ -1,0 +1,6 @@
+COME ANDARE AVANTI?
+
+Ora abbiamo l'agente di guida aumentato e non, cercare di definire uno scenario in cui l'aumentato fa di più di quello normale?
+L'agente va bene? Basta che si fermi e non faccia un incidente o deve comunque raggiungere la destinazione? Questione anchor points,
+l'agente segue gli anchor points per arrivare alla fine, possiamo metterne uno ogni 20m in base alla velocità?
+Cambiare l'agente, che comportamento deve seguire?

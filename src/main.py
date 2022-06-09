@@ -1,7 +1,5 @@
 import os
 import sys
-import time
-from copy import deepcopy
 from datetime import datetime
 
 import carla
@@ -12,22 +10,18 @@ from pathlib import Path
 from numpy import random
 
 from src.FolderPath import FolderPath
-from src.TeleConstant import FinishCode
 from src.TeleOutputWriter import DataCollector, TeleLogger
-from src.TeleSimulator import TeleSimulator
+from src.core.TeleSimulator import TeleSimulator, FinishCode
 from src.actor.InfoSimulationActor import SimulationRatioActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
-from src.args_parse import TeleConfiguration
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import create_sim_world, create_route, destroy_sim_world, create_data_collector, \
     create_network_topology, create_display
 from src.carla_bridge.TeleWorld import TeleWorld
-from src.TeleWorldController import BehaviorAgentTeleWorldController, KeyboardTeleWorldController, \
-    BasicAgentTeleWorldController
-import src.utils as utils
+from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 
 
 def main(simulation_conf, scenario_conf):
@@ -54,10 +48,10 @@ def main(simulation_conf, scenario_conf):
     start_transform, destination_location = create_route(tele_world, scenario_conf)
 
     if simulation_conf['controller']['type'] == 'auto':
-        controller = BehaviorAgentTeleWorldController(simulation_conf['controller']['behavior'],
-                                                      start_transform.location, destination_location)
+        controller = BehaviorAgentTeleWorldAdapterController(simulation_conf['controller']['behavior'],
+                                                             start_transform.location, destination_location)
     else:
-        controller = KeyboardTeleWorldController(clock)
+        controller = KeyboardTeleWorldAdapterController(clock)
 
     # ACTORS
 

@@ -2,7 +2,6 @@ import socket
 from abc import ABC
 from typing import List
 
-from src.network.NetworkChannel import NetworkChannel
 from src.utils.decorators import needs_member
 
 

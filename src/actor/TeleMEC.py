@@ -1,5 +1,4 @@
-from src.actor.TeleCarlaActor import TeleCarlaActor
-from src.network.NetworkNode import NetworkNode
+from src.communication.NetworkNode import NetworkNode
 
 
 class TeleMEC(NetworkNode):

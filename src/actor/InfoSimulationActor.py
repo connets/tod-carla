@@ -1,6 +1,6 @@
 import time
 
-from src.TeleEvent import tele_event
+from src.core.TeleEvent import tele_event
 from src.TeleOutputWriter import DataCollector
 from src.actor.TeleActor import TeleActor
 

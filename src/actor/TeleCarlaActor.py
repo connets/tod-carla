@@ -1,5 +1,5 @@
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
-from src.network.NetworkNode import NetworkNode
+from src.communication.NetworkNode import NetworkNode
 
 
 class TeleCarlaActor(NetworkNode):
@@ -12,17 +12,13 @@ class TeleCarlaActor(NetworkNode):
 
 import random
 import sys
-from abc import ABC, abstractmethod
-from time import sleep
 
 import carla
-from carla import ActorBlueprint, Transform, Location, Rotation, VehicleControl
+from carla import ActorBlueprint, VehicleControl
 
-from src.TeleContext import TeleContext
-from src.TeleEvent import tele_event
-from src.TeleVehicleState import TeleVehicleState
-from src.network.NetworkMessage import InfoUpdateNetworkMessage
-from threading import Thread
+from src.core.TeleEvent import tele_event
+from src.communication.TeleVehicleState import TeleVehicleState
+from src.communication.NetworkMessage import InfoUpdateNetworkMessage
 import lib.camera_visibility.carla_vehicle_annotator as cva
 
 from src.utils.decorators import needs_member

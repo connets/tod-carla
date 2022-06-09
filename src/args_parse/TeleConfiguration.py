@@ -1,9 +1,8 @@
 import argparse
 import time
-from typing import Any
 
 from src.args_parse.ConfigurationParser import ConfigurationParser
-from src.utils import parser_utils
+from src.args_parse import parser_utils
 from src.utils.decorators import DecoratorSingleton
 
 

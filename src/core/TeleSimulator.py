@@ -1,6 +1,5 @@
-import threading
-
-from src.TeleContext import TeleContext
+from enum import Enum
+from src.core.TeleContext import TeleContext
 from src.actor.TeleCarlaActor import TeleCarlaActor
 
 
@@ -73,3 +72,8 @@ class TeleSimulator:
             actor.quit()
 
         return self._finish_code
+
+
+class FinishCode(Enum):
+    OK = 0
+    ACCIDENT = 1

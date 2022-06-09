@@ -34,7 +34,6 @@ Use ARROWS or WASD keys for control.
 
     ESC          : quit
 """
-import abc
 from abc import ABC, abstractmethod
 
 import carla
@@ -42,14 +41,13 @@ import pygame
 from pygame.locals import KMOD_CTRL, KMOD_SHIFT, K_0, K_9, K_BACKQUOTE, K_BACKSPACE, K_COMMA, K_DOWN, K_ESCAPE, K_F1, \
     K_LEFT, K_PERIOD, K_RIGHT, K_SLASH, K_SPACE, K_TAB, K_UP, K_a, K_b, K_c, K_d, K_g, K_h, K_i, K_l, K_m, K_n, K_o, \
     K_p, K_q, K_r, K_s, K_t, K_v, K_w, K_x, K_z, K_MINUS, K_EQUALS
-from enum import Enum
 
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.behavior_agent import BehaviorAgent
 from src.utils.decorators import needs_member
 
 
-class TeleController(ABC):
+class TeleAdapterController(ABC):
 
     def __init__(self):
         self._tele_vehicle_state = None
@@ -77,7 +75,8 @@ class TeleController(ABC):
     def get_trajectory(self):
         ...
 
-class KeyboardTeleWorldController(TeleController):
+
+class KeyboardTeleWorldAdapterController(TeleAdapterController):
     """Class that handles keyboard input."""
 
     def __init__(self, clock):
@@ -165,7 +164,7 @@ class KeyboardTeleWorldController(TeleController):
         return []
 
 
-class BasicAgentTeleWorldController(TeleController):
+class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
     def __init__(self):
         super().__init__()
@@ -188,7 +187,7 @@ class BasicAgentTeleWorldController(TeleController):
         return self.carla_agent.done()
 
 
-class BehaviorAgentTeleWorldController(TeleController):
+class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     def __init__(self, behavior, start_location, destination_location):
         super().__init__()
