@@ -63,6 +63,8 @@ class BehaviorAgent(BasicAgent):
         elif behavior == 'aggressive':
             self._behavior = Aggressive()
 
+        self._other_actors = {}  # id_actor: (timestamp, state)
+
     def _update_information(self):
         """
         This method updates the information regarding the ego
@@ -129,6 +131,9 @@ class BehaviorAgent(BasicAgent):
                     self._behavior.tailgate_counter = 200
                     self.set_destination(end_waypoint.transform.location,
                                          left_wpt.transform.location)
+
+    def _update_other_actors(self, other_actors):
+        ...
 
     def collision_and_car_avoid_manager(self, waypoint):
         """
@@ -198,8 +203,6 @@ class BehaviorAgent(BasicAgent):
         # else:
         walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
             self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
-
-        print(walker_list, walker_state, len(self._local_planner._waypoints_queue))
 
         return walker_state, walker, distance
 
