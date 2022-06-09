@@ -91,6 +91,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         """Render method"""
         if self.surface is not None:
             self.display.blit(self.surface, (0, 0))
+            self.surface = None
 
     def destroy(self):
         self.sensor.destroy()

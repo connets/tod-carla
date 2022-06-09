@@ -7,6 +7,7 @@
 
 from enum import Enum
 from collections import deque
+import itertools
 import random
 
 import carla
@@ -240,6 +241,8 @@ class LocalPlanner(object):
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
         self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
+        self._min_distance = 1.5 #TODO fix this parameter
+
 
         num_waypoint_removed = 0
         for i, (waypoint, _) in enumerate(self._waypoints_queue, start=1):
@@ -274,6 +277,13 @@ class LocalPlanner(object):
             draw_waypoints(self._world, [self.target_waypoint], 1.0)
 
         return control
+
+    def get_next_waypoint_and_direction(self, count):
+        if not self._waypoints_queue:
+            return []
+        if len(self._waypoints_queue) >= count:
+            return itertools.islice(self._waypoints_queue, count)
+        return self._waypoints_queue
 
     def get_incoming_waypoint_and_direction(self, steps=3):
         """

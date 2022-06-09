@@ -8,8 +8,8 @@ from src.network.NetworkNode import NetworkNode
 class TeleOperator(NetworkNode):
     lock = threading.RLock()
 
-    def __init__(self, host, port, controller):
-        super().__init__(host, port)
+    def __init__(self, controller):
+        super().__init__()
         self._last_snapshot = None
         self._controller = controller
 

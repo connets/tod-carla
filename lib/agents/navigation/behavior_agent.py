@@ -63,6 +63,8 @@ class BehaviorAgent(BasicAgent):
         elif behavior == 'aggressive':
             self._behavior = Aggressive()
 
+        self._other_actors = {}  # id_actor: (timestamp, state)
+
     def _update_information(self):
         """
         This method updates the information regarding the ego
@@ -130,6 +132,9 @@ class BehaviorAgent(BasicAgent):
                     self.set_destination(end_waypoint.transform.location,
                                          left_wpt.transform.location)
 
+    def _update_other_actors(self, other_actors):
+        ...
+
     def collision_and_car_avoid_manager(self, waypoint):
         """
         This module is in charge of warning in case of a collision
@@ -189,15 +194,15 @@ class BehaviorAgent(BasicAgent):
             return w.get_location().distance(waypoint.transform.location)
 
         walker_list = [w for w in walker_list if dist(w) < 10]
-        if self._direction == RoadOption.CHANGELANELEFT:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
-        elif self._direction == RoadOption.CHANGELANERIGHT:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=1)
-        else:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
+        # if self._direction == RoadOption.CHANGELANELEFT:
+        #     walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+        #         self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
+        # elif self._direction == RoadOption.CHANGELANERIGHT:
+        #     walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+        #         self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=1)
+        # else:
+        walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+            self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
 
         return walker_state, walker, distance
 

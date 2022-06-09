@@ -1,22 +1,44 @@
 from carla import Vector3D, Transform, Location, Rotation, BoundingBox
 
 
+class OtherActorState:
+    def __init__(self, _id, transform, bounding_box):
+        self.id = _id
+        self.transform = transform
+        self.bounding_box = bounding_box
+
+    def get_location(self):
+        return self.transform.location
+
+    def get_transform(self):
+        return self.transform
+
+    def update_state(self, actor_state):
+        assert isinstance(actor_state, self.__class__)
+
+
+class OtherVehicleState(OtherActorState):
+    def __init__(self, _id, transform, bounding_box, velocity):
+        super().__init__(_id, transform, bounding_box)
+        self.velocity = velocity
+
+    def get_velocity(self):
+        return self.velocity
+
+    @staticmethod
+    def generate_visible_vehicle(vehicle):
+        return OtherVehicleState(vehicle.id, vehicle.get_transform(),
+                                 vehicle.bounding_box, vehicle.get_velocity())
+
+
+class OtherPedestrianState(OtherActorState):
+    @staticmethod
+    def generate_visible_pedestrian(pedestrian):
+        return OtherPedestrianState(pedestrian.id, pedestrian.get_transform(),
+                                    pedestrian.bounding_box)
+
+
 class TeleVehicleState:
-    class VisibleActor:
-        def __init__(self, _id, transformation, bounding_box):
-            self.id = _id
-            self.transformation = transformation
-            self.bounding_box = bounding_box
-
-        def get_transform(self):
-            return self.transformation
-
-        def get_location(self):
-            return self.transformation.location
-
-        @staticmethod
-        def generate_visible_actor(actor):
-            return TeleVehicleState.VisibleActor(actor.id, actor.get_transform(), actor.bounding_box)
 
     def __init__(self, timestamp, _id, velocity, transform, speed_limit, bounding_box, visible_vehicles,
                  visible_pedestrians):
@@ -35,9 +57,9 @@ class TeleVehicleState:
         vehicle_state = TeleVehicleState(timestamp, vehicle.id, vehicle.get_velocity(), vehicle.get_transform(),
                                          vehicle.get_speed_limit(),
                                          vehicle.bounding_box,
-                                         [TeleVehicleState.VisibleActor.generate_visible_actor(v) for v in
+                                         [OtherVehicleState.generate_visible_vehicle(v) for v in
                                           visible_vehicles],
-                                         [TeleVehicleState.VisibleActor.generate_visible_actor(v) for v in
+                                         [OtherPedestrianState.generate_visible_pedestrian(p) for p in
                                           visible_pedestrians])
         for sensor in vehicle.sensors:
             sensor.attach_data(vehicle_state)
