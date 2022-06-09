@@ -3,8 +3,8 @@ from src.network.NetworkNode import NetworkNode
 
 
 class TeleCarlaActor(NetworkNode):
-    def __init__(self, host, port):
-        super().__init__(host, port)
+    def __init__(self):
+        super().__init__()
 
     def spawn_in_the_world(self, tele_world):
         ...
@@ -29,9 +29,9 @@ from src.utils.decorators import needs_member
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, host, port, sending_interval,
+    def __init__(self, sending_interval,
                  actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None, modify_vehicle_physics=False):
-        super().__init__(host, port)
+        super().__init__()
         self._tele_world = None
         self._sending_interval = sending_interval
         if attrs is None:
@@ -154,8 +154,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
 class TeleCarlaPedestrian(TeleCarlaActor):
 
-    def __init__(self, host, port, initial_location):
-        super().__init__(host, port)
+    def __init__(self, initial_location):
+        super().__init__()
         self._initial_location = initial_location
         self._tele_world = None
         self.model = None

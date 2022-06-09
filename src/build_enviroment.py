@@ -5,7 +5,7 @@ from numpy import random
 from src.FolderPath import FolderPath
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor
-from src.network.NetworkChannel import DiscreteNetworkChannel, TcNetworkInterface
+from src.network.NetworkChannel import DiscreteNetworkChannel
 import src.utils as utils
 from src.utils.Hud import HUD
 import pygame

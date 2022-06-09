@@ -62,7 +62,7 @@ def main(simulation_conf, scenario_conf):
     # ACTORS
 
     player_attrs = {'role_name': 'hero'}
-    player = TeleCarlaVehicle('127.0.0.1', utils.find_free_port(), 0.05,
+    player = TeleCarlaVehicle(0.05,
                               scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
@@ -71,8 +71,8 @@ def main(simulation_conf, scenario_conf):
     collisions_sensor = TeleCarlaCollisionSensor()
     player.attach_sensor(collisions_sensor)
 
-    tele_operator = TeleOperator('127.0.0.1', utils.find_free_port(), controller)
-    mec_server = TeleMEC('127.0.0.1', utils.find_free_port())
+    tele_operator = TeleOperator(controller)
+    mec_server = TeleMEC()
 
     create_network_topology(scenario_conf, player, mec_server, tele_operator)
 
@@ -93,8 +93,7 @@ def main(simulation_conf, scenario_conf):
     tele_sim.add_actor(data_collector)
     tele_sim.add_actor(SimulationRatioActor(1))
     for pedestrian in scenario_conf['pedestrians']:
-        pedestrian = TeleCarlaPedestrian('127.0.0.1', utils.find_free_port(),
-                                         carla.Location(x=pedestrian['x'], y=pedestrian['y'], z=pedestrian['z']))
+        pedestrian = TeleCarlaPedestrian(carla.Location(x=pedestrian['x'], y=pedestrian['y'], z=pedestrian['z']))
         tele_sim.add_actor(pedestrian)
     tele_sim.add_actor(player)
 

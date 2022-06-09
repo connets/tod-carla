@@ -9,10 +9,8 @@ from src.utils.decorators import needs_member
 
 class NetworkNode(TeleActor):
 
-    def __init__(self, host, port):
+    def __init__(self):
         super().__init__()
-        self.host = host
-        self.port = port
         # self._network_delay_manager = NetworkChannel()
         self._channels: List[NetworkChannel] = []
         self._tele_context = None
