@@ -1,3 +1,18 @@
+IMPORT:
+  $cmd$: 'import os'
+
+_PROJECT_PATH:
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
+output:
+  log:
+    $cmd$: "self['_PROJECT_PATH'] + 'log/'"
+  results:
+    $cmd$: "self['_PROJECT_PATH'] + 'out/'"
+#  images:
+#    $cmd$: "self['_PROJECT_PATH'] + 'images/'"
+
+
 world: Town01_Opt
 vehicle_player: vehicle.tesla.model3
 bot:
@@ -26,9 +41,9 @@ delay:
 #      queue_urllc_distribution: constant(0.0)
 #      queue_embb_distribution: constant(0.0)
 
-      uplink_extra_delay: uniform(10ms, 100ms)
+      uplink_extra_delay: uniform(10ms, 10ms)
 
-      downlink_extra_delay: uniform(10ms, 100ms)
+      downlink_extra_delay: uniform(10ms, 10ms)
  #+  uniform(-1ms, 1ms)
 #      extra_delay: uniform(1ms, 5ms)
 

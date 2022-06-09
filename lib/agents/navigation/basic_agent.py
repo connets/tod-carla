@@ -72,7 +72,7 @@ class BasicAgent(object):
 
         self._base_tlight_threshold = 5.0  # meters
         self._base_vehicle_threshold = 5.0  # meters
-        self._max_brake = 0.2
+        self._max_brake = 0.75
 
         # Change parameters according to the dictionary
         opt_dict['target_speed'] = target_speed
@@ -317,14 +317,14 @@ class BasicAgent(object):
         speed = get_speed(self._last_vehicle_state) / 3.6
         d_pr = speed * self.t_pr
         d_braking = speed ** 2 / (2 * self.u * self.g)
-        d_total = d_pr + d_braking
+        d_total = max(d_pr + d_braking, 5)
 
         safe_distance_waypoints = [self._map.get_waypoint(self._last_vehicle_state.get_location(),
                                                           lane_type=carla.LaneType.Any)] + \
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
                                       int(d_total / self._sampling_resolution))]
 
-        print(d_total, int(d_total / self._sampling_resolution))
+
         for path_wpt, vehicle in itertools.product(safe_distance_waypoints, vehicle_list):
             vehicle_transform = vehicle.get_transform()
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)

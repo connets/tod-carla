@@ -189,15 +189,17 @@ class BehaviorAgent(BasicAgent):
             return w.get_location().distance(waypoint.transform.location)
 
         walker_list = [w for w in walker_list if dist(w) < 10]
-        if self._direction == RoadOption.CHANGELANELEFT:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
-        elif self._direction == RoadOption.CHANGELANERIGHT:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=1)
-        else:
-            walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
-                self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
+        # if self._direction == RoadOption.CHANGELANELEFT:
+        #     walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+        #         self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
+        # elif self._direction == RoadOption.CHANGELANERIGHT:
+        #     walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+        #         self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=1)
+        # else:
+        walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
+            self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
+
+        print(walker_list, walker_state, len(self._local_planner._waypoints_queue))
 
         return walker_state, walker, distance
 

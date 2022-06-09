@@ -69,7 +69,7 @@ class TeleSimulator:
             while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
                 ...
 
-            for callback in self._step_callbacks: callback()
+            for callback in self._step_callbacks: callback(self._tele_world.timestamp)
 
             self._tele_context.run_next_event()
 
