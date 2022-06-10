@@ -25,7 +25,7 @@ def create_display(player, clock, tele_sim, camera_width, camera_height, camera_
         hud.render()
         pygame.display.flip()
 
-    tele_sim.add_step_listener(render)
+    tele_sim.add_tick_listener(render)
     tele_sim.add_tick_listener(hud.tick)
 
     return display

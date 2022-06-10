@@ -1,8 +1,9 @@
 from carla import Vector3D, Transform, Location, Rotation, BoundingBox
 
 
-class OtherActorState:
-    def __init__(self, _id, transform, bounding_box):
+class ActorState:
+    def __init__(self, timestamp, _id, transform, bounding_box):
+        self.timestamp = timestamp
         self.id = _id
         self.transform = transform
         self.bounding_box = bounding_box
@@ -13,53 +14,54 @@ class OtherActorState:
     def get_transform(self):
         return self.transform
 
-    def update_state(self, actor_state):
-        assert isinstance(actor_state, self.__class__)
+    def update_state(self, new_state):
+        assert isinstance(new_state, self.__class__)
+        for name, value in new_state.__dict__.items():
+            if value is not None:
+                setattr(self, name, value)
 
 
-class OtherVehicleState(OtherActorState):
-    def __init__(self, _id, transform, bounding_box, velocity):
-        super().__init__(_id, transform, bounding_box)
+class OtherVehicleState(ActorState):
+    def __init__(self, timestamp, _id, transform, bounding_box, velocity):
+        super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
 
     def get_velocity(self):
         return self.velocity
 
     @staticmethod
-    def generate_visible_vehicle(vehicle):
-        return OtherVehicleState(vehicle.id, vehicle.get_transform(),
+    def generate_visible_vehicle(timestamp, vehicle):
+        return OtherVehicleState(timestamp, vehicle.id, vehicle.get_transform(),
                                  vehicle.bounding_box, vehicle.get_velocity())
 
 
-class OtherPedestrianState(OtherActorState):
+class OtherPedestrianState(ActorState):
     @staticmethod
-    def generate_visible_pedestrian(pedestrian):
-        return OtherPedestrianState(pedestrian.id, pedestrian.get_transform(),
+    def generate_visible_pedestrian(timestamp, pedestrian):
+        return OtherPedestrianState(timestamp, pedestrian.id, pedestrian.get_transform(),
                                     pedestrian.bounding_box)
 
 
-class TeleVehicleState:
+class TeleVehicleState(ActorState):
 
-    def __init__(self, timestamp, _id, velocity, transform, speed_limit, bounding_box, visible_vehicles,
+    def __init__(self, timestamp, _id, bounding_box, velocity, transform, speed_limit, visible_vehicles,
                  visible_pedestrians):
-        self.timestamp = timestamp
-        self.id = _id
+        super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
         self.transform = transform
         self.speed_limit = speed_limit
-        self.bounding_box = bounding_box
         self.collisions = []
         self.visible_vehicles = visible_vehicles
         self.visible_pedestrians = visible_pedestrians
 
     @staticmethod
     def generate_vehicle_state(timestamp, vehicle, visible_vehicles, visible_pedestrians):
-        vehicle_state = TeleVehicleState(timestamp, vehicle.id, vehicle.get_velocity(), vehicle.get_transform(),
+        vehicle_state = TeleVehicleState(timestamp, vehicle.id, vehicle.bounding_box,
+                                         vehicle.get_velocity(), vehicle.get_transform(),
                                          vehicle.get_speed_limit(),
-                                         vehicle.bounding_box,
-                                         [OtherVehicleState.generate_visible_vehicle(v) for v in
+                                         [OtherVehicleState.generate_visible_vehicle(timestamp, v) for v in
                                           visible_vehicles],
-                                         [OtherPedestrianState.generate_visible_pedestrian(p) for p in
+                                         [OtherPedestrianState.generate_visible_pedestrian(timestamp, p) for p in
                                           visible_pedestrians])
         for sensor in vehicle.sensors:
             sensor.attach_data(vehicle_state)

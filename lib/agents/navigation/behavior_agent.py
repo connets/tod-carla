@@ -63,7 +63,24 @@ class BehaviorAgent(BasicAgent):
         elif behavior == 'aggressive':
             self._behavior = Aggressive()
 
-        self._other_actors = {}  # id_actor: (timestamp, state)
+        self._other_vehicles = {}  # id_actor: state
+        self._other_pedestrians = {}  # id_actor: state
+
+    def update_vehicle_state(self, vehicle_state):
+        super().update_vehicle_state(vehicle_state)
+        for visible_vehicle in vehicle_state.visible_vehicles:
+            if visible_vehicle.id not in self._other_vehicles:
+                self._other_vehicles[visible_vehicle.id] = visible_vehicle
+            elif visible_vehicle.timestamp.elapsed_seconds >= self._other_vehicles[
+                visible_vehicle.id].timestamp.elapsed_seconds:
+                self._other_vehicles[visible_vehicle.id].update_state(visible_vehicle)
+
+        for visible_pedestrian in vehicle_state.visible_pedestrians:
+            if visible_pedestrian.id not in self._other_pedestrians:
+                self._other_pedestrians[visible_pedestrian.id] = visible_pedestrian
+            elif visible_pedestrian.timestamp.elapsed_seconds >= self._other_pedestrians[
+                visible_pedestrian.id].timestamp.elapsed_seconds:
+                self._other_pedestrians[visible_pedestrian.id].update_state(visible_pedestrian)
 
     def _update_information(self):
         """
@@ -147,7 +164,7 @@ class BehaviorAgent(BasicAgent):
             :return distance: distance to nearby vehicle
         """
 
-        vehicle_list = self._world.get_actors().filter("*vehicle*")
+        vehicle_list = self._other_vehicles.values()
 
         def dist(v):
             return v.get_location().distance(waypoint.transform.location)
@@ -188,7 +205,7 @@ class BehaviorAgent(BasicAgent):
         """
 
         # walker_list = self._world.get_actors().filter("*walker.pedestrian*")
-        walker_list = self._last_vehicle_state.visible_pedestrians
+        walker_list = self._other_pedestrians.values()
 
         def dist(w):
             return w.get_location().distance(waypoint.transform.location)
