@@ -116,8 +116,10 @@ def main(simulation_conf, scenario_conf):
 
 
 if __name__ == '__main__':
+
     configuration = TeleConfiguration(sys.argv[1], sys.argv[2])
 
+    #
     simulation_conf = configuration['carla_simulation_file']
     scenario_conf = configuration['carla_scenario_file']
 

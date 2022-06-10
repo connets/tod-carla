@@ -6,14 +6,37 @@ from src.utils.utils import stretch_dict, expand_dict
 
 
 class ConfigurationParser:
+    """
+    A class used to parse the args with configuration files
+    """
+
     def __init__(self, config_file=None):
+        """
+        Parameters
+        ----------
+        config_file : str
+            take the path of the file with default configurations
+               """
         self.config_file = config_file
         self.options = []
 
     def add(self, *args, **kwargs):
+        """
+        add name arguments and option for that arguments
+        """
         self.options.append((args, kwargs))
 
+    #TODO we can remove pargs?
     def parse(self, *pargs, args=None, **kwpargs):
+        """
+        run the parsing of the current state of the object.
+        Parameters
+        ----------
+            pargs: parsing options
+            args: arguments to parse, if None take command line arguments
+
+
+        """
         if args is None:
             args = sys.argv[1:].copy()
 
