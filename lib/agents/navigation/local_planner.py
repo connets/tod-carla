@@ -241,7 +241,7 @@ class LocalPlanner(object):
         veh_location = self._last_vehicle_state.get_location()
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
         self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
-        self._min_distance = 1.5 #TODO fix this parameter
+        # self._min_distance = 1.5 #TODO fix this parameter
 
 
         num_waypoint_removed = 0
@@ -253,7 +253,7 @@ class LocalPlanner(object):
                 min_distance = self._min_distance
 
             if veh_location.distance(waypoint.transform.location) < min_distance:
-                num_waypoint_removed = i
+                num_waypoint_removed += 1
             else:
                 break
 

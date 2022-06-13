@@ -18,7 +18,7 @@ class NetworkChannel(ABC):
     def start(self, tele_context):
         self._tele_context = tele_context
 
-        @tele_event('change_delay_network_channel')
+        @tele_event('change_delay_network_channel-' + str(id(self)))
         def change_delay():
             self._apply_delay()
             self._tele_context.schedule(change_delay, self._interval)
@@ -54,7 +54,7 @@ class DiscreteNetworkChannel(NetworkChannel):
     def send(self, msg):
         super().send(msg)
 
-        @tele_event('send_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower())
+        @tele_event('send_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower() + '-' + str(id(msg)))
         def send_message():
             msg.action(self.destination_node)
 
