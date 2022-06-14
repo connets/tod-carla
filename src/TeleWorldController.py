@@ -57,7 +57,7 @@ class TeleAdapterController(ABC):
         ...
 
     @abstractmethod
-    def do_action(self, vehicle_state=None):
+    def do_action(self, vehicle_state):
         ...
 
     @abstractmethod
@@ -166,6 +166,9 @@ class KeyboardTeleWorldAdapterController(TeleAdapterController):
 
 class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
+    def get_trajectory(self):
+        return []
+
     def __init__(self):
         super().__init__()
         self._player = None
@@ -201,22 +204,23 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
     def add_player_in_world(self, player):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
+
         self._waypoints = self.carla_agent.set_destination(self._destination_location,
                                                            start_location=self._start_location)
-        print("*****")
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
-    def do_action(self, vehicle_state=None):
+    @needs_member('carla_agent')
+    def do_action(self, vehicle_state):
         if pygame.get_init() and any(self._quit(e) for e in pygame.event.get()):
             return None
 
-        if vehicle_state is not None:
+        control = None
+        if self.carla_agent.last_vehicle_state is None or self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds:
             self.carla_agent.update_vehicle_state(vehicle_state)
 
-        control = self.carla_agent.run_step(True)
-        control.manual_gear_shift = False
+            control = self.carla_agent.run_step(True)
         return control
 
     @needs_member('carla_agent')

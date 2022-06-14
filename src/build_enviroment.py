@@ -74,9 +74,7 @@ def destroy_sim_world(client, sim_world):
 def create_route(tele_world, scenario_conf):
     carla_map = tele_world.carla_map
     if 'route' in scenario_conf:
-        # for spawn_point in carla_map.get_spawn_points():
-        #     if abs(-102.523941 - spawn_point.location.x) < 6:
-        #         print(spawn_point)
+
         start_transform = Transform(
             Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],
                      z=scenario_conf['route']['start']['z']),

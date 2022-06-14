@@ -1,6 +1,7 @@
 from queue import PriorityQueue
 
 from src.TeleOutputWriter import TeleLogger
+from src.utils.decorators import needs_member
 
 
 class TeleContext:
@@ -10,6 +11,7 @@ class TeleContext:
         self._initial_timestamp = initial_timestamp
         self._timestamp = initial_timestamp
         self.finish = finish_callback
+        self.tmp = None
         # self._finished = False
 
     @property
@@ -19,7 +21,8 @@ class TeleContext:
     def current_duration(self):
         return self._timestamp - self._initial_timestamp
 
-
+    @property
+    @needs_member('_queue', lambda x: not x.empty())
     def next_timestamp_event(self):
         return self._queue.queue[0].timestamp if not self._queue.empty() else None
 
@@ -41,7 +44,6 @@ class TeleContext:
             TeleLogger.instance.event_logger.write(self._timestamp, 'scheduled', event)
         # if not self._finished:
         self._queue.put(self.TimingEvent(event, self._timestamp + s))
-
 
     class TimingEvent:
         def __init__(self, event, timestamp):

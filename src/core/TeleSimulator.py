@@ -49,7 +49,7 @@ class TeleSimulator:
             actor.start()
         while not self._finished and self._tele_context.has_scheduled_events():
             # network_delay.tick()
-            simulator_timestamp = round(self._tele_context.timestamp, 6)
+            simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
             while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
                 self._tele_world.tick()

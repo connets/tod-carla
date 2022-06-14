@@ -13,6 +13,7 @@ class TeleOperator(NetworkNode):
         self._last_snapshot = None
         self._controller = controller
 
+    # TODO update only if the latest vehicle has less ts
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
         if self._controller.done():
             self._tele_context.finish(FinishCode.OK)
@@ -20,4 +21,5 @@ class TeleOperator(NetworkNode):
             self._tele_context.finish(FinishCode.ACCIDENT)
         else:
             command = self._controller.do_action(tele_vehicle_state)
-            self.send_message(InstructionNetworkMessage(command))
+            if command is not None:
+                self.send_message(InstructionNetworkMessage(command))

@@ -66,6 +66,10 @@ class BehaviorAgent(BasicAgent):
         self._other_vehicles = {}  # id_actor: state
         self._other_pedestrians = {}  # id_actor: state
 
+    @property
+    def last_vehicle_state(self):
+        return self._last_vehicle_state
+
     def update_vehicle_state(self, vehicle_state):
         super().update_vehicle_state(vehicle_state)
         for visible_vehicle in vehicle_state.visible_vehicles:
@@ -330,7 +334,7 @@ class BehaviorAgent(BasicAgent):
                 self._speed_limit - self._behavior.speed_lim_dist])
             self._local_planner.set_speed(target_speed)
             control = self._local_planner.run_step(debug=debug)
-
+        control.manual_gear_shift = False
         return control
 
     def emergency_stop(self):

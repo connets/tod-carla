@@ -56,6 +56,8 @@ def main(simulation_conf, scenario_conf):
     # ACTORS
 
     player_attrs = {'role_name': 'hero'}
+    # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
+
     player = TeleCarlaVehicle(0.05,
                               scenario_conf['vehicle_player'],
                               player_attrs,
@@ -98,6 +100,7 @@ def main(simulation_conf, scenario_conf):
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
+    tele_sim.add_step_listener(lambda ts: print(player.get_location()))
     try:
         status_code = tele_sim.do_simulation()
 
