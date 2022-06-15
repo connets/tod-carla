@@ -4,7 +4,7 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 """ This module contains a local planner to perform low-level waypoint following based on PID controllers. """
-
+import functools
 from enum import Enum
 from collections import deque
 import itertools
@@ -13,6 +13,7 @@ import random
 import carla
 from lib.agents.navigation.controller import VehiclePIDController
 from lib.agents.tools.misc import draw_waypoints, get_speed
+from src.utils import carla_utils
 
 
 class RoadOption(Enum):
@@ -86,7 +87,7 @@ class LocalPlanner(object):
         self._max_brake = 0.3
         self._max_steer = 0.8
         self._offset = 0
-        self._base_min_distance = 2
+        self._base_min_distance = 0.5
         self._distance_ratio = 0.3
         self._follow_speed_limits = False
 
@@ -243,7 +244,6 @@ class LocalPlanner(object):
         self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
         # self._min_distance = 1.5 #TODO fix this parameter
 
-
         num_waypoint_removed = 0
         for i, (waypoint, _) in enumerate(self._waypoints_queue, start=1):
 
@@ -253,9 +253,30 @@ class LocalPlanner(object):
                 min_distance = self._min_distance
 
             if veh_location.distance(waypoint.transform.location) < min_distance:
-                num_waypoint_removed += 1
+                num_waypoint_removed = i
             else:
                 break
+
+        def calc_angle_to_wp(vehicle_location, wp):
+            velocity_vector = self._last_vehicle_state.get_transform().get_forward_vector()
+            location_wp = wp.transform.location
+            vector_wp = carla.Vector3D(location_wp.x - vehicle_location.x, location_wp.y - vehicle_location.y, 0)
+            angle = min(carla_utils.angle_between(velocity_vector, vector_wp),
+                        carla_utils.angle_between(vector_wp, velocity_vector))
+            return angle
+
+            #
+            # vehicle_location = self._last_vehicle_state.get_location()
+            # for i, (wp, _) in enumerate(self._waypoints_queue):
+            #     location_wp = wp.transform.location
+            #     vector_wp = carla.Vector3D(location_wp.x - vehicle_location.x, location_wp.y - vehicle_location.y, 0)
+            #     angle = min(carla_utils.angle_between(velocity_vector, vector_wp),
+            #                 carla_utils.angle_between(vector_wp, velocity_vector))
+            #     print(angle)
+            #     if angle < 45:
+            #         return i, (wp, _)
+            #
+            # return 0, self._waypoints_queue[0]
 
         if num_waypoint_removed > 0:
             for _ in range(num_waypoint_removed):
@@ -271,6 +292,20 @@ class LocalPlanner(object):
             control.manual_gear_shift = False
         else:
             self.target_waypoint, self.target_road_option = self._waypoints_queue[0]
+            # last wp behind me, it's the last of the firsts wp with a angle > 90
+            last_index_wp_to_remove, _ = functools.reduce(
+                lambda acc, it: (it[0], True) if acc[1] and calc_angle_to_wp(self._last_vehicle_state.get_location(),
+                                                                             it[1]) > 60 else (acc[0], False),
+                enumerate(wp for wp, _ in self._waypoints_queue), (-1, True))
+            for _ in range(last_index_wp_to_remove + 1):
+                self._waypoints_queue.popleft()
+            # First waypoint that I can see
+            first_visible_index_wp = next((i for i, (wp, _) in enumerate(self._waypoints_queue) if
+                                               calc_angle_to_wp(self._last_vehicle_state.get_location(), wp) < 45), 0)
+
+            self.target_waypoint, self.target_road_option =self._waypoints_queue[first_visible_index_wp]
+            if num_waypoint_removed == 0:
+                print("****=> ", self._last_vehicle_state.get_transform().get_forward_vector(), self.target_waypoint.transform.location, self._last_vehicle_state.get_location())
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:

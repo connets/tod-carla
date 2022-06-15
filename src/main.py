@@ -9,10 +9,11 @@ from pathlib import Path
 
 from numpy import random
 
+from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
 from src.core.TeleSimulator import TeleSimulator, FinishCode
-from src.actor.InfoSimulationActor import SimulationRatioActor
+from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
@@ -22,6 +23,7 @@ from src.build_enviroment import create_sim_world, create_route, destroy_sim_wor
     create_network_topology, create_display
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
+import src.utils.carla_utils as carla_utils
 
 
 def main(simulation_conf, scenario_conf):
@@ -62,6 +64,7 @@ def main(simulation_conf, scenario_conf):
                               scenario_conf['vehicle_player'],
                               player_attrs,
                               start_transform=start_transform,
+                              # start_transform=carla.Transform(carla.Location(x=392.470001, y=68.860039, z=0.300000), carla.Rotation(pitch=0.000000, yaw=-90.000046, roll=0.000000)),
                               modify_vehicle_physics=True)
 
     collisions_sensor = TeleCarlaCollisionSensor()
@@ -83,6 +86,13 @@ def main(simulation_conf, scenario_conf):
     lidar_sensor = TeleCarlaLidarSensor()
     player.attach_sensor(lidar_sensor)
 
+    tele_sim.add_actor(PeriodicDataCollectorActor(FolderPath.OUTPUT_RESULTS_PATH + "vector.csv",
+                                                  {'timestamp': lambda: utils.format_number(
+                                                      tele_world.timestamp.elapsed_seconds, 5),
+                                                   'location': lambda: player.get_transform().location,
+                                                   'vector': lambda: player.get_transform().get_forward_vector()},
+                                                  0.05))
+
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
     tele_sim.add_actor(tele_operator)
@@ -100,7 +110,8 @@ def main(simulation_conf, scenario_conf):
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
-    tele_sim.add_step_listener(lambda ts: print(player.get_location()))
+    # tele_sim.add_step_listener(
+    #     lambda ts: print(*carla_utils.get_closest_spawning_points(tele_world.carla_map, player.get_location())))
     try:
         status_code = tele_sim.do_simulation()
 

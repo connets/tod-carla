@@ -11,7 +11,6 @@ class TeleContext:
         self._initial_timestamp = initial_timestamp
         self._timestamp = initial_timestamp
         self.finish = finish_callback
-        self.tmp = None
         # self._finished = False
 
     @property

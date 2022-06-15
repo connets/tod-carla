@@ -62,7 +62,7 @@ class BasicAgent(object):
         self._ignore_stop_signs = False
         self._ignore_vehicles = False
         self._target_speed = target_speed
-        self._sampling_resolution = 2
+        self._sampling_resolution = 0.5
 
         self.reaction_time = 1.5
         self.response_time = 1.5
@@ -156,7 +156,7 @@ class BasicAgent(object):
             start_location = self._local_planner.target_waypoint.transform.location
             clean_queue = True
         else:
-            start_location = self._start_location
+            # start_location = self._start_location
             clean_queue = False
 
         start_waypoint = self._map.get_waypoint(start_location)
