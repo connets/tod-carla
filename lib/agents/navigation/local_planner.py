@@ -297,15 +297,17 @@ class LocalPlanner(object):
                 lambda acc, it: (it[0], True) if acc[1] and calc_angle_to_wp(self._last_vehicle_state.get_location(),
                                                                              it[1]) > 60 else (acc[0], False),
                 enumerate(wp for wp, _ in self._waypoints_queue), (-1, True))
-            for _ in range(last_index_wp_to_remove + 1):
-                self._waypoints_queue.popleft()
+            # for _ in range(last_index_wp_to_remove + 1):
+            #     self._waypoints_queue.popleft()
             # First waypoint that I can see
             first_visible_index_wp = next((i for i, (wp, _) in enumerate(self._waypoints_queue) if
                                                calc_angle_to_wp(self._last_vehicle_state.get_location(), wp) < 45), 0)
 
+            for _ in range(first_visible_index_wp):
+                self._waypoints_queue.popleft()
+
             self.target_waypoint, self.target_road_option =self._waypoints_queue[first_visible_index_wp]
-            if num_waypoint_removed == 0:
-                print("****=> ", self._last_vehicle_state.get_transform().get_forward_vector(), self.target_waypoint.transform.location, self._last_vehicle_state.get_location())
+            print("***=> ", first_visible_index_wp)
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:
