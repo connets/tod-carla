@@ -62,7 +62,7 @@ class BasicAgent(object):
         self._ignore_stop_signs = False
         self._ignore_vehicles = False
         self._target_speed = target_speed
-        self._sampling_resolution = 0.5
+        self._sampling_resolution = 3
 
         self.reaction_time = 1.5
         self.response_time = 1.5

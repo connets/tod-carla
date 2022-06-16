@@ -31,7 +31,7 @@ def create_display(player, clock, tele_sim, camera_width, camera_height, camera_
     return display
 
 
-def create_sim_world(host, port, timeout, world, seed, render, time_step=None):
+def create_sim_world(host, port, timeout, world, seed, render, time_step):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
