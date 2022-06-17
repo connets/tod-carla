@@ -306,7 +306,7 @@ class LocalPlanner(object):
             for _ in range(first_visible_index_wp):
                 self._waypoints_queue.popleft()
 
-            self.target_waypoint, self.target_road_option =self._waypoints_queue[first_visible_index_wp]
+            self.target_waypoint, self.target_road_option =self._waypoints_queue[0]
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:
