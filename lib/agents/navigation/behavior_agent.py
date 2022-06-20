@@ -42,7 +42,6 @@ class BehaviorAgent(BasicAgent):
         super().__init__(vehicle, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
         self._look_ahead_steps = 0
 
-        self.tmp = vehicle
         # Vehicle information
         self._speed = 0
         self._speed_limit = 0

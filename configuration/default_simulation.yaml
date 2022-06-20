@@ -8,7 +8,7 @@ render: False
 
 
 timing:
-  time_step: 0.05 #milliseconds
+  time_step: 10ms #milliseconds
 #  sensors_data: 0.005
 #  interval_channel_change_delay: 0.01
 
