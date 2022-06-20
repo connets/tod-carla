@@ -20,9 +20,9 @@ class TeleWorld:
         self.sim_world: World = self.client.get_world()
         self._last_snapshot: carla.WorldSnapshot = self.sim_world.get_snapshot()
 
-        builds = self.sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
-        objects_to_toggle = {build.id for build in builds}
-        self.sim_world.enable_environment_objects(objects_to_toggle, False)
+        # builds = self.sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
+        # objects_to_toggle = {build.id for build in builds}
+        # self.sim_world.enable_environment_objects(objects_to_toggle, True)
 
         try:
             self.carla_map = self.sim_world.get_map()

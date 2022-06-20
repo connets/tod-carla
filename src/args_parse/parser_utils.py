@@ -25,17 +25,18 @@ def parse_unit_measurement(config_dict):
     :param config_dict:
     :return update the config_dict using the international system:
     """
-    for k, v in config_dict.items():
+    config_dict_res = config_dict.copy()
+    for k, v in config_dict_res.items():
         if isinstance(v, dict):
-            config_dict[k] = parse_unit_measurement(v)
+            config_dict_res[k] = parse_unit_measurement(v)
         elif isinstance(v, list):
-            config_dict[k] = [
+            config_dict_res[k] = [
                 parse_and_convert_value(e) if isinstance(e, str) else parse_unit_measurement(e) for e in v]
         elif isinstance(v, str):
-            config_dict[k] = parse_and_convert_value(v)
+            config_dict_res[k] = parse_and_convert_value(v)
         else:
-            config_dict[k] = v
-    return config_dict
+            config_dict_res[k] = v
+    return config_dict_res
 
 
 def parse_and_convert_value(value):

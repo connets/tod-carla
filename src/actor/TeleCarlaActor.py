@@ -63,7 +63,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
                 if pedestrian_raw:
                     pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
                     visible_pedestrians = pedestrians_res['vehicles']
-
             self.send_message(InfoUpdateNetworkMessage(
                 TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
                                                         visible_pedestrians),

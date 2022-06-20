@@ -134,8 +134,8 @@ if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1], sys.argv[2])
 
     #
-    simulation_conf = configuration['carla_simulation_file']
-    scenario_conf = configuration['carla_scenario_file']
+    simulation_conf = configuration['carla_simulation_config']
+    scenario_conf = configuration['carla_scenario_config']
 
     FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH = scenario_conf['delay']['backhaul']['uplink_extra_delay'][
                                                        'family'] + '_' + '_'.join(
@@ -162,10 +162,8 @@ if __name__ == '__main__':
 
     os.mkdir(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/')
 
-    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation_file.yaml', 'w') as outfile:
-        yaml.dump(simulation_conf, outfile, default_flow_style=False)
-    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario_file.yaml', 'w') as outfile:
-        yaml.dump(scenario_conf, outfile, default_flow_style=False)
+    configuration.save_config(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation.yaml',
+                              FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario.yaml')
 
     TeleLogger(FolderPath.OUTPUT_LOG_PATH)
     main(simulation_conf, scenario_conf)

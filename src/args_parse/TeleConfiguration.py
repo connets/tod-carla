@@ -1,6 +1,8 @@
 import argparse
 import time
 
+import yaml
+
 from src.args_parse.ConfigurationParser import ConfigurationParser
 from src.args_parse import parser_utils
 from src.utils.decorators import DecoratorSingleton
@@ -9,26 +11,30 @@ from src.utils.decorators import DecoratorSingleton
 @DecoratorSingleton
 class TeleConfiguration(dict):
 
-    def __init__(self, carla_simulation_config_path, carla_scenario_config_path) -> None:
+    def __init__(self, carla_simulation_config_path, carla_scenario_config_path):
         super().__init__()
-        self._carla_simulation_config_path = carla_simulation_config_path
-        self._carla_scenario_config_path = carla_scenario_config_path
+        self['carla_simulation_path'] = carla_simulation_config_path
+        self['carla_scenario_path'] = carla_scenario_config_path
         self._parse()
 
     def _parse(self):
-        conf_files = self._parse_configuration_files()
-        self['carla_simulation_file'] = self._parse_carla_server_args(conf_files['carla_simulation_file'])
-        self['carla_scenario_file'] = self._parse_carla_simulation_args(conf_files['carla_scenario_file'])
+        self['carla_simulation_config_readable'] = self._parse_carla_server_args(self['carla_simulation_path'])
+        self['carla_scenario_config_readable'] = self._parse_carla_simulation_args(self['carla_scenario_path'])
+        self['carla_simulation_config'] = parser_utils.parse_unit_measurement(self['carla_simulation_config_readable'])
+        self['carla_scenario_config'] = parser_utils.parse_unit_measurement(self['carla_scenario_config_readable'])
 
-    def _parse_configuration_files(self, args=None):
-        parser = ConfigurationParser()
-        parser.add('--carla_simulation_file', metavar='CF', help='Configuration file path for Carla server',
-                   default=self._carla_simulation_config_path)
-        parser.add('--carla_scenario_file', metavar='CF', help='Configuration file path for simulation',
-                   default=self._carla_scenario_config_path)
-        # parser.add('--sudo_pw', metavar='CF', help='privileged password of current user',
-        #            required=True)
-        return parser_utils.parse_unit_measurement(parser.parse(args=args))
+    def save_config(self, simulation_file_out_path, scenario_file_out_path, readable=True):
+        if readable:
+            simulation_config = self['carla_simulation_config_readable']
+            scenario_config = self['carla_scenario_config_readable']
+        else:
+            simulation_config = self['carla_simulation_config']
+            scenario_config = self['carla_scenario_config']
+
+        with open(simulation_file_out_path, 'w') as outfile:
+            yaml.dump(simulation_config, outfile, default_flow_style=False)
+        with open(scenario_file_out_path, 'w') as outfile:
+            yaml.dump(scenario_config, outfile, default_flow_style=False)
 
     def _parse_carla_server_args(self, configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
@@ -42,8 +48,7 @@ class TeleConfiguration(dict):
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
         parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
         parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')
-        return parser_utils.parse_unit_measurement(
-            parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+        return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
     def _parse_carla_simulation_args(self, configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
@@ -77,18 +82,17 @@ class TeleConfiguration(dict):
         parser.add('--output.log', type=str, help='Log output directory', required=True)
         parser.add('--output.results', type=str, help='Result output directory', required=True)
         parser.add('--output.images', type=str, help='Images output directory')
-        return parser_utils.parse_unit_measurement(
-            parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS))
+        return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
 
 if __name__ == '__main__':
     import os
 
     PROJECT_PATH = ''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))
-    res = TeleConfiguration(PROJECT_PATH + 'configuration/default_simulation.yaml',
-                            PROJECT_PATH + 'configuration/scenario/dangerous_curve_with_pedestrian.yaml')
+    res = TeleConfiguration(PROJECT_PATH + 'configuration/tmp/carla_simulation_file.yaml',
+                            PROJECT_PATH + 'configuration/tmp/carla_scenario_file.yaml')
 
-    print(res['carla_scenario_file']['pedestrians'][0]['x'])
+    print(res['carla_scenario_config'])
     # TeleConfiguration
     # res = dict()
     # conf_files = parse_configuration_files()
