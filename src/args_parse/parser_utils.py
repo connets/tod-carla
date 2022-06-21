@@ -79,6 +79,8 @@ def _parse_single_unit_value(value_str):
         return float(value) / 1000
     if unit == 'us':
         return float(value) / 1000000
+    if unit == 'm/s':
+        return float(value)
     if unit == 'km/h':
         return float(value) / 3.6
     # length unit
