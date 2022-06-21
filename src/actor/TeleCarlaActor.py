@@ -139,8 +139,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
 
     def quit(self):
-        if self._sending_info_thread is not None:
-            self._sending_info_thread.exit()
         for sensor in self.sensors:
             sensor.destroy()
         self._tele_world.apply_sync_command(carla.command.DestroyActor(self.id))

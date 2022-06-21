@@ -26,7 +26,7 @@ class ConfigurationParser:
         """
         self.options.append((args, kwargs))
 
-    #TODO we can remove pargs?
+    # TODO we can remove pargs?
     def parse(self, *pargs, args=None, **kwpargs):
         """
         run the parsing of the current state of the object.
@@ -50,7 +50,9 @@ class ConfigurationParser:
         config_vars_complete = stretch_dict(config_vars_complete)
 
         if 'IMPORT.$cmd$' in config_vars_complete.keys():
-            exec(config_vars_complete['IMPORT.$cmd$'])
+            for imp in config_vars_complete['IMPORT.$cmd$'].strip().split(';'):
+                exec(imp)
+
             del config_vars_complete['IMPORT.$cmd$']
 
         config_vars = {}

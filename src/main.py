@@ -144,24 +144,20 @@ if __name__ == '__main__':
         scenario_conf['delay']['backhaul']['uplink_extra_delay']['parameters'] \
             .values()) + '|' + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
-    Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
-    Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
+    # Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
+    # Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
 
-    FolderPath.OUTPUT_RESULTS_PATH = scenario_conf['output'][
-                                         'results'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
-    FolderPath.OUTPUT_LOG_PATH = scenario_conf['output']['log'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
+    FolderPath.OUTPUT_RESULTS_PATH = scenario_conf['output']['results']
+    os.makedirs(FolderPath.OUTPUT_RESULTS_PATH)
 
-    os.mkdir(FolderPath.OUTPUT_RESULTS_PATH)
-    os.mkdir(FolderPath.OUTPUT_LOG_PATH)
+    FolderPath.OUTPUT_LOG_PATH = scenario_conf['output']['log']
+    os.makedirs(FolderPath.OUTPUT_LOG_PATH)
 
     if 'images' in scenario_conf['output']:
-        Path(scenario_conf['output']['images']).mkdir(parents=True, exist_ok=True)
+        FolderPath.OUTPUT_IMAGES_PATH = scenario_conf['output']['images']
+        os.makedirs(FolderPath.OUTPUT_IMAGES_PATH)
 
-        FolderPath.OUTPUT_IMAGES_PATH = scenario_conf['output'][
-                                            'images'] + FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH + '/'
-        os.mkdir(FolderPath.OUTPUT_IMAGES_PATH)
-
-    os.mkdir(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/')
+    os.mkdir(scenario_conf['output']['results'] + 'configurations/')
 
     configuration.save_config(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation.yaml',
                               FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario.yaml')

@@ -1,14 +1,6 @@
 IMPORT:
-  $cmd$: 'import os'
+  $cmd$: "import os;from datetime import datetime"
 
-_PROJECT_PATH:
-  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
-
-output:
-  log:
-    $cmd$: "self['_PROJECT_PATH'] + 'log/'"
-  results:
-    $cmd$: "self['_PROJECT_PATH'] + 'out/'"
 #  images:
 #    $cmd$: "self['_PROJECT_PATH'] + 'images/'"
 
@@ -17,7 +9,6 @@ world: Town01_Opt
 player:
   model: vehicle.tesla.model3
   refresh_interval: 50ms
-  speed_limit: 60km/h
 
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
@@ -52,3 +43,16 @@ delay:
 #      extra_delay: uniform(1ms, 5ms)
 
 #      M_node_processing_time_distribution: constant(0.0)
+
+
+
+_PROJECT_PATH:
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
+_CURRENT_SIMULATION_DIRECTORY_PATH:
+  $cmd$: "self['delay.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+output:
+  log:
+    $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
+  results:
+    $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"

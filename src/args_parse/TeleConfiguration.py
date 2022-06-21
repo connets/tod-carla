@@ -91,8 +91,8 @@ if __name__ == '__main__':
     import os
 
     PROJECT_PATH = ''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))
-    res = TeleConfiguration(PROJECT_PATH + 'configuration/tmp/carla_simulation_file.yaml',
-                            PROJECT_PATH + 'configuration/tmp/carla_scenario_file.yaml')
+    res = TeleConfiguration(PROJECT_PATH + 'configuration/default_simulation.yaml',
+                            PROJECT_PATH + 'configuration/scenario/simple_curve.yaml')
 
     print(res['carla_scenario_config'])
     # TeleConfiguration
