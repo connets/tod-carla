@@ -53,7 +53,8 @@ class TeleVehicleState(ActorState):
         super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
         self.transform = transform
-        self.speed_limit = speed_limit
+        # self.speed_limit = speed_limit
+        self.speed_limit = 60
         self.acceleration = acceleration
         self.collisions = []
         self.visible_vehicles = visible_vehicles

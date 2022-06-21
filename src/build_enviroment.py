@@ -35,7 +35,6 @@ def create_sim_world(host, port, timeout, world, seed, render, time_step):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
-    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
     settings = sim_world.get_settings()
     settings.synchronous_mode = True
@@ -47,6 +46,8 @@ def create_sim_world(host, port, timeout, world, seed, render, time_step):
     traffic_manager.set_random_device_seed(seed)
 
     client.reload_world(False)  # reload map keeping the world settings
+    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
+
     sim_world.tick()
     # env_objs = sim_world.get_environment_objects(carla.CityObjectLabel.Any)
     # building_01 = env_objs[0]

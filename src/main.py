@@ -60,8 +60,8 @@ def main(simulation_conf, scenario_conf):
     player_attrs = {'role_name': 'hero'}
     # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
 
-    player = TeleCarlaVehicle(0.05,
-                              scenario_conf['vehicle_player'],
+    player = TeleCarlaVehicle(scenario_conf['player']['refresh_interval'],
+                              scenario_conf['player']['model'],
                               player_attrs,
                               start_transform=start_transform,
                               # start_transform=carla.Transform(carla.Location(x=392.470001, y=68.860039, z=0.300000), carla.Rotation(pitch=0.000000, yaw=-90.000046, roll=0.000000)),

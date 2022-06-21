@@ -30,6 +30,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         super().__init__()
         self._tele_world = None
         self._sending_interval = sending_interval
+        self._speed_limit = None
         if attrs is None:
             attrs = dict()
         self._actor_filter = actor_filter
@@ -40,7 +41,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self.sensors = set()
 
-        self._sending_info_thread = None
+    def get_speed_limit(self):
+        return self._speed_limit if self._speed_limit is None else self.model.get_speed_limit()
 
     def run(self):
         @tele_event('sending_info_state')
