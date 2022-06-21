@@ -42,7 +42,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self.sensors = set()
 
     def get_speed_limit(self):
-        return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit()
+        return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit() / 3.6
 
     def run(self):
         @tele_event('sending_info_state')

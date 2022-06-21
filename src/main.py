@@ -112,7 +112,7 @@ def main(simulation_conf, scenario_conf):
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     # tele_sim.add_step_listener(
-    #     lambda ts: print(*carla_utils.get_closest_spawning_points(tele_world.carla_map, player.get_location())))
+    #     lambda ts: print(player.get_speed_limit()))
     try:
         status_code = tele_sim.do_simulation()
 
