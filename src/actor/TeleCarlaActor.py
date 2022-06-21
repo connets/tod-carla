@@ -21,7 +21,7 @@ from src.communication.TeleVehicleState import TeleVehicleState
 from src.communication.NetworkMessage import InfoUpdateNetworkMessage
 import lib.camera_visibility.carla_vehicle_annotator as cva
 
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
@@ -80,7 +80,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)
 
-    @needs_member('model')
+    @preconditions('model')
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
@@ -134,7 +134,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         for sensor in self.sensors:
             sensor.attach_to_actor(tele_world, self)
 
-    @needs_member('_tele_world')
+    @preconditions('_tele_world')
     def receive_instruction_network_message(self, command):
         self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
 

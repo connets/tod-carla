@@ -2,7 +2,7 @@ import socket
 from abc import ABC
 from typing import List
 
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class TeleActor(ABC):
@@ -19,7 +19,7 @@ class TeleActor(ABC):
     def run(self):
         ...
 
-    @needs_member('_tele_context')
+    @preconditions('_tele_context')
     def start(self):
         self.run()
 

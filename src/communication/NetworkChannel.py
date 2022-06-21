@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 
 from src.core.TeleEvent import tele_event
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class NetworkChannel(ABC):
@@ -14,7 +14,7 @@ class NetworkChannel(ABC):
         self._delay = distr_func()
         self._binded = False
 
-    @needs_member('_binded', lambda x: x)
+    @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
         self._tele_context = tele_context
 
@@ -50,7 +50,7 @@ class DiscreteNetworkChannel(NetworkChannel):
     def _apply_delay(self):
         self._delay = self._distr_func()
 
-    @needs_member('_tele_context')
+    @preconditions('_tele_context')
     def send(self, msg):
         super().send(msg)
 

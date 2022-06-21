@@ -14,11 +14,11 @@ def closure(f):
     return closure_aux
 
 
-def needs_member(member, valid=lambda x: x is not None):
+def preconditions(*members, valid=lambda *params: all(p is not None for p in params)):
     def wrapper_method(method):
         def validation(ref, *args, **kwargs):
-            if not valid(getattr(ref, member)):
-                raise Exception(f"You need {member} to call method {method.__name__}")
+            if not valid(*(getattr(ref, member) for member in members)):
+                raise Exception(f"Violated prerequisites of method {method.__name__}")
             return method(ref, *args, **kwargs)
 
         return validation
@@ -41,7 +41,6 @@ def synchronized(lock: threading.RLock):
 class MetaClassSingleton(type):
     _instances = {}
 
-
     def __call__(cls, *args, **kwargs):
         if cls not in MetaClassSingleton._instances:
             MetaClassSingleton._instances[cls] = super().__call__(*args, **kwargs)
@@ -54,7 +53,7 @@ class DecoratorSingleton:
         self._instance = None
 
     @property
-    @needs_member("_instance")
+    @preconditions("_instance")
     def instance(self):
         return self._instance
 
@@ -70,4 +69,5 @@ class DecoratorSingleton:
     def destroy(self):
         del self._instance
         self._instance = None
+
 
