@@ -232,7 +232,7 @@ class LocalPlanner(object):
         :return: control to be applied
         """
         if self._follow_speed_limits:
-            self._target_speed = self._last_vehicle_state.get_speed_limit()
+            self._target_speed = self._last_vehicle_state.get_speed_limit() * 3.6
 
         # Add more waypoints too few in the horizon
         if not self._stop_waypoint_creation and len(self._waypoints_queue) < self._min_waypoint_queue_length:

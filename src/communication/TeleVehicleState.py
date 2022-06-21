@@ -32,7 +32,6 @@ class OtherVehicleState(ActorState):
         super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
 
-
     @staticmethod
     def generate_visible_vehicle(timestamp, vehicle):
         return OtherVehicleState(timestamp, vehicle.id, vehicle.get_transform(),
@@ -50,11 +49,16 @@ class TeleVehicleState(ActorState):
 
     def __init__(self, timestamp, _id, bounding_box, velocity, transform, speed_limit, acceleration, visible_vehicles,
                  visible_pedestrians):
+        """
+            :param velocity: velocity carla Vector3D
+            :param speed_limit: speed limit in m/s
+            :param acceleration: acceleration carla Vector3D
+        """
         super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
         self.transform = transform
-        # self.speed_limit = speed_limit
-        self.speed_limit = 60
+        self.speed_limit = speed_limit
+        # self.speed_limit = 60
         self.acceleration = acceleration
         self.collisions = []
         self.visible_vehicles = visible_vehicles
@@ -73,7 +77,6 @@ class TeleVehicleState(ActorState):
             sensor.attach_data(vehicle_state)
 
         return vehicle_state
-
 
     def __getstate__(self):
         return {

@@ -55,6 +55,7 @@ class TeleConfiguration(dict):
         parser.add('--world', metavar='W', help='Using world')
         parser.add('--player.model', metavar='V', help='model vehicle to drive', required=True)
         parser.add('--player.refresh_interval', metavar='V', help='vehicle state sending interval', required=True)
+        parser.add('--player.speed_limit', metavar='V', help='speed limit of vehicle player ', default=None)
 
         parser.add('--delay.backhaul.uplink_extra_delay', help='backhaul uplink extra delay', required=True)
         parser.add('--delay.backhaul.downlink_extra_delay', help='backhaul downlink extra delay', required=True)

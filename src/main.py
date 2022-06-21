@@ -61,6 +61,7 @@ def main(simulation_conf, scenario_conf):
     # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
 
     player = TeleCarlaVehicle(scenario_conf['player']['refresh_interval'],
+                              scenario_conf['player']['speed_limit'],
                               scenario_conf['player']['model'],
                               player_attrs,
                               start_transform=start_transform,

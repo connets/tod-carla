@@ -1,14 +1,12 @@
 import argparse
 import re
 
-_re_pattern_value_unit = r"\s*(-?[\d.]+)\s*([a-zA-Z%]*)"
+_re_pattern_value_unit = r"\s*(-?[\d.]+)\s*([a-zA-Z]*?[\/a-zA-Z]*)"
 # this regex captures the following example normal(3s,1ms) with/without spaces between parenthesis and comma(s)
 # it's also able to capture the sample duration specified after the distribution e.g., normal(3s,1ms) H 2ms  with/without spaces
 
 _re_pattern_compact_distribution = re.compile(
     r'^(?P<family>[a-z]+\b)\s*\(\s*(?P<args>-?\d*\.?\d+\s*[a-z]*\b(\s*,\s*-?\d*\.?\d+\s*[a-z]*\b)*)\s*\)\s*(H\s*(?P<sample_duration>\d*\.?\d+\s*[a-z]*)\b)*$')
-
-
 
 _re_pattern_composition_compact_distribution = re.compile(r"[a-z]+\s*\(.+\).*\s*\+\s*([a-z]+\s*\(.+\).*\s*)+\s*$")
 
@@ -81,6 +79,8 @@ def _parse_single_unit_value(value_str):
         return float(value) / 1000
     if unit == 'us':
         return float(value) / 1000000
+    if unit == 'km/h':
+        return float(value) / 3.6
     # length unit
     if unit == 'm':
         return float(value)
@@ -178,7 +178,8 @@ _distribution_dict = {'constant': (_expand_constant, [1]),
                       'exponential': (_expand_exponential, [1, 2]),
                       'lognormal': (_expand_lognormal, [2, 3]),
                       'erlang': (_expand_erlang, [2, 3]),
-                      'hypoexponential': (_expand_hypoexponential, [i for i in range(2)]) # TODO change here, refactor with regex
+                      'hypoexponential': (_expand_hypoexponential, [i for i in range(2)])
+                      # TODO change here, refactor with regex
                       }
 
 
