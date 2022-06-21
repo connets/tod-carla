@@ -1,5 +1,6 @@
 world: Town01_Opt
-vehicle_player: vehicle.tesla.model3
+player:
+  model: vehicle.tesla.model3
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
 IMPORT:

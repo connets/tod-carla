@@ -35,7 +35,6 @@ def create_sim_world(host, port, timeout, world, seed, render, time_step):
     client: libcarla.Client = carla.Client(host, port)
     client.set_timeout(timeout)
     sim_world: carla.World = client.load_world(world)
-    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
     settings = sim_world.get_settings()
     settings.synchronous_mode = True
@@ -47,6 +46,8 @@ def create_sim_world(host, port, timeout, world, seed, render, time_step):
     traffic_manager.set_random_device_seed(seed)
 
     client.reload_world(False)  # reload map keeping the world settings
+    sim_world.set_weather(carla.WeatherParameters.ClearSunset)
+
     sim_world.tick()
     # env_objs = sim_world.get_environment_objects(carla.CityObjectLabel.Any)
     # building_01 = env_objs[0]
@@ -54,7 +55,7 @@ def create_sim_world(host, port, timeout, world, seed, render, time_step):
     # objects_to_toggle = {building_01.id, building_02.id}
     #
     # # Toggle buildings off
-    # sim_world.enable_environment_objects(objects_to_toggle, True)
+    # sim_world.enable_environment_objects([o.id for o in env_objs], True)
 
     # traffic_manager.set_synchronous_mode(True)
 
@@ -121,13 +122,12 @@ def create_network_topology(scenario_conf, player, mec_server, tele_operator):
     backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
     backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
 
-
     vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
-                                             utils.delay_family_to_func[backhaul_uplink_delay['family']](
-                                                 **backhaul_uplink_delay['parameters']), 0.1)
+                                                      utils.delay_family_to_func[backhaul_uplink_delay['family']](
+                                                          **backhaul_uplink_delay['parameters']), 0.1)
     player.add_channel(vehicle_operator_channel)
 
     operator_vehicle_channel = DiscreteNetworkChannel(player,
-                                             utils.delay_family_to_func[backhaul_downlink_delay['family']](
-                                                 **backhaul_downlink_delay['parameters']), 0.1)
+                                                      utils.delay_family_to_func[backhaul_downlink_delay['family']](
+                                                          **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)

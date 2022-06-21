@@ -67,8 +67,8 @@ class BasicAgent(object):
         self.reaction_time = 1.5
         self.response_time = 1.5
         self.g = 9.80665  # m/s^2
-        self.t_pr = 1.5  # s
-        self.u = 0.7
+        self.t_pr = 1.5  # perception-reaction time (s)
+        self.u = 0.7  # coefficient of kinetic friction
 
         self._base_tlight_threshold = 5.0  # meters
         self._base_vehicle_threshold = 5.0  # meters
@@ -314,11 +314,10 @@ class BasicAgent(object):
 
     def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                    lane_offset=0):
-        speed = get_speed(self._last_vehicle_state) / 3.6
-        d_pr = speed * self.t_pr
-        d_braking = speed ** 2 / (2 * self.u * self.g)
-        d_total = max(d_pr + d_braking, 5)
-
+        speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
+        d_pr = speed * self.t_pr # perception-reaction distance
+        d_braking = speed ** 2 / (2 * self.u * self.g) # braking distance
+        d_total = max(d_pr + d_braking, 6)
         safe_distance_waypoints = [self._map.get_waypoint(self._last_vehicle_state.get_location(),
                                                           lane_type=carla.LaneType.Any)] + \
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(

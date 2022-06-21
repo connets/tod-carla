@@ -60,8 +60,9 @@ def main(simulation_conf, scenario_conf):
     player_attrs = {'role_name': 'hero'}
     # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
 
-    player = TeleCarlaVehicle(0.05,
-                              scenario_conf['vehicle_player'],
+    player = TeleCarlaVehicle(scenario_conf['player']['refresh_interval'],
+                              scenario_conf['player']['speed_limit'],
+                              scenario_conf['player']['model'],
                               player_attrs,
                               start_transform=start_transform,
                               # start_transform=carla.Transform(carla.Location(x=392.470001, y=68.860039, z=0.300000), carla.Rotation(pitch=0.000000, yaw=-90.000046, roll=0.000000)),
@@ -134,8 +135,8 @@ if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1], sys.argv[2])
 
     #
-    simulation_conf = configuration['carla_simulation_file']
-    scenario_conf = configuration['carla_scenario_file']
+    simulation_conf = configuration['carla_simulation_config']
+    scenario_conf = configuration['carla_scenario_config']
 
     FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH = scenario_conf['delay']['backhaul']['uplink_extra_delay'][
                                                        'family'] + '_' + '_'.join(
@@ -162,10 +163,8 @@ if __name__ == '__main__':
 
     os.mkdir(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/')
 
-    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation_file.yaml', 'w') as outfile:
-        yaml.dump(simulation_conf, outfile, default_flow_style=False)
-    with open(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario_file.yaml', 'w') as outfile:
-        yaml.dump(scenario_conf, outfile, default_flow_style=False)
+    configuration.save_config(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation.yaml',
+                              FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario.yaml')
 
     TeleLogger(FolderPath.OUTPUT_LOG_PATH)
     main(simulation_conf, scenario_conf)

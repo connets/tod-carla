@@ -21,15 +21,16 @@ from src.communication.TeleVehicleState import TeleVehicleState
 from src.communication.NetworkMessage import InfoUpdateNetworkMessage
 import lib.camera_visibility.carla_vehicle_annotator as cva
 
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, sending_interval,
-                 actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None, modify_vehicle_physics=False):
+    def __init__(self, sending_interval, speed_limit=None, actor_filter='vehicle.tesla.model3', attrs=None,
+                 start_transform=None, modify_vehicle_physics=False):
         super().__init__()
         self._tele_world = None
         self._sending_interval = sending_interval
+        self._speed_limit = speed_limit
         if attrs is None:
             attrs = dict()
         self._actor_filter = actor_filter
@@ -40,7 +41,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self.sensors = set()
 
-        self._sending_info_thread = None
+    def get_speed_limit(self):
+        return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit()
 
     def run(self):
         @tele_event('sending_info_state')
@@ -63,7 +65,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
                 if pedestrian_raw:
                     pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
                     visible_pedestrians = pedestrians_res['vehicles']
-
             self.send_message(InfoUpdateNetworkMessage(
                 TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
                                                         visible_pedestrians),
@@ -79,7 +80,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)
 
-    @needs_member('model')
+    @preconditions('model')
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
@@ -133,7 +134,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         for sensor in self.sensors:
             sensor.attach_to_actor(tele_world, self)
 
-    @needs_member('_tele_world')
+    @preconditions('_tele_world')
     def receive_instruction_network_message(self, command):
         self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
 

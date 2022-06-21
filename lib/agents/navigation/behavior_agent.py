@@ -91,7 +91,7 @@ class BehaviorAgent(BasicAgent):
         vehicle based on the surrounding world.
         """
         self._speed = get_speed(self._last_vehicle_state)
-        self._speed_limit = self._last_vehicle_state.get_speed_limit()
+        self._speed_limit = self._last_vehicle_state.get_speed_limit() * 3.6
         self._local_planner.set_speed(self._speed_limit)
         self._direction = self._local_planner.target_road_option
         if self._direction is None:
@@ -213,7 +213,6 @@ class BehaviorAgent(BasicAgent):
         def dist(w):
             return w.get_location().distance(waypoint.transform.location)
 
-        walker_list = [w for w in walker_list if dist(w) < 10]
         # if self._direction == RoadOption.CHANGELANELEFT:
         #     walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
         #         self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=90, lane_offset=-1)
@@ -291,7 +290,6 @@ class BehaviorAgent(BasicAgent):
 
         # 2.1: Pedestrian avoidance behaviors
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
-
         if walker_state:
             # Distance is computed from the center of the two cars,
             # we use bounding boxes to calculate the actual distance

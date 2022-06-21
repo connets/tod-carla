@@ -4,7 +4,7 @@ from typing import List
 
 from src.actor.TeleActor import TeleActor
 from src.communication.NetworkChannel import NetworkChannel
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class NetworkNode(TeleActor):
@@ -33,7 +33,7 @@ class NetworkNode(TeleActor):
     def run(self):
         ...
 
-    @needs_member('_tele_context')
+    @preconditions('_tele_context')
     def start(self):
         for channel in self._channels:
             channel.start(self._tele_context)

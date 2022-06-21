@@ -44,7 +44,7 @@ from pygame.locals import KMOD_CTRL, KMOD_SHIFT, K_0, K_9, K_BACKQUOTE, K_BACKSP
 
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.behavior_agent import BehaviorAgent
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class TeleAdapterController(ABC):
@@ -211,7 +211,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
-    @needs_member('carla_agent')
+    @preconditions('carla_agent')
     def do_action(self, vehicle_state):
         if pygame.get_init() and any(self._quit(e) for e in pygame.event.get()):
             return None
@@ -223,7 +223,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
             control = self.carla_agent.run_step(True)
         return control
 
-    @needs_member('carla_agent')
+    @preconditions('carla_agent')
     def get_trajectory(self):
         return self._waypoints
 

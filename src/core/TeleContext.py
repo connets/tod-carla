@@ -1,7 +1,7 @@
 from queue import PriorityQueue
 
 from src.TeleOutputWriter import TeleLogger
-from src.utils.decorators import needs_member
+from src.utils.decorators import preconditions
 
 
 class TeleContext:
@@ -21,7 +21,7 @@ class TeleContext:
         return self._timestamp - self._initial_timestamp
 
     @property
-    @needs_member('_queue', lambda x: not x.empty())
+    @preconditions('_queue', valid=lambda x: not x.empty())
     def next_timestamp_event(self):
         return self._queue.queue[0].timestamp if not self._queue.empty() else None
 

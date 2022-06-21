@@ -1,3 +1,5 @@
+import re
+
 from carla import Vector3D, Transform, Location, Rotation, BoundingBox
 
 
@@ -8,11 +10,15 @@ class ActorState:
         self.transform = transform
         self.bounding_box = bounding_box
 
+    def __getattr__(self, method_name, *args):
+        m = re.match(r'get_(.*)', method_name)
+        if m:
+            name = m.group(1)
+            return lambda: getattr(self, name)
+        return super(self.__class__, self).__getattribute__(method_name, *args)
+
     def get_location(self):
         return self.transform.location
-
-    def get_transform(self):
-        return self.transform
 
     def update_state(self, new_state):
         assert isinstance(new_state, self.__class__)
@@ -25,9 +31,6 @@ class OtherVehicleState(ActorState):
     def __init__(self, timestamp, _id, transform, bounding_box, velocity):
         super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
-
-    def get_velocity(self):
-        return self.velocity
 
     @staticmethod
     def generate_visible_vehicle(timestamp, vehicle):
@@ -44,12 +47,19 @@ class OtherPedestrianState(ActorState):
 
 class TeleVehicleState(ActorState):
 
-    def __init__(self, timestamp, _id, bounding_box, velocity, transform, speed_limit, visible_vehicles,
+    def __init__(self, timestamp, _id, bounding_box, velocity, transform, speed_limit, acceleration, visible_vehicles,
                  visible_pedestrians):
+        """
+            :param velocity: velocity carla Vector3D
+            :param speed_limit: speed limit in m/s
+            :param acceleration: acceleration carla Vector3D
+        """
         super().__init__(timestamp, _id, transform, bounding_box)
         self.velocity = velocity
         self.transform = transform
         self.speed_limit = speed_limit
+        # self.speed_limit = 60
+        self.acceleration = acceleration
         self.collisions = []
         self.visible_vehicles = visible_vehicles
         self.visible_pedestrians = visible_pedestrians
@@ -58,7 +68,7 @@ class TeleVehicleState(ActorState):
     def generate_vehicle_state(timestamp, vehicle, visible_vehicles, visible_pedestrians):
         vehicle_state = TeleVehicleState(timestamp, vehicle.id, vehicle.bounding_box,
                                          vehicle.get_velocity(), vehicle.get_transform(),
-                                         vehicle.get_speed_limit(),
+                                         vehicle.get_speed_limit(), vehicle.get_acceleration(),
                                          [OtherVehicleState.generate_visible_vehicle(timestamp, v) for v in
                                           visible_vehicles],
                                          [OtherPedestrianState.generate_visible_pedestrian(timestamp, p) for p in
@@ -67,18 +77,6 @@ class TeleVehicleState(ActorState):
             sensor.attach_data(vehicle_state)
 
         return vehicle_state
-
-    def get_location(self):
-        return self.transform.location
-
-    def get_velocity(self):
-        return self.velocity
-
-    def get_transform(self):
-        return self.transform
-
-    def get_speed_limit(self):
-        return self.speed_limit
 
     def __getstate__(self):
         return {
