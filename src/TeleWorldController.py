@@ -164,6 +164,7 @@ class KeyboardTeleWorldAdapterController(TeleAdapterController):
         return []
 
 
+@DeprecationWarning
 class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
     def get_trajectory(self):
@@ -192,9 +193,10 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
-    def __init__(self, behavior, start_location, destination_location):
+    def __init__(self, behavior, sampling_resolution, start_location, destination_location):
         super().__init__()
         self._behavior = behavior
+        self._sampling_resolution = sampling_resolution
         self._start_location = start_location
         self._destination_location = destination_location
         self._player = None
@@ -203,7 +205,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     def add_player_in_world(self, player):
         self._player = player
-        self.carla_agent = BehaviorAgent(player.model, behavior=self._behavior)
+        self.carla_agent = BehaviorAgent(player.model, self._sampling_resolution, behavior=self._behavior)
 
         self._waypoints = self.carla_agent.set_destination(self._destination_location,
                                                            start_location=self._start_location)

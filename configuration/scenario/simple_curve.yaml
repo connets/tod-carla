@@ -9,6 +9,12 @@ world: Town01_Opt
 player:
   model: vehicle.tesla.model3
   refresh_interval: 50ms
+  speed_limit: auto
+
+controller:
+  type: auto
+  behavior: normal
+  sampling_resolution: 50m
 
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this

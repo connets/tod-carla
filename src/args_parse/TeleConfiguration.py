@@ -46,8 +46,6 @@ class TeleConfiguration(dict):
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
         parser.add('--timing.time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
-        parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
-        parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
     def _parse_carla_simulation_args(self, configuration_path, args=None):
@@ -84,6 +82,12 @@ class TeleConfiguration(dict):
         parser.add('--output.log', type=str, help='Log output directory', required=True)
         parser.add('--output.results', type=str, help='Result output directory', required=True)
         parser.add('--output.images', type=str, help='Images output directory')
+
+        parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
+        parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')
+        parser.add('--controller.sampling_resolution', metavar='S', type=str,
+                   help='sampling resolution of waypoints, distance between waypoints')
+
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
 

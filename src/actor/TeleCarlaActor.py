@@ -25,12 +25,12 @@ from src.utils.decorators import preconditions
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, sending_interval, speed_limit=None, actor_filter='vehicle.tesla.model3', attrs=None,
+    def __init__(self, sending_interval, speed_limit, actor_filter='vehicle.tesla.model3', attrs=None,
                  start_transform=None, modify_vehicle_physics=False):
         super().__init__()
         self._tele_world = None
         self._sending_interval = sending_interval
-        self._speed_limit = speed_limit
+        self._speed_limit = speed_limit if speed_limit != 'auto' else None
         if attrs is None:
             attrs = dict()
         self._actor_filter = actor_filter

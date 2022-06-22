@@ -13,9 +13,7 @@ timing:
 #  interval_channel_change_delay: 0.01
 
 
-controller:
-  type: auto
-  behavior: normal
+
 
 
 #seed: 9

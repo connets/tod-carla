@@ -36,7 +36,7 @@ def main(simulation_conf, scenario_conf):
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
-    render = simulation_conf['render'] or simulation_conf['controller']['type'] == 'manual'
+    render = simulation_conf['render'] or scenario_conf['controller']['type'] == 'manual'
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
                                          simulation_conf['seed'],
@@ -49,8 +49,9 @@ def main(simulation_conf, scenario_conf):
 
     start_transform, destination_location = create_route(tele_world, scenario_conf)
 
-    if simulation_conf['controller']['type'] == 'auto':
-        controller = BehaviorAgentTeleWorldAdapterController(simulation_conf['controller']['behavior'],
+    if scenario_conf['controller']['type'] == 'auto':
+        controller = BehaviorAgentTeleWorldAdapterController(scenario_conf['controller']['behavior'],
+                                                             scenario_conf['controller']['sampling_resolution'],
                                                              start_transform.location, destination_location)
     else:
         controller = KeyboardTeleWorldAdapterController(clock)
