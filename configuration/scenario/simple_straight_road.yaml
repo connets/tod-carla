@@ -6,7 +6,7 @@ IMPORT:
 
 
 world: Town01_Opt
-time_limit: 40s
+time_limit: 20s
 
 player:
   model: vehicle.tesla.model3
@@ -16,7 +16,7 @@ player:
 controller:
   type: auto
   behavior: normal
-  sampling_resolution: 50m
+  sampling_resolution: 100m
 
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
@@ -29,9 +29,9 @@ route:
     yaw: -90.000298
     roll: 0.
   end:
-    x: 365.
-    y: -2.
-    z: 0.
+    x: 396.449982
+    y: 19.920038
+    z: 0.300000
 
 delay:
   #    ran:

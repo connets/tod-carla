@@ -31,7 +31,7 @@ class BehaviorAgent(BasicAgent):
     are encoded in the agent, from cautious to a more aggressive ones.
     """
 
-    def __init__(self, vehicle, behavior='normal', opt_dict={}, map_inst=None, grp_inst=None):
+    def __init__(self, vehicle, sampling_resolution, behavior='normal', opt_dict={}, map_inst=None, grp_inst=None):
         """
         Constructor method.
 
@@ -39,7 +39,7 @@ class BehaviorAgent(BasicAgent):
             :param behavior: type of agent to apply
         """
 
-        super().__init__(vehicle, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
+        super().__init__(vehicle, sampling_resolution, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
         self._look_ahead_steps = 0
 
         # Vehicle information
@@ -50,7 +50,6 @@ class BehaviorAgent(BasicAgent):
         self._incoming_waypoint = None
         self._min_speed = 5
         self._behavior = None
-        self._sampling_resolution = 0.05
 
         # Parameters for agent behavior
         if behavior == 'cautious':

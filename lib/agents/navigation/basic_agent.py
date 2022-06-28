@@ -29,7 +29,7 @@ class BasicAgent(object):
     as well as to change its parameters in case a different driving mode is desired.
     """
 
-    def __init__(self, vehicle, target_speed=20, opt_dict={}, map_inst=None, grp_inst=None):
+    def __init__(self, vehicle, sampling_resolution, target_speed=20, opt_dict={}, map_inst=None, grp_inst=None):
         """
         Initialization the agent paramters, the local and the global planner.
 
@@ -62,7 +62,7 @@ class BasicAgent(object):
         self._ignore_stop_signs = False
         self._ignore_vehicles = False
         self._target_speed = target_speed
-        self._sampling_resolution = 3  # m
+        self._sampling_resolution = sampling_resolution  # m
 
         self.reaction_time = 1.5
         self.response_time = 1.5

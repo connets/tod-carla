@@ -1,4 +1,5 @@
 world: Town07_Opt
+
 player:
   model: vehicle.tesla.model3
 bot:

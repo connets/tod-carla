@@ -12,7 +12,7 @@ from numpy import random
 from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
-from src.core.TeleSimulator import TeleSimulator, FinishCode
+from src.core.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
@@ -36,21 +36,21 @@ def main(simulation_conf, scenario_conf):
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
-    render = simulation_conf['render'] or simulation_conf['controller']['type'] == 'manual'
+    render = simulation_conf['render'] or scenario_conf['controller']['type'] == 'manual'
     client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
                                          scenario_conf['world'],
                                          simulation_conf['seed'],
                                          render,
-                                         simulation_conf['timing'][
-                                             'time_step'] if 'timing' in simulation_conf and 'time_step' in
-                                                             simulation_conf['timing'] else None)
+                                         simulation_conf['simulation_time_step'])
 
     tele_world: TeleWorld = TeleWorld(client)
 
+
     start_transform, destination_location = create_route(tele_world, scenario_conf)
 
-    if simulation_conf['controller']['type'] == 'auto':
-        controller = BehaviorAgentTeleWorldAdapterController(simulation_conf['controller']['behavior'],
+    if scenario_conf['controller']['type'] == 'auto':
+        controller = BehaviorAgentTeleWorldAdapterController(scenario_conf['controller']['behavior'],
+                                                             scenario_conf['controller']['sampling_resolution'],
                                                              start_transform.location, destination_location)
     else:
         controller = KeyboardTeleWorldAdapterController(clock)
@@ -71,7 +71,7 @@ def main(simulation_conf, scenario_conf):
     collisions_sensor = TeleCarlaCollisionSensor()
     player.attach_sensor(collisions_sensor)
 
-    tele_operator = TeleOperator(controller)
+    tele_operator = TeleOperator(controller, scenario_conf['time_limit'])
     mec_server = TeleMEC()
 
     create_network_topology(scenario_conf, player, mec_server, tele_operator)
@@ -92,7 +92,7 @@ def main(simulation_conf, scenario_conf):
                                                       tele_world.timestamp.elapsed_seconds, 5),
                                                    'location': lambda: player.get_transform().location,
                                                    'vector': lambda: player.get_transform().get_forward_vector()},
-                                                  0.05))
+                                                  simulation_conf['output_results_sampling']))
 
     data_collector = create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
@@ -112,22 +112,17 @@ def main(simulation_conf, scenario_conf):
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     # tele_sim.add_step_listener(
-    #     lambda ts: print(player.get_speed_limit()))
+    #     lambda ts: print(player.get_location()))
     try:
         status_code = tele_sim.do_simulation()
-
-        finished_status_sim = {
-            FinishCode.ACCIDENT: 'ACCIDENT',
-            FinishCode.OK: 'FINISH',
-        }[status_code]
     except Exception as e:
-        finished_status_sim = 'ERROR'
+        status_code = TeleSimulator.FinishCode.TIME_LIMIT.name
         raise e
     finally:
         destroy_sim_world(client, sim_world)
         pygame.quit()
         with open(FolderPath.OUTPUT_RESULTS_PATH + 'finish_status.txt', 'w') as f:
-            f.write(finished_status_sim)
+            f.write(status_code.name)
 
 
 if __name__ == '__main__':

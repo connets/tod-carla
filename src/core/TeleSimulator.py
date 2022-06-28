@@ -4,6 +4,11 @@ from src.actor.TeleCarlaActor import TeleCarlaActor
 
 
 class TeleSimulator:
+    class FinishCode(Enum):
+        OK = 0
+        ACCIDENT = 1
+        TIME_LIMIT = 2
+
     def __init__(self, tele_world, clock):
         self._tele_world = tele_world
         self._clock = clock
@@ -72,8 +77,3 @@ class TeleSimulator:
             actor.quit()
 
         return self._finish_code
-
-
-class FinishCode(Enum):
-    OK = 0
-    ACCIDENT = 1

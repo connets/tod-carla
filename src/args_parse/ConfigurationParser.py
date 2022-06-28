@@ -56,16 +56,19 @@ class ConfigurationParser:
             del config_vars_complete['IMPORT.$cmd$']
 
         config_vars = {}
+        config_keys_to_exec = []
         for key in config_vars_complete.keys():
             m = re.search(r'(.*)\.\$cmd\$$', key)
             if m:
                 code = config_vars_complete[key]
-                code = code.replace('self', 'config_vars')
-                config_vars[m.group(1)] = eval(code)
+                config_vars[m.group(1)] = code
+                config_keys_to_exec.append(m.group(1))
             else:
                 config_vars[key] = config_vars_complete[key]
 
+        config_private_vars = {key: config_vars[key] for key in config_vars.keys() if key.startswith('_')}
         config_vars = {key: config_vars[key] for key in config_vars.keys() if not key.startswith('_')}
+
         parser = argparse.ArgumentParser(
             *pargs,
             # Inherit options from config_parser
@@ -79,12 +82,6 @@ class ConfigurationParser:
             parser_arg = parser.add_argument(*opt_args, **opt_kwargs)
             if parser_arg.dest in config_vars:
                 config_default = config_vars.pop(parser_arg.dest)
-                expected_type = str
-                if parser_arg.type is not None:
-                    expected_type = parser_arg.type
-
-                # if not isinstance(config_default, expected_type):
-                #     parser.error(f'YAML configuration entry {parser_arg.dest} does not have type {expected_type}')
                 parser_arg.default = config_default
                 parser_arg.required = False
 
@@ -92,5 +89,15 @@ class ConfigurationParser:
             parser.error(f'Unexpected configuration entries: {config_vars}')
 
         res, unknown = parser.parse_known_args(args)
+        res = vars(res)
 
-        return expand_dict(vars(res))
+        res = {**res, **config_private_vars}
+        for key in config_keys_to_exec:
+            print(key)
+            code = res[key]
+            code = code.replace('self', 'res')
+            res[key] = eval(code)
+
+        res = {key: res[key] for key in res.keys() if not key.startswith('_')}
+
+        return expand_dict(res)
