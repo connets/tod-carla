@@ -44,7 +44,8 @@ class TeleConfiguration(dict):
         parser.add('--render', help='show display', default=False, action='store_true')
         parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1280)
         parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
-        parser.add('--timing.time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
+        parser.add('--simulation_time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
+        parser.add('--output_results_sampling', metavar='T', help='interval for save results')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
@@ -54,6 +55,8 @@ class TeleConfiguration(dict):
         parser.add('--player.model', metavar='V', help='model vehicle to drive', required=True)
         parser.add('--player.refresh_interval', metavar='V', help='vehicle state sending interval', required=True)
         parser.add('--player.speed_limit', metavar='V', help='speed limit of vehicle player ', default=None)
+
+        parser.add('--time_limit', metavar='V', help='time limit of scenario simulation ', default=None)
 
         parser.add('--delay.backhaul.uplink_extra_delay', help='backhaul uplink extra delay', required=True)
         parser.add('--delay.backhaul.downlink_extra_delay', help='backhaul downlink extra delay', required=True)

@@ -71,8 +71,6 @@ class GlobalRoutePlanner(object):
 
             else:
                 path = path + [edge['entry_waypoint']] + edge['path'] + [edge['exit_waypoint']]
-                for wp in path:
-                    print("===>", wp)
                 closest_index = self._find_closest_in_list(current_waypoint, path)
                 for waypoint in path[closest_index:]:
                     current_waypoint = waypoint

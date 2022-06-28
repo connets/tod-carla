@@ -6,6 +6,8 @@ IMPORT:
 
 
 world: Town01_Opt
+time_limit: 20s
+
 player:
   model: vehicle.tesla.model3
   refresh_interval: 50ms

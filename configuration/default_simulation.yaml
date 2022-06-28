@@ -6,9 +6,8 @@ timeout: 8s
 #  height: 720
 render: False
 
-
-timing:
-  time_step: 50ms #milliseconds
+simulation_time_step: 6ms #milliseconds
+output_results_sampling: 10ms
 #  sensors_data: 0.005
 #  interval_channel_change_delay: 0.01
 
