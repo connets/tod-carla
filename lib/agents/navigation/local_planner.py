@@ -301,12 +301,12 @@ class LocalPlanner(object):
             #     self._waypoints_queue.popleft()
             # First waypoint that I can see
             first_visible_index_wp = next((i for i, (wp, _) in enumerate(self._waypoints_queue) if
-                                               calc_angle_to_wp(self._last_vehicle_state.get_location(), wp) < 45), 0)
+                                           calc_angle_to_wp(self._last_vehicle_state.get_location(), wp) < 45), 0)
 
             for _ in range(first_visible_index_wp):
                 self._waypoints_queue.popleft()
 
-            self.target_waypoint, self.target_road_option =self._waypoints_queue[0]
+            self.target_waypoint, self.target_road_option = self._waypoints_queue[0]
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:

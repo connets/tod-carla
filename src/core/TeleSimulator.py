@@ -77,3 +77,4 @@ class TeleSimulator:
 class FinishCode(Enum):
     OK = 0
     ACCIDENT = 1
+    TIME_EXCEEDED = 2

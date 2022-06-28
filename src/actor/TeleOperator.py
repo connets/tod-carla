@@ -8,13 +8,16 @@ from src.core.TeleSimulator import FinishCode
 class TeleOperator(NetworkNode):
     lock = threading.RLock()
 
-    def __init__(self, controller):
+    def __init__(self, controller, maximum_time):
         super().__init__()
-        self._last_snapshot = None
         self._controller = controller
+        self._maximum_time = maximum_time
+        self._last_snapshot = None
 
     # TODO update only if the latest vehicle has less ts
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
+        if timestamp > self._maximum_time:
+            self._tele_context.finish(FinishCode.TIME_EXCEEDED)
         if self._controller.done():
             self._tele_context.finish(FinishCode.OK)
         elif tele_vehicle_state.collisions:

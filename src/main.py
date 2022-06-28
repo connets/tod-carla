@@ -47,6 +47,9 @@ def main(simulation_conf, scenario_conf):
 
     tele_world: TeleWorld = TeleWorld(client)
 
+    print(carla_utils.get_closest_spawning_points(tele_world.carla_map,
+                                                  carla.Location(x=396.372284, y=19.668348, z=0.002165))[1])
+
     start_transform, destination_location = create_route(tele_world, scenario_conf)
 
     if scenario_conf['controller']['type'] == 'auto':
@@ -72,7 +75,7 @@ def main(simulation_conf, scenario_conf):
     collisions_sensor = TeleCarlaCollisionSensor()
     player.attach_sensor(collisions_sensor)
 
-    tele_operator = TeleOperator(controller)
+    tele_operator = TeleOperator(controller, 50.)
     mec_server = TeleMEC()
 
     create_network_topology(scenario_conf, player, mec_server, tele_operator)
@@ -109,17 +112,19 @@ def main(simulation_conf, scenario_conf):
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_RESULTS_PATH + 'optimal_trajectory.csv')
     optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
     anchor_points = controller.get_trajectory()
+    print(anchor_points)
     for point in anchor_points:
         optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
     # tele_sim.add_step_listener(
-    #     lambda ts: print(player.get_speed_limit()))
+    #     lambda ts: print(player.get_location()))
     try:
         status_code = tele_sim.do_simulation()
 
         finished_status_sim = {
             FinishCode.ACCIDENT: 'ACCIDENT',
             FinishCode.OK: 'FINISH',
+            FinishCode.TIME_EXCEEDED: 'TIME_EXCEEDED'
         }[status_code]
     except Exception as e:
         finished_status_sim = 'ERROR'
