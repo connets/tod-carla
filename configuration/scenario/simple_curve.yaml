@@ -16,7 +16,7 @@ player:
 controller:
   type: auto
   behavior: normal
-  sampling_resolution: 20m
+  sampling_resolution: 10m
 
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
@@ -44,9 +44,9 @@ delay:
     #      queue_urllc_distribution: constant(0.0)
     #      queue_embb_distribution: constant(0.0)
 
-    uplink_extra_delay: uniform(10ms, 10ms)
+    uplink_extra_delay: constant(100ms)
 
-    downlink_extra_delay: uniform(10ms, 10ms)
+    downlink_extra_delay: constant(100ms)
   #+  uniform(-1ms, 1ms)
 #      extra_delay: uniform(1ms, 5ms)
 

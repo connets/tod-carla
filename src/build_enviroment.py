@@ -3,6 +3,7 @@ import carla
 from numpy import random
 
 from src.FolderPath import FolderPath
+from src.TeleOutputWriter import DataCollector
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
 from src.communication.NetworkChannel import DiscreteNetworkChannel
 import src.utils as utils
@@ -97,18 +98,18 @@ def create_data_collector(tele_world, player):
     return PeriodicDataCollectorActor(FolderPath.OUTPUT_RESULTS_PATH + "sensors.csv",
                                       {'timestamp': lambda: utils.format_number(
                                           tele_world.timestamp.elapsed_seconds, 5),
-                                       'velocity_x': lambda: utils.format_number(player.get_velocity().x, 5),
-                                       'velocity_y': lambda: utils.format_number(player.get_velocity().y, 5),
-                                       'velocity_z': lambda: utils.format_number(player.get_velocity().z, 5),
+                                       'velocity_x': lambda: utils.format_number(player.get_velocity().x, 8),
+                                       'velocity_y': lambda: utils.format_number(player.get_velocity().y, 8),
+                                       'velocity_z': lambda: utils.format_number(player.get_velocity().z, 8),
                                        'acceleration_x': lambda: utils.format_number(
                                            player.get_acceleration().x, 5),
                                        'acceleration_y': lambda: utils.format_number(
                                            player.get_acceleration().y, 5),
                                        'acceleration_z': lambda: utils.format_number(
                                            player.get_acceleration().z, 5),
-                                       'location_x': lambda: utils.format_number(player.get_location().x, 5),
-                                       'location_y': lambda: utils.format_number(player.get_location().y, 5),
-                                       'location_z': lambda: utils.format_number(player.get_location().z, 5),
+                                       'location_x': lambda: utils.format_number(player.get_location().x, 8),
+                                       'location_y': lambda: utils.format_number(player.get_location().y, 8),
+                                       'location_z': lambda: utils.format_number(player.get_location().z, 8),
                                        # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                                        # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                                        # 'latitude': lambda: round(gnss_sensor.latitude, 5),
@@ -131,3 +132,23 @@ def create_network_topology(scenario_conf, player, mec_server, tele_operator):
                                                       utils.delay_family_to_func[backhaul_downlink_delay['family']](
                                                           **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)
+
+
+def apply_god_changes(tele_world, player, controller):
+    optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_LOG_PATH + 'commands.csv')
+
+    optimal_trajectory_collector.write('current_timestamp', 'timestamp_state', 'current_location_x',
+                                       'current_location_y', 'state_location_x', 'state_location_y')
+
+    def on_calc_instruction(run_step):
+        def on_calc_aux(*args, **kwargs):
+            last_available_state = controller.carla_agent._last_vehicle_state
+            optimal_trajectory_collector.write(tele_world.timestamp.elapsed_seconds, last_available_state.timestamp.elapsed_seconds,
+                                               player.get_location().x, player.get_location().y,
+                                               last_available_state.get_location().x,
+                                               last_available_state.get_location().y)
+            return run_step(*args, **kwargs)
+
+        return on_calc_aux
+
+    controller.carla_agent.run_step = on_calc_instruction(controller.carla_agent.run_step)
