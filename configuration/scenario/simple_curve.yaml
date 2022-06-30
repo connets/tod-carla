@@ -16,7 +16,7 @@ player:
 controller:
   type: auto
   behavior: normal
-  sampling_resolution: 50m
+  sampling_resolution: 20m
 
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
