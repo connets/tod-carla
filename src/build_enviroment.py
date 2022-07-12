@@ -137,16 +137,28 @@ def create_network_topology(scenario_conf, player, mec_server, tele_operator):
 def apply_god_changes(tele_world, player, controller):
     optimal_trajectory_collector = DataCollector(FolderPath.OUTPUT_LOG_PATH + 'commands.csv')
 
-    optimal_trajectory_collector.write('current_timestamp', 'timestamp_state', 'current_location_x',
-                                       'current_location_y', 'state_location_x', 'state_location_y')
+    optimal_trajectory_collector.write('current_timestamp', 'timestamp_state',
+                                       'current_location_x', 'current_location_y',
+                                       'state_location_x', 'state_location_y',
+                                       'current_velocity_x', 'current_velocity_y', 'current_velocity_z',
+                                       'state_velocity_x', 'state_velocity_y', 'state_velocity_z',
+                                       )
 
     def on_calc_instruction(run_step):
         def on_calc_aux(*args, **kwargs):
             last_available_state = controller.carla_agent._last_vehicle_state
-            optimal_trajectory_collector.write(tele_world.timestamp.elapsed_seconds, last_available_state.timestamp.elapsed_seconds,
+            optimal_trajectory_collector.write(tele_world.timestamp.elapsed_seconds,
+                                               last_available_state.timestamp.elapsed_seconds,
                                                player.get_location().x, player.get_location().y,
                                                last_available_state.get_location().x,
-                                               last_available_state.get_location().y)
+                                               last_available_state.get_location().y,
+                                               utils.format_number(player.get_velocity().x, 8),
+                                               utils.format_number(player.get_velocity().y, 8),
+                                               utils.format_number(player.get_velocity().z, 8),
+                                               utils.format_number(last_available_state.get_velocity().x, 8),
+                                               utils.format_number(last_available_state.get_velocity().y, 8),
+                                               utils.format_number(last_available_state.get_velocity().z, 8),
+                                               )
             return run_step(*args, **kwargs)
 
         return on_calc_aux

@@ -44,9 +44,9 @@ delay:
     #      queue_urllc_distribution: constant(0.0)
     #      queue_embb_distribution: constant(0.0)
 
-    uplink_extra_delay: constant(100ms)
+    uplink_extra_delay: constant(110ms)
 
-    downlink_extra_delay: constant(100ms)
+    downlink_extra_delay: constant(110ms)
   #+  uniform(-1ms, 1ms)
 #      extra_delay: uniform(1ms, 5ms)
 

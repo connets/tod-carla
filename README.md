@@ -1,7 +1,8 @@
 # Tele Operated Driving simulator
 ## Installation
 
-You must have Carla Server
+**Requires Python 3.8**
+
 ```sh
 pip install --upgrade pip==22.*
 git clone https://github.com/Jaivra/tod_simulator
