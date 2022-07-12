@@ -19,8 +19,7 @@ from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.args_parse.TeleConfiguration import TeleConfiguration
-from src.build_enviroment import create_sim_world, create_route, destroy_sim_world, create_data_collector, \
-    create_network_topology, create_display
+import src.build_enviroment as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils
@@ -37,16 +36,16 @@ def main(simulation_conf, scenario_conf):
     clock = pygame.time.Clock()
 
     render = simulation_conf['render'] or scenario_conf['controller']['type'] == 'manual'
-    client, sim_world = create_sim_world(simulation_conf['host'], simulation_conf['port'], simulation_conf['timeout'],
-                                         scenario_conf['world'],
-                                         simulation_conf['seed'],
-                                         render,
-                                         simulation_conf['simulation_time_step'])
+    client, sim_world = build_enviroment.create_sim_world(simulation_conf['host'], simulation_conf['port'],
+                                                          simulation_conf['timeout'],
+                                                          scenario_conf['world'],
+                                                          simulation_conf['seed'],
+                                                          render,
+                                                          simulation_conf['simulation_time_step'])
 
     tele_world: TeleWorld = TeleWorld(client)
 
-
-    start_transform, destination_location = create_route(tele_world, scenario_conf)
+    start_transform, destination_location = build_enviroment.create_route(tele_world, scenario_conf)
 
     if scenario_conf['controller']['type'] == 'auto':
         controller = BehaviorAgentTeleWorldAdapterController(scenario_conf['controller']['behavior'],
@@ -74,14 +73,15 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator(controller, scenario_conf['time_limit'])
     mec_server = TeleMEC()
 
-    create_network_topology(scenario_conf, player, mec_server, tele_operator)
+    build_enviroment.create_network_topology(scenario_conf, player, mec_server, tele_operator)
 
     tele_sim = TeleSimulator(tele_world, clock)
 
     camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
-        create_display(player, clock, tele_sim, simulation_conf['camera']['width'], simulation_conf['camera']['height'],
-                       camera_sensor, FolderPath.OUTPUT_IMAGES_PATH)
+        build_enviroment.create_display(player, clock, tele_sim, simulation_conf['camera']['width'],
+                                        simulation_conf['camera']['height'],
+                                        camera_sensor, FolderPath.OUTPUT_IMAGES_PATH)
 
     player.attach_sensor(camera_sensor)
     lidar_sensor = TeleCarlaLidarSensor()
@@ -94,7 +94,7 @@ def main(simulation_conf, scenario_conf):
                                                    'vector': lambda: player.get_transform().get_forward_vector()},
                                                   simulation_conf['output_results_sampling']))
 
-    data_collector = create_data_collector(tele_world, player)
+    data_collector = build_enviroment.create_data_collector(tele_world, player)
     tele_sim.add_actor(mec_server)
     tele_sim.add_actor(tele_operator)
     tele_sim.add_actor(data_collector)
@@ -113,13 +113,15 @@ def main(simulation_conf, scenario_conf):
 
     # tele_sim.add_step_listener(
     #     lambda ts: print(player.get_location()))
+
+    build_enviroment.apply_god_changes(tele_world, player, controller)
     try:
         status_code = tele_sim.do_simulation()
     except Exception as e:
         status_code = TeleSimulator.FinishCode.TIME_LIMIT.name
         raise e
     finally:
-        destroy_sim_world(client, sim_world)
+        build_enviroment.destroy_sim_world(client, sim_world)
         pygame.quit()
         with open(FolderPath.OUTPUT_RESULTS_PATH + 'finish_status.txt', 'w') as f:
             f.write(status_code.name)

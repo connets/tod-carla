@@ -74,24 +74,16 @@ class GlobalRoutePlanner(object):
                 closest_index = self._find_closest_in_list(current_waypoint, path)
                 for waypoint in path[closest_index:]:
                     current_waypoint = waypoint
-                    route_trace.append((current_waypoint, road_option))
                     if len(route) - i <= 2 and waypoint.transform.location.distance(
-                            destination) < 1 / 2 * self._sampling_resolution:
-                        """
-                        proof not looping:
-                        we consider the second-last waypoint A , x = distance between A and destination, y = sampling
-                        system:
-                        - x > 1/2y
-                        - x < y
-                        - y - x < 1/2y
-                        - x > 0
-                        """
+                            destination) < self._sampling_resolution:
+                        route_trace.append((destination_waypoint, route))
                         break
-                    elif len(
-                            route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
+                    elif len(route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
                         destination_index = self._find_closest_in_list(destination_waypoint, path)
                         if closest_index > destination_index:
                             break
+                    route_trace.append((current_waypoint, road_option))
+
 
         return route_trace
 
