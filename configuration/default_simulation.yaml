@@ -1,3 +1,6 @@
+IMPORT:
+  $cmd$: "import os;from datetime import datetime"
+  
 host: ubiquity
 port: 3000
 timeout: 8s
@@ -13,7 +16,39 @@ output_results_sampling: 10ms
 
 
 
+network:
 
+  type: tod
+  #    ran:
+  #      base_station_processing_distribution: constant(0.0)
+  #      uplink_urllc_distribution: constant(0.0)
+  #      uplink_embb_distribution: constant(0.0)
+  #      downlink_embb_distribution: constant(0.0)
+
+  backhaul:
+    #      queue_urllc_distribution: constant(0.0)
+    #      queue_embb_distribution: constant(0.0)
+
+    uplink_extra_delay: constant(110ms)
+
+    downlink_extra_delay: constant(110ms)
+  #+  uniform(-1ms, 1ms)
+#      extra_delay: uniform(1ms, 5ms)
+
+#      M_node_processing_time_distribution: constant(0.0)
+
+
+
+_PROJECT_PATH:
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
+_CURRENT_SIMULATION_DIRECTORY_PATH:
+  $cmd$: "self['network.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+output:
+  log:
+    $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
+  results:
+    $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
 
 #seed: 9
 

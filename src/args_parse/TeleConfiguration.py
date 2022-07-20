@@ -47,6 +47,14 @@ class TeleConfiguration(dict):
         parser.add('--simulation_time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
         parser.add('--output_results_sampling', metavar='T', help='interval for save results')
         parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
+
+        parser.add('--network.type', help='network manager type')
+        parser.add('--network.backhaul.uplink_extra_delay', help='backhaul uplink extra delay')
+        parser.add('--network.backhaul.downlink_extra_delay', help='backhaul downlink extra delay')
+
+        parser.add('--output.log', type=str, help='Log output directory', required=True)
+        parser.add('--output.results', type=str, help='Result output directory', required=True)
+        parser.add('--output.images', type=str, help='Images output directory')
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
     def _parse_carla_simulation_args(self, configuration_path, args=None):
@@ -57,10 +65,6 @@ class TeleConfiguration(dict):
         parser.add('--player.speed_limit', metavar='V', help='speed limit of vehicle player ', default=None)
 
         parser.add('--time_limit', metavar='V', help='time limit of scenario simulation ', default=None)
-
-        parser.add('--network.type', help='network manager type')
-        parser.add('--network.backhaul.uplink_extra_delay', help='backhaul uplink extra delay')
-        parser.add('--network.backhaul.downlink_extra_delay', help='backhaul downlink extra delay')
 
 
         parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
@@ -83,10 +87,6 @@ class TeleConfiguration(dict):
         parser.add('--pedestrians', metavar='P', type=list, help='Pedestrians list', default=[])
 
         parser.add('--no-rendering', help='Activate no rendering mode')
-
-        parser.add('--output.log', type=str, help='Log output directory', required=True)
-        parser.add('--output.results', type=str, help='Result output directory', required=True)
-        parser.add('--output.images', type=str, help='Images output directory')
 
         parser.add('--controller.type', metavar='S', type=str, help='controller type', required=True)
         parser.add('--controller.behavior', metavar='S', type=str, help='controller behavior if auto')

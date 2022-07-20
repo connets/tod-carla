@@ -74,7 +74,7 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator(controller, scenario_conf['time_limit'])
     mec_server = TeleMEC()
 
-    tele_sim = build_enviroment.create_simulator_and_network_topology(scenario_conf, tele_world, clock, player,
+    tele_sim = build_enviroment.create_simulator_and_network_topology(simulation_conf['network'], tele_world, clock, player,
                                                                       mec_server, tele_operator)
 
     camera_sensor = TeleCarlaCameraSensor(2.2)
@@ -138,17 +138,17 @@ if __name__ == '__main__':
     # Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
     # Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
 
-    FolderPath.OUTPUT_RESULTS_PATH = scenario_conf['output']['results']
+    FolderPath.OUTPUT_RESULTS_PATH = simulation_conf['output']['results']
     os.makedirs(FolderPath.OUTPUT_RESULTS_PATH)
 
-    FolderPath.OUTPUT_LOG_PATH = scenario_conf['output']['log']
+    FolderPath.OUTPUT_LOG_PATH = simulation_conf['output']['log']
     os.makedirs(FolderPath.OUTPUT_LOG_PATH)
 
-    if 'images' in scenario_conf['output']:
-        FolderPath.OUTPUT_IMAGES_PATH = scenario_conf['output']['images']
+    if 'images' in simulation_conf['output']:
+        FolderPath.OUTPUT_IMAGES_PATH = simulation_conf['output']['images']
         os.makedirs(FolderPath.OUTPUT_IMAGES_PATH)
 
-    os.mkdir(scenario_conf['output']['results'] + 'configurations/')
+    os.mkdir(simulation_conf['output']['results'] + 'configurations/')
 
     configuration.save_config(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation.yaml',
                               FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario.yaml')

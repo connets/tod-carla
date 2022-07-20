@@ -26,7 +26,7 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
 class CarlaOmnetManager:
     _id_iter = itertools.count(0)
 
-    def __init__(self, protocol, port, init_timeout, timeout, vehicle_actual_position):
+    def __init__(self, protocol, port, connection_timeout, timeout, vehicle_actual_position):
         self.step_listener = None
         self._vehicle_actual_position = vehicle_actual_position
 
@@ -36,7 +36,7 @@ class CarlaOmnetManager:
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
         self.socket.bind(f"{protocol}://*:{port}")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = init_timeout * 1000
+        self.socket.RCVTIMEO = self.socket.SNDTIMEO = connection_timeout * 1000
 
         print("Waiting for connection...")
         handshake = self._receive_data()
