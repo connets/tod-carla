@@ -1,11 +1,19 @@
+import itertools
+
 import zmq
 import json
+from types import SimpleNamespace
+
+from lib.carla_omnet.CommunicationMessage import CommunicationMessage, SimulationStepRequest
+
 
 class CarlaOmnetError(RuntimeError):
     ...
 
+
 class CarlaOmnetCommunicationError(CarlaOmnetError):
     ...
+
 
 class UnknownMessageCarlaOmnetError(RuntimeError):
     def __init__(self, unknown_msg):
@@ -15,11 +23,18 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
         return "I don't know how to handle the following msg: " + self.unknown_msg
 
 
-class OmnetCommunicationManager():
+class OmnetCommunicationManager:
 
 
-    def __init__(self, protocol, port, init_timeout, timeout, step_listener=None):
+
+
+    _id_iter = itertools.count(0)
+
+    def __init__(self, protocol, port, init_timeout, timeout, vehicle_actual_position, step_listener=None):
+        self._vehicle_actual_position = vehicle_actual_position
         self.step_listener = step_listener
+
+        self._messages_to_send = set()
         self._queued_messages = dict()
 
         context = zmq.Context()
@@ -42,15 +57,27 @@ class OmnetCommunicationManager():
     def start(self):
         message = self._receive_data()
         if message.type == 'simulation_step':
-            ...
+            if self.step_listener is not None:
+                self.step_listener(message.timestamp)
         elif message.type == 'receive_msg':
             ...
         else:
             ...
+        for msg in self._messages_to_send:
+            msg_id = next(self._id_iter)
+            self._queued_messages[msg_id] = msg
+        self._messages_to_send.clear()
+
         self.socket.send(b"Hello")
+
+    def send_message(self, message, destination):
+        def wrapped_msg(): message.action(destination)
+
+        self._messages_to_send.add(wrapped_msg)
 
 
 #  Socket to talk to server
 if __name__ == '__main__':
-    manager = OmnetCommunicationManager('tcp', 5555, 1, 1)
-    manager.start()
+    tmp = '{"timestamp": 2345}'
+    obj = SimulationStepRequest.from_json(tmp)
+    print(obj.timestamp)
