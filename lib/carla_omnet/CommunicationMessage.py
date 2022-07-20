@@ -10,11 +10,13 @@ class SimulationRequest:
     @staticmethod
     def from_json_factory(j):
         classes = {HandshakeRequest, SimulationStepRequest, ReceiveMessageRequest}
+        msg_type = j['request_type']
+        del j['request_type']
         for cls in classes:
-            if cls.request_type == j.request_type:
-                return cls(**json.loads(j))
+            if cls.request_type == msg_type:
+                return cls(**j)
 
-        raise RuntimeError("Message not recognize")
+        raise RuntimeError(f"Message type {msg_type} not recognized")
         # for key, value in json.loads(j):
         #     setattr(self, key, value)
 
@@ -46,3 +48,5 @@ class ReceiveMessageAnswer(CommunicationMessage):
     def __init__(self, message_id, size):
         self.message_id = message_id
         self.size = size
+
+

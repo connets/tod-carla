@@ -139,7 +139,7 @@ def create_simulator_and_network_topology(network_conf, tele_world, clock, playe
         operator_vehicle_channel = CarlaOmnetNetworkChannel(player)
         carla_omnet_manager = CarlaOmnetManager(network_conf['protocol'], network_conf['port'],
                                                 network_conf['connection_timeout'], network_conf['timeout'],
-                                                player.get_location)
+                                                lambda: player.get_location())
         tele_sim = CarlaOmnetSimulator(tele_world, clock, carla_omnet_manager)
 
     else:

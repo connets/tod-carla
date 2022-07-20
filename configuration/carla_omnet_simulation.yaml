@@ -18,7 +18,7 @@ output_results_sampling: 10ms
 
 network:
 
-  type: tod
+  type: carla_omnet
   #    ran:
   #      base_station_processing_distribution: constant(0.0)
   #      uplink_urllc_distribution: constant(0.0)

@@ -51,6 +51,10 @@ class TeleConfiguration(dict):
         parser.add('--network.type', help='network manager type')
         parser.add('--network.backhaul.uplink_extra_delay', help='backhaul uplink extra delay')
         parser.add('--network.backhaul.downlink_extra_delay', help='backhaul downlink extra delay')
+        parser.add('--network.protocol', help='protocol used for the co-simulation')
+        parser.add('--network.port', help='port used for the co-simulation')
+        parser.add('--network.connection_timeout', help='initial connection timeout used for the co-simulation')
+        parser.add('--network.timeout', help='timeout used for the co-simulation')
 
         parser.add('--output.log', type=str, help='Log output directory', required=True)
         parser.add('--output.results', type=str, help='Result output directory', required=True)
