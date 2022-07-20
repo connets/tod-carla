@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from enum import Enum
 
+from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.communication.NetworkNode import NetworkNode
 from src.core.TeleContext import TeleContext
 from src.actor.TeleCarlaActor import TeleCarlaActor
@@ -59,17 +60,9 @@ class Simulator(ABC):
     #             actor.spawn_in_the_world(self._tele_world)
     #         actor.start()
 
+    @abstractmethod
     def do_simulation(self):
-        for actor in self._actors:
-            actor.start()
-        while not self._finished and self._tele_context.has_scheduled_events():
-            self.do_simulation_step(self._tele_context.next_timestamp_event)
-
-        self._tele_world.quit()
-        for actor in self._actors:
-            actor.quit()
-
-        return self._finish_code
+        ...
 
     # go ahead with simulation until timestamp
     def do_simulation_step(self, timestamp):
@@ -104,13 +97,36 @@ class TODSimulator(Simulator):
     def _network_context(self):
         return self._tele_context
 
+    def do_simulation(self):
+        for actor in self._actors:
+            actor.start()
+        while not self._finished and self._tele_context.has_scheduled_events():
+            self.do_simulation_step(self._tele_context.next_timestamp_event)
+
+        self._tele_world.quit()
+        for actor in self._actors:
+            actor.quit()
+
+        return self._finish_code
+
 
 class CarlaOmnetSimulator(Simulator):
 
-    def __init__(self, tele_world, clock, carla_omnet_manager):
+    def __init__(self, tele_world, clock, carla_omnet_manager: CarlaOmnetManager):
         super().__init__(tele_world, clock)
         self._carla_omnet_manager = carla_omnet_manager
 
     @property
     def _network_context(self):
         return self._carla_omnet_manager
+
+    def do_simulation(self):
+        for actor in self._actors:
+            actor.start()
+
+        self._carla_omnet_manager.start(lambda ts: self.do_simulation_step(ts))
+        self._tele_world.quit()
+        for actor in self._actors:
+            actor.quit()
+
+        return self._finish_code

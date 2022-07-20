@@ -4,7 +4,8 @@ import zmq
 import json
 from types import SimpleNamespace
 
-from lib.carla_omnet.CommunicationMessage import CommunicationMessage, SimulationStepRequest
+from lib.carla_omnet.CommunicationMessage import SimulationStepRequest, HandshakeRequest, \
+    SimulationRequest, ReceiveMessageRequest, ReceiveMessageAnswer
 
 
 class CarlaOmnetError(RuntimeError):
@@ -31,7 +32,7 @@ class CarlaOmnetManager:
         self._vehicle_actual_position = vehicle_actual_position
 
         self._messages_to_send = set()
-        self._queued_messages = dict()
+        self._actions_to_do = dict()
 
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
@@ -40,35 +41,40 @@ class CarlaOmnetManager:
 
         print("Waiting for connection...")
         handshake = self._receive_data()
-        print(handshake)
-        self.socket.send(b"Hello")
+        if not isinstance(handshake, HandshakeRequest):
+            raise RuntimeError("Error in connection")
 
+        self.socket.send(b"Hello")
         print("Connected!")
         self.socket.RCVTIMEO = self.socket.SNDTIMEO = timeout * 1000
 
     def _receive_data(self):
         message = self.socket.recv()
-        return json.loads(message.decode("utf-8"))
+        json_data = json.loads(message.decode("utf-8"))
+        return SimulationRequest.from_json_factory(json_data)
 
     def start(self, step_listener=None):
         self.step_listener = step_listener
         self._do_simulation()
 
     def _do_simulation(self):
-        message = self._receive_data()
-        if message.type == 'simulation_step':
+        request = self._receive_data()
+        if isinstance(request, SimulationStepRequest):
             if self.step_listener is not None:
-                self.step_listener(message.timestamp)
-        elif message.type == 'receive_msg':
-            ...
+                self.step_listener(request.timestamp)
+        elif isinstance(request, ReceiveMessageRequest):
+            action = self._messages_to_send[request.msg_id]
+            action()
         else:
             ...
+        messages = []
         for msg in self._messages_to_send:
             msg_id = next(self._id_iter)
-            self._queued_messages[msg_id] = msg
+            self._actions_to_do[msg_id] = msg
+            messages.append(ReceiveMessageAnswer(msg_id, 100))  # TODO change to allow multi-messages as answer
         self._messages_to_send.clear()
 
-        self.socket.send(b"Hello")
+        self.socket.send(json.dumps(messages).encode("utf-8"))
 
     def send_message(self, message):
         self._messages_to_send.add(message)
