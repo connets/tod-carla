@@ -12,7 +12,6 @@ from numpy import random
 from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
-from src.core.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
@@ -23,6 +22,7 @@ import src.build_enviroment as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils
+from src.core.Simulator import TODSimulator, Simulator
 
 
 def main(simulation_conf, scenario_conf):
@@ -32,6 +32,7 @@ def main(simulation_conf, scenario_conf):
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
+    global status_code
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
@@ -73,9 +74,8 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator(controller, scenario_conf['time_limit'])
     mec_server = TeleMEC()
 
-    build_enviroment.create_network_topology(scenario_conf, player, mec_server, tele_operator)
-
-    tele_sim = TeleSimulator(tele_world, clock)
+    tele_sim = build_enviroment.create_simulator_and_network_topology(simulation_conf['network'], tele_world, clock, player,
+                                                                      mec_server, tele_operator)
 
     camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
@@ -118,7 +118,7 @@ def main(simulation_conf, scenario_conf):
     try:
         status_code = tele_sim.do_simulation()
     except Exception as e:
-        status_code = TeleSimulator.FinishCode.TIME_LIMIT.name
+        status_code = Simulator.FinishCode.TIME_LIMIT
         raise e
     finally:
         build_enviroment.destroy_sim_world(client, sim_world)
@@ -135,26 +135,20 @@ if __name__ == '__main__':
     simulation_conf = configuration['carla_simulation_config']
     scenario_conf = configuration['carla_scenario_config']
 
-    FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH = scenario_conf['delay']['backhaul']['uplink_extra_delay'][
-                                                       'family'] + '_' + '_'.join(
-        str(v) for v in
-        scenario_conf['delay']['backhaul']['uplink_extra_delay']['parameters'] \
-            .values()) + '|' + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-
     # Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
     # Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
 
-    FolderPath.OUTPUT_RESULTS_PATH = scenario_conf['output']['results']
+    FolderPath.OUTPUT_RESULTS_PATH = simulation_conf['output']['results']
     os.makedirs(FolderPath.OUTPUT_RESULTS_PATH)
 
-    FolderPath.OUTPUT_LOG_PATH = scenario_conf['output']['log']
+    FolderPath.OUTPUT_LOG_PATH = simulation_conf['output']['log']
     os.makedirs(FolderPath.OUTPUT_LOG_PATH)
 
-    if 'images' in scenario_conf['output']:
-        FolderPath.OUTPUT_IMAGES_PATH = scenario_conf['output']['images']
+    if 'images' in simulation_conf['output']:
+        FolderPath.OUTPUT_IMAGES_PATH = simulation_conf['output']['images']
         os.makedirs(FolderPath.OUTPUT_IMAGES_PATH)
 
-    os.mkdir(scenario_conf['output']['results'] + 'configurations/')
+    os.mkdir(simulation_conf['output']['results'] + 'configurations/')
 
     configuration.save_config(FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_simulation.yaml',
                               FolderPath.OUTPUT_RESULTS_PATH + 'configurations/carla_scenario.yaml')

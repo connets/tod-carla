@@ -1,9 +1,12 @@
+from abc import abstractmethod, ABC
 from enum import Enum
+
+from src.communication.NetworkNode import NetworkNode
 from src.core.TeleContext import TeleContext
 from src.actor.TeleCarlaActor import TeleCarlaActor
 
 
-class TeleSimulator:
+class Simulator(ABC):
     class FinishCode(Enum):
         OK = 0
         ACCIDENT = 1
@@ -33,8 +36,15 @@ class TeleSimulator:
     def add_actor(self, actor):
         self._actors.append(actor)
         actor.set_context(self._tele_context)
+        if isinstance(actor, NetworkNode):
+            actor.set_network_context(self._tele_context)
         if isinstance(actor, TeleCarlaActor):
             actor.spawn_in_the_world(self._tele_world)
+
+    @property
+    @abstractmethod
+    def _network_context(self):
+        ...
 
     def add_tick_listener(self, listener):
         self._tick_listeners.add(listener)
@@ -77,3 +87,46 @@ class TeleSimulator:
             actor.quit()
 
         return self._finish_code
+
+    def do_simulation_step(self, timestamp):
+        while not self._finished and self._tele_context.has_scheduled_events():
+            # network_delay.tick()
+            simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
+            while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
+                self._clock.tick()
+                self._tele_world.tick()
+                for listener in self._tick_listeners:
+                    listener(self._tele_world.timestamp)
+
+            # busy waiting for attending the last data sensors
+            while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
+                ...
+
+            for callback in self._step_callbacks: callback(self._tele_world.timestamp)
+
+            self._tele_context.run_next_event()
+
+            # data_collector.tick()
+            # print(sim_world.get_snapshot().timestamp)
+        ...
+
+
+class TODSimulator(Simulator):
+
+    def __init__(self, tele_world, clock):
+        super().__init__(tele_world, clock)
+
+    @property
+    def _network_context(self):
+        return self._tele_context
+
+
+class CarlaOmnetSimulator(Simulator):
+
+    def __init__(self, tele_world, clock, carla_omnet_manager):
+        super().__init__(tele_world, clock)
+        self._carla_omnet_manager = carla_omnet_manager
+
+    @property
+    def _network_context(self):
+        return self._carla_omnet_manager

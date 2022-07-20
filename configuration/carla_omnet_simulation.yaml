@@ -1,39 +1,24 @@
 IMPORT:
   $cmd$: "import os;from datetime import datetime"
+  
+host: ubiquity
+port: 3000
+timeout: 8s
+#camera:
+#  width: 1280
+#  height: 720
+render: False
 
-#  images:
-#    $cmd$: "self['_PROJECT_PATH'] + 'images/'"
+simulation_time_step: 50ms #milliseconds
+output_results_sampling: 10ms
+#  sensors_data: 0.005
+#  interval_channel_change_delay: 0.01
 
 
-world: Town01_Opt
-time_limit: 40s
 
-player:
-  model: vehicle.tesla.model3
-  refresh_interval: 50ms
-  speed_limit: auto
+network:
 
-controller:
-  type: auto
-  behavior: normal
-  sampling_resolution: 10m
-
-bot:
-  vehicle_model: vehicle.tesla.model3 #TODO change this
-route:
-  start:
-    x: 396.449982
-    y: 87.529510
-    z: 0.3
-    pitch: 0.
-    yaw: -90.000298
-    roll: 0.
-  end:
-    x: 365.
-    y: -2.
-    z: 0.
-
-delay:
+  type: tod
   #    ran:
   #      base_station_processing_distribution: constant(0.0)
   #      uplink_urllc_distribution: constant(0.0)
@@ -58,9 +43,15 @@ _PROJECT_PATH:
   $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
 
 _CURRENT_SIMULATION_DIRECTORY_PATH:
-  $cmd$: "self['delay.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+  $cmd$: "self['network.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
 output:
   log:
     $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
   results:
     $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
+
+#seed: 9
+
+
+
+
