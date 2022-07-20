@@ -23,11 +23,7 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
         return "I don't know how to handle the following msg: " + self.unknown_msg
 
 
-class OmnetCommunicationManager:
-
-
-
-
+class CarlaOmnetManager:
     _id_iter = itertools.count(0)
 
     def __init__(self, protocol, port, init_timeout, timeout, vehicle_actual_position, step_listener=None):
@@ -70,10 +66,8 @@ class OmnetCommunicationManager:
 
         self.socket.send(b"Hello")
 
-    def send_message(self, message, destination):
-        def wrapped_msg(): message.action(destination)
-
-        self._messages_to_send.add(wrapped_msg)
+    def send_message(self, message):
+        self._messages_to_send.add(message)
 
 
 #  Socket to talk to server

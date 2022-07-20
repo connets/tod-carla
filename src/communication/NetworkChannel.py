@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 
+from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.core import TeleEvent
 from src.core.TeleEvent import tele_event, EventType
 from src.utils.decorators import preconditions
@@ -28,7 +29,6 @@ class NetworkChannel(ABC):
         return network_event
 
     @abstractmethod
-    @preconditions('_tele_context')
     def send(self, msg):
         ...
 
@@ -56,18 +56,28 @@ class TODNetworkChannel(NetworkChannel):
 
         change_delay()
 
+    @preconditions('_tele_context')
+    def send(self, msg):
+        network_event = self._create_event(msg)
+        self._tele_context.schedule(network_event, self._delay)
+
+    def quit(self):
+        ...
+
+
+class CarlaOmnetNetworkChannel(NetworkChannel):
+    def __init__(self, destination_node, carla_omnet_manager: CarlaOmnetManager):
+        super().__init__(destination_node)
+        self._carla_omnet_manager = carla_omnet_manager
+        self._binded = False
+
     def bind(self, source_node):
         self._binded = True
 
-    @preconditions('_tele_context')
+    @preconditions('_carla_omnet_manager')
     def send(self, msg):
-        super().send(msg)
-
-        @tele_event('send_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower() + '-' + str(id(msg)))
-        def send_message():
-            msg.action(self.destination_node)
-
-        self._tele_context.schedule(send_message, self._delay)
+        network_event = self._create_event(msg)
+        self._carla_omnet_manager.send_message(network_event)
 
     def quit(self):
         ...

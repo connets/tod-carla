@@ -18,10 +18,18 @@ def tele_event(name, event_type: EventType = EventType.GENERAL, log=True):
 
 
 if __name__ == '__main__':
-    @tele_network_event("prova")
-    def tmp():
-        print('i am tmp')
-        return 'ciao'
+    class Tmp:
+        @tele_event("ciao")
+        def tmp(self):
+            print('i am tmp')
+            return 'ciao'
+
+    class Tmp1(Tmp):
+
+        @tele_event("ciao")
+        def tmp(self):
+            return super().tmp()
+        print("ciao")
 
 
-    tmp()
+    print(Tmp1().tmp.name_event)
