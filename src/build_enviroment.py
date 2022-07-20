@@ -5,7 +5,7 @@ from numpy import random
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
-from src.communication.NetworkChannel import DiscreteNetworkChannel
+from src.communication.NetworkChannel import TODNetworkChannel
 import src.utils as utils
 from src.utils.Hud import HUD
 import pygame
@@ -123,12 +123,12 @@ def create_network_topology(scenario_conf, player, mec_server, tele_operator):
     backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
     backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
 
-    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
+    vehicle_operator_channel = TODNetworkChannel(tele_operator,
                                                       utils.delay_family_to_func[backhaul_uplink_delay['family']](
                                                           **backhaul_uplink_delay['parameters']), 0.1)
     player.add_channel(vehicle_operator_channel)
 
-    operator_vehicle_channel = DiscreteNetworkChannel(player,
+    operator_vehicle_channel = TODNetworkChannel(player,
                                                       utils.delay_family_to_func[backhaul_downlink_delay['family']](
                                                           **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)

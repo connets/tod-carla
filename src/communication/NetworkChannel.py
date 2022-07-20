@@ -1,38 +1,34 @@
 import re
 from abc import ABC, abstractmethod
 
-from src.core.TeleEvent import tele_event
+from src.core import TeleEvent
+from src.core.TeleEvent import tele_event, EventType
 from src.utils.decorators import preconditions
 
 
 class NetworkChannel(ABC):
-    def __init__(self, destination_node, distr_func, interval):
+    def __init__(self, destination_node):
         self.destination_node = destination_node
-
-        self._distr_func = distr_func
-        self._interval = interval
-        self._delay = distr_func()
         self._binded = False
+        self._tele_context = None
 
     @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
         self._tele_context = tele_context
 
-        @tele_event('change_delay_network_channel-' + str(id(self)))
-        def change_delay():
-            self._apply_delay()
-            self._tele_context.schedule(change_delay, self._interval)
-
-        change_delay()
-
-    @abstractmethod
-    def _apply_delay(self):
-        ...
-
     def bind(self, source_node):
         self._binded = True
 
+    def _create_event(self, msg):
+        @tele_event('send_' + re.sub(r'(?<!^)(?=[A-Z])', '_', msg.__class__.__name__).lower() + '-' + str(id(msg)),
+                    EventType.NETWORK)
+        def network_event():
+            msg.action(self.destination_node)
+
+        return network_event
+
     @abstractmethod
+    @preconditions('_tele_context')
     def send(self, msg):
         ...
 
@@ -41,14 +37,27 @@ class NetworkChannel(ABC):
         ...
 
 
-class DiscreteNetworkChannel(NetworkChannel):
-
+class TODNetworkChannel(NetworkChannel):
     def __init__(self, destination_node, distr_func, interval):
-        super().__init__(destination_node, distr_func, interval)
-        self._tele_context = None
+        super().__init__(destination_node)
+        self._distr_func = distr_func
+        self._interval = interval
+        self._delay = distr_func()
+        self._binded = False
 
-    def _apply_delay(self):
-        self._delay = self._distr_func()
+    @preconditions('_binded', valid=lambda x: x)
+    def start(self, tele_context):
+        super().start(tele_context)
+
+        @tele_event('change_delay_network_channel-' + str(id(self)))
+        def change_delay():
+            self._delay = self._distr_func()
+            self._tele_context.schedule(change_delay, self._interval)
+
+        change_delay()
+
+    def bind(self, source_node):
+        self._binded = True
 
     @preconditions('_tele_context')
     def send(self, msg):
@@ -61,7 +70,7 @@ class DiscreteNetworkChannel(NetworkChannel):
         self._tele_context.schedule(send_message, self._delay)
 
     def quit(self):
-        pass
+        ...
 
 
 if __name__ == '__main__':
