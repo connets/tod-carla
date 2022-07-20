@@ -33,7 +33,9 @@ route:
     y: -2.
     z: 0.
 
-delay:
+network:
+
+  type: tod
   #    ran:
   #      base_station_processing_distribution: constant(0.0)
   #      uplink_urllc_distribution: constant(0.0)
@@ -58,7 +60,7 @@ _PROJECT_PATH:
   $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
 
 _CURRENT_SIMULATION_DIRECTORY_PATH:
-  $cmd$: "self['delay.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+  $cmd$: "self['network.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
 output:
   log:
     $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"

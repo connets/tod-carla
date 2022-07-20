@@ -11,11 +11,6 @@ class NetworkChannel(ABC):
     def __init__(self, destination_node):
         self.destination_node = destination_node
         self._binded = False
-        self._tele_context = None
-
-    @preconditions('_binded', valid=lambda x: x)
-    def start(self, tele_context):
-        self._tele_context = tele_context
 
     def bind(self, source_node):
         self._binded = True
@@ -44,10 +39,11 @@ class TODNetworkChannel(NetworkChannel):
         self._interval = interval
         self._delay = distr_func()
         self._binded = False
+        self._tele_context = None
 
     @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
-        super().start(tele_context)
+        self._tele_context = tele_context
 
         @tele_event('change_delay_network_channel-' + str(id(self)))
         def change_delay():
@@ -66,10 +62,14 @@ class TODNetworkChannel(NetworkChannel):
 
 
 class CarlaOmnetNetworkChannel(NetworkChannel):
-    def __init__(self, destination_node, carla_omnet_manager: CarlaOmnetManager):
+    def __init__(self, destination_node):
         super().__init__(destination_node)
-        self._carla_omnet_manager = carla_omnet_manager
         self._binded = False
+        self._carla_omnet_manager = None
+
+    @preconditions('_binded', valid=lambda x: x)
+    def start(self, carla_omnet_manager):
+        self._carla_omnet_manager = carla_omnet_manager
 
     def bind(self, source_node):
         self._binded = True

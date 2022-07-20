@@ -58,8 +58,10 @@ class TeleConfiguration(dict):
 
         parser.add('--time_limit', metavar='V', help='time limit of scenario simulation ', default=None)
 
-        parser.add('--delay.backhaul.uplink_extra_delay', help='backhaul uplink extra delay', required=True)
-        parser.add('--delay.backhaul.downlink_extra_delay', help='backhaul downlink extra delay', required=True)
+        parser.add('--network.type', help='network manager type')
+        parser.add('--network.backhaul.uplink_extra_delay', help='backhaul uplink extra delay')
+        parser.add('--network.backhaul.downlink_extra_delay', help='backhaul downlink extra delay')
+
 
         parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
 

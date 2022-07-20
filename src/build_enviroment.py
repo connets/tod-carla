@@ -2,11 +2,13 @@ from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
 
+from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
-from src.communication.NetworkChannel import TODNetworkChannel
+from src.communication.NetworkChannel import TODNetworkChannel, CarlaOmnetNetworkChannel
 import src.utils as utils
+from src.core.Simulator import TODSimulator, CarlaOmnetSimulator
 from src.utils.Hud import HUD
 import pygame
 
@@ -119,19 +121,33 @@ def create_data_collector(tele_world, player):
                                        }, 0.005)
 
 
-def create_network_topology(scenario_conf, player, mec_server, tele_operator):
-    backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
-    backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
+def create_simulator_and_network_topology(scenario_conf, tele_world, clock, player, mec_server, tele_operator):
+    if scenario_conf['network']['type'] == 'tod':
+        tele_sim = TODSimulator(tele_world, clock)
 
-    vehicle_operator_channel = TODNetworkChannel(tele_operator,
-                                                      utils.delay_family_to_func[backhaul_uplink_delay['family']](
-                                                          **backhaul_uplink_delay['parameters']), 0.1)
+        backhaul_uplink_delay = scenario_conf['network']['backhaul']['uplink_extra_delay']
+        backhaul_downlink_delay = scenario_conf['network']['backhaul']['downlink_extra_delay']
+
+        vehicle_operator_channel = TODNetworkChannel(tele_operator,
+                                                     utils.delay_family_to_func[backhaul_uplink_delay['family']](
+                                                         **backhaul_uplink_delay['parameters']), 0.1)
+        operator_vehicle_channel = TODNetworkChannel(player,
+                                                     utils.delay_family_to_func[backhaul_downlink_delay['family']](
+                                                         **backhaul_downlink_delay['parameters']), 0.1)
+    elif scenario_conf['network']['type'] == 'carla_omnet':
+        vehicle_operator_channel = CarlaOmnetNetworkChannel(tele_operator)
+        operator_vehicle_channel = CarlaOmnetNetworkChannel(player)
+        carla_omnet_manager = CarlaOmnetManager(scenario_conf['network']['protocol'], scenario_conf['network']['port'],
+                                                scenario_conf['network']['connection_timeout'])
+        tele_sim = CarlaOmnetSimulator(tele_world, clock)
+
+    else:
+        raise RuntimeError("Network type not valid")
+
     player.add_channel(vehicle_operator_channel)
-
-    operator_vehicle_channel = TODNetworkChannel(player,
-                                                      utils.delay_family_to_func[backhaul_downlink_delay['family']](
-                                                          **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)
+
+    return tele_sim
 
 
 def apply_god_changes(tele_world, player, controller):

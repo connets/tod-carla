@@ -74,9 +74,8 @@ def main(simulation_conf, scenario_conf):
     tele_operator = TeleOperator(controller, scenario_conf['time_limit'])
     mec_server = TeleMEC()
 
-    build_enviroment.create_network_topology(scenario_conf, player, mec_server, tele_operator)
-
-    tele_sim = TODSimulator(tele_world, clock)
+    tele_sim = build_enviroment.create_simulator_and_network_topology(scenario_conf, tele_world, clock, player,
+                                                                      mec_server, tele_operator)
 
     camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
@@ -135,12 +134,6 @@ if __name__ == '__main__':
     #
     simulation_conf = configuration['carla_simulation_config']
     scenario_conf = configuration['carla_scenario_config']
-
-    FolderPath.CURRENT_SIMULATION_DIRECTORY_PATH = scenario_conf['delay']['backhaul']['uplink_extra_delay'][
-                                                       'family'] + '_' + '_'.join(
-        str(v) for v in
-        scenario_conf['delay']['backhaul']['uplink_extra_delay']['parameters'] \
-            .values()) + '|' + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
     # Path(scenario_conf['output']['results']).mkdir(parents=True, exist_ok=True)
     # Path(scenario_conf['output']['log']).mkdir(parents=True, exist_ok=True)
