@@ -12,7 +12,6 @@ from numpy import random
 from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
-from src.core.TeleSimulator import TeleSimulator
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
 from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
 from src.actor.TeleMEC import TeleMEC
@@ -23,6 +22,7 @@ import src.build_enviroment as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils
+from src.core.Simulator import TODSimulator, Simulator
 
 
 def main(simulation_conf, scenario_conf):
@@ -32,6 +32,7 @@ def main(simulation_conf, scenario_conf):
     - carla_simulation_file(default: configuration/default_simulation_curve.yaml)
     """
 
+    global status_code
     random.seed(simulation_conf['seed'])
     clock = pygame.time.Clock()
 
@@ -75,7 +76,7 @@ def main(simulation_conf, scenario_conf):
 
     build_enviroment.create_network_topology(scenario_conf, player, mec_server, tele_operator)
 
-    tele_sim = TeleSimulator(tele_world, clock)
+    tele_sim = TODSimulator(tele_world, clock)
 
     camera_sensor = TeleCarlaCameraSensor(2.2)
     if render:
@@ -118,7 +119,7 @@ def main(simulation_conf, scenario_conf):
     try:
         status_code = tele_sim.do_simulation()
     except Exception as e:
-        status_code = TeleSimulator.FinishCode.TIME_LIMIT.name
+        status_code = Simulator.FinishCode.TIME_LIMIT
         raise e
     finally:
         build_enviroment.destroy_sim_world(client, sim_world)

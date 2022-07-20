@@ -19,17 +19,14 @@ def tele_event(name, event_type: EventType = EventType.GENERAL, log=True):
 
 if __name__ == '__main__':
     class Tmp:
-        @tele_event("ciao")
+        @property
         def tmp(self):
-            print('i am tmp')
             return 'ciao'
 
     class Tmp1(Tmp):
 
-        @tele_event("ciao")
         def tmp(self):
-            return super().tmp()
-        print("ciao")
+            return "ue"
 
 
-    print(Tmp1().tmp.name_event)
+    print(Tmp1().tmp)

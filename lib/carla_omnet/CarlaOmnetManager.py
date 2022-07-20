@@ -26,9 +26,9 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
 class CarlaOmnetManager:
     _id_iter = itertools.count(0)
 
-    def __init__(self, protocol, port, init_timeout, timeout, vehicle_actual_position, step_listener=None):
+    def __init__(self, protocol, port, init_timeout, timeout, vehicle_actual_position):
+        self.step_listener = None
         self._vehicle_actual_position = vehicle_actual_position
-        self.step_listener = step_listener
 
         self._messages_to_send = set()
         self._queued_messages = dict()
@@ -50,7 +50,11 @@ class CarlaOmnetManager:
         message = self.socket.recv()
         return json.loads(message.decode("utf-8"))
 
-    def start(self):
+    def start(self, step_listener=None):
+        self.step_listener = step_listener
+        self._do_simulation()
+
+    def _do_simulation(self):
         message = self._receive_data()
         if message.type == 'simulation_step':
             if self.step_listener is not None:
