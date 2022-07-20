@@ -1,6 +1,6 @@
 IMPORT:
   $cmd$: "import os;from datetime import datetime"
-  
+
 host: ubiquity
 port: 3000
 timeout: 8s
@@ -24,20 +24,10 @@ network:
   #      uplink_urllc_distribution: constant(0.0)
   #      uplink_embb_distribution: constant(0.0)
   #      downlink_embb_distribution: constant(0.0)
-
-  backhaul:
-    #      queue_urllc_distribution: constant(0.0)
-    #      queue_embb_distribution: constant(0.0)
-
-    uplink_extra_delay: constant(110ms)
-
-    downlink_extra_delay: constant(110ms)
-  #+  uniform(-1ms, 1ms)
-#      extra_delay: uniform(1ms, 5ms)
-
-#      M_node_processing_time_distribution: constant(0.0)
-
-
+  protocol: tcp
+  port: 5555
+  connection_timeout: 10s
+  timeout: 4s
 
 _PROJECT_PATH:
   $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"

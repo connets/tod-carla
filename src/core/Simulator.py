@@ -63,24 +63,7 @@ class Simulator(ABC):
         for actor in self._actors:
             actor.start()
         while not self._finished and self._tele_context.has_scheduled_events():
-            # network_delay.tick()
-            simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
-            while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
-                self._clock.tick()
-                self._tele_world.tick()
-                for listener in self._tick_listeners:
-                    listener(self._tele_world.timestamp)
-
-            # busy waiting for attending the last data sensors
-            while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
-                ...
-
-            for callback in self._step_callbacks: callback(self._tele_world.timestamp)
-
-            self._tele_context.run_next_event()
-
-            # data_collector.tick()
-            # print(sim_world.get_snapshot().timestamp)
+            self.do_simulation_step(self._tele_context.next_timestamp_event)
 
         self._tele_world.quit()
         for actor in self._actors:
@@ -88,8 +71,9 @@ class Simulator(ABC):
 
         return self._finish_code
 
+    # go ahead with simulation until timestamp
     def do_simulation_step(self, timestamp):
-        while not self._finished and self._tele_context.has_scheduled_events():
+        while not self._finished and self._tele_context.has_scheduled_events(timestamp):
             # network_delay.tick()
             simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
             while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:

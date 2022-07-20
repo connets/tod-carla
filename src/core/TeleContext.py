@@ -34,8 +34,13 @@ class TeleContext:
             TeleLogger.instance.event_logger.write(self._timestamp, 'executed', event)
         event()
 
-    def has_scheduled_events(self):
-        return not self._queue.empty()
+    def has_scheduled_events(self, timestamp_limit=None):
+        """
+        if not self._queue.empty():
+            return timestamp_limit is None or self._queue.queue[0].timestamp <= timestamp_limit
+        """
+        return not self._queue.empty() and (
+                    timestamp_limit is None or self._queue.queue[0].timestamp <= timestamp_limit)
 
     def schedule(self, event, s):
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
@@ -55,5 +60,3 @@ class TeleContext:
         @property
         def timestamp_scheduled(self):
             return self.timestamp
-
-
