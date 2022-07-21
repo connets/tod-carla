@@ -69,10 +69,11 @@ class CarlaOmnetManager:
                 self.socket.send(json.dumps(answer.__dict__).encode("utf-8"))
                 continue
             elif isinstance(request, ReceiveMessageRequest):
-                action = self._messages_to_send[request.msg_id]
+                self.step_listener(request.timestamp)
+                action = self._actions_to_do[request.msg_id]
                 action()
             else:
-                ...
+                raise RuntimeError("Message don't recognize")
             messages = []
             for msg in self._messages_to_send:
                 msg_id = next(self._id_iter)
@@ -84,6 +85,7 @@ class CarlaOmnetManager:
 
     def send_message(self, message):
         self._messages_to_send.add(message)
+        assert self._messages_to_send.__len__() == 1 # TODO remove for multi-messages
 
 
 #  Socket to talk to server

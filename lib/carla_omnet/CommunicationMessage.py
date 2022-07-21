@@ -35,7 +35,8 @@ class SimulationStepRequest(SimulationRequest):
 class ReceiveMessageRequest(SimulationRequest):
     request_type = 'receive_msg'
 
-    def __init__(self, msg_id):
+    def __init__(self, timestamp, msg_id):
+        self.timestamp = timestamp
         self.msg_id = msg_id
 
 
@@ -48,5 +49,3 @@ class ReceiveMessageAnswer(CommunicationMessage):
     def __init__(self, message_id, size):
         self.message_id = message_id
         self.size = size
-
-
