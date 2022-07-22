@@ -46,6 +46,6 @@ class SimulationStepAnswer(CommunicationMessage):
 
 
 class ReceiveMessageAnswer(CommunicationMessage):
-    def __init__(self, message_id, size):
-        self.message_id = message_id
+    def __init__(self, msg_id, size):
+        self.msg_id = msg_id
         self.size = size
