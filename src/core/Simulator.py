@@ -37,15 +37,8 @@ class Simulator(ABC):
     def add_actor(self, actor):
         self._actors.append(actor)
         actor.set_context(self._tele_context)
-        if isinstance(actor, NetworkNode):
-            actor.set_network_context(self._tele_context)
         if isinstance(actor, TeleCarlaActor):
             actor.spawn_in_the_world(self._tele_world)
-
-    @property
-    @abstractmethod
-    def _network_context(self):
-        ...
 
     def add_tick_listener(self, listener):
         self._tick_listeners.add(listener)
@@ -60,22 +53,12 @@ class Simulator(ABC):
     #             actor.spawn_in_the_world(self._tele_world)
     #         actor.start()
 
-    @abstractmethod
     def do_simulation(self):
-        ...
+        for actor in self._actors:
+            actor.start()
+        while self._tele_context.finished() and self._tele_context.has_runnable_events():
 
-    # go ahead with simulation until timestamp
-    def do_simulation_step(self, limit_timestamp):
-        has_scheduled_events_before = self._tele_context.has_scheduled_events(limit_timestamp)
-        while not self._finished and (
-                limit_timestamp > self._tele_world.timestamp.elapsed_seconds or has_scheduled_events_before):
-            # network_delay.tick()
-
-            has_scheduled_events_before &= self._tele_context.has_scheduled_events(limit_timestamp)
-
-            next_simulator_timestamp = round(
-                self._tele_context.next_timestamp_event if has_scheduled_events_before else limit_timestamp, 6)
-            while next_simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
+            while self._tele_context.timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
                 self._tele_world.tick()
                 for listener in self._tick_listeners:
@@ -84,10 +67,32 @@ class Simulator(ABC):
             # busy waiting for attending the last data sensors
             while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
                 ...
-            if has_scheduled_events_before:
-                for callback in self._step_callbacks: callback(self._tele_world.timestamp)
-                self._tele_context.run_next_event()
-            print("**** => ", has_scheduled_events_before)
+            # for callback in self._step_callbacks: callback(self._tele_world.timestamp)
+            self._tele_context.run_next_event()
+
+        self._tele_world.quit()
+        for actor in self._actors:
+            actor.quit()
+
+        return self._finish_code
+
+    # go ahead with simulation until timestamp
+    def _do_simulation_step(self, limit_timestamp):
+        while not self._tele_context.finished:
+            # network_delay.tick()
+            simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
+
+            while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
+                self._clock.tick()
+                self._tele_world.tick()
+                for listener in self._tick_listeners:
+                    listener(self._tele_world.timestamp)
+
+            # busy waiting for attending the last data sensors
+            while any(not actor.done(self._tele_world.timestamp) for actor in self._actors):
+                ...
+            # for callback in self._step_callbacks: callback(self._tele_world.timestamp)
+            self._tele_context.run_next_event()
 
             # data_collector.tick()
             # print(sim_world.get_snapshot().timestamp)
@@ -99,40 +104,9 @@ class TODSimulator(Simulator):
     def __init__(self, tele_world, clock):
         super().__init__(tele_world, clock)
 
-    @property
-    def _network_context(self):
-        return self._tele_context
-
-    def do_simulation(self):
-        for actor in self._actors:
-            actor.start()
-        while not self._finished and self._tele_context.has_scheduled_events():
-            self.do_simulation_step(self._tele_context.next_timestamp_event)
-
-        self._tele_world.quit()
-        for actor in self._actors:
-            actor.quit()
-
-        return self._finish_code
-
 
 class CarlaOmnetSimulator(Simulator):
 
     def __init__(self, tele_world, clock, carla_omnet_manager: CarlaOmnetManager):
         super().__init__(tele_world, clock)
         self._carla_omnet_manager = carla_omnet_manager
-
-    @property
-    def _network_context(self):
-        return self._carla_omnet_manager
-
-    def do_simulation(self):
-        for actor in self._actors:
-            actor.start()
-
-        self._carla_omnet_manager.start(lambda ts: self.do_simulation_step(ts))
-        self._tele_world.quit()
-        for actor in self._actors:
-            actor.quit()
-
-        return self._finish_code

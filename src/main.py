@@ -13,7 +13,8 @@ from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
-from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
+from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian, TODTeleCarlaVehicle, \
+    CarlaOmnetTeleCarlaVehicle
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
@@ -60,7 +61,8 @@ def main(simulation_conf, scenario_conf):
     player_attrs = {'role_name': 'hero'}
     # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
 
-    player = TeleCarlaVehicle(scenario_conf['player']['refresh_interval'],
+    vehicle_class = TODTeleCarlaVehicle if simulation_conf['network']['type'] == 'tod' else CarlaOmnetTeleCarlaVehicle
+    player = vehicle_class(scenario_conf['player']['refresh_interval'],
                               scenario_conf['player']['speed_limit'],
                               scenario_conf['player']['model'],
                               player_attrs,

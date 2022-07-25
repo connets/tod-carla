@@ -1,15 +1,24 @@
 import abc
+import enum
 import json
 
 
-class CommunicationMessage(abc.ABC):
+class MESSAGE_TYPE(enum.Enum):
     ...
 
 
-class SimulationRequest:
+class CoSimulationAnswer(abc.ABC):
+    def to_json(self):
+        return json.dumps(self.__dict__).encode("utf-8")
+
+
+class CoSimulationRequest:
+    def __init__(self, timestamp):
+        self.timestamp = timestamp
+
     @staticmethod
-    def from_json_factory(j):
-        classes = {HandshakeRequest, SimulationStepRequest, ReceiveMessageRequest}
+    def from_json(j):
+        classes = {HandshakeRequest, StepRequest, ReceiveMessageRequest}
         msg_type = j['request_type']
         del j['request_type']
         for cls in classes:
@@ -21,31 +30,33 @@ class SimulationRequest:
         #     setattr(self, key, value)
 
 
-class HandshakeRequest(SimulationRequest):
+class HandshakeRequest(CoSimulationRequest):
     request_type = 'handshake'
 
 
-class SimulationStepRequest(SimulationRequest):
-    request_type = 'simulation_step'
-
+class HandshakeAnswer(CoSimulationAnswer):
     def __init__(self, timestamp):
         self.timestamp = timestamp
 
 
-class ReceiveMessageRequest(SimulationRequest):
-    request_type = 'receive_msg'
-
-    def __init__(self, timestamp, msg_id):
-        self.timestamp = timestamp
-        self.msg_id = msg_id
+class StepRequest(CoSimulationRequest):
+    request_type = 'simulation_step'
 
 
-class SimulationStepAnswer(CommunicationMessage):
+class StepAnswer(CoSimulationAnswer):
     def __init__(self, location):
         self.location = location
 
 
-class ReceiveMessageAnswer(CommunicationMessage):
+class ReceiveMessageRequest(CoSimulationRequest):
+    request_type = 'receive_msg'
+
+    def __init__(self, timestamp, msg_id):
+        super().__init__(timestamp)
+        self.msg_id = msg_id
+
+
+class ReceiveMessageAnswer(CoSimulationAnswer):
     def __init__(self, msg_id, size):
         self.msg_id = msg_id
         self.size = size
