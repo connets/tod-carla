@@ -26,7 +26,7 @@ class NetworkChannel(ABC):
 
     @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
-        ...
+        self._tele_context = tele_context
 
     @preconditions('_tele_context')
     def send(self, msg):
@@ -44,9 +44,8 @@ class TODNetworkChannel(NetworkChannel):
         self._interval = interval
         self._delay = distr_func()
 
-    @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
-        self._tele_context = tele_context
+        super(TODNetworkChannel, self).start()
 
         @tele_event('change_delay_network_channel-' + str(id(self)))
         def change_delay():

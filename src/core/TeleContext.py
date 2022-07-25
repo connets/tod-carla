@@ -41,7 +41,7 @@ class TeleContext(abc.ABC):
         # print("-"*5, self._timestamp_func(), ms, self._timestamp_func() + ms)
         if all(hasattr(event, attr) for attr in ['log_event', 'name_event']) and event.log_event:
             TeleLogger.instance.event_logger.write(self._timestamp, 'scheduled', event)
-        # if not self._finished:
+        self._schedule(event, s)
 
     @preconditions('_queue', valid=lambda q: not q.empty())
     def run_next_event(self):
@@ -90,7 +90,6 @@ class TODTeleContext(TeleContext):
                 timestamp_limit is None or self._queue.queue[0].timestamp <= timestamp_limit)
 
     def _schedule(self, event, s):
-        print("***** => ")
         self._queue.put(self.TimingEvent(event, self._timestamp + s))
 
 
@@ -99,11 +98,15 @@ class CarlaOmnetTeleContext(TeleContext):
     @property
     def next_timestamp_event(self):
         return self._queue.queue[0].timestamp if not self._queue.empty() and self._queue.queue[
-            0] <= self._carla_omnet_manager.timestamp else self.timestamp
+            0].timestamp <= self._carla_omnet_manager.timestamp else self.timestamp
 
     def __init__(self, carla_omnet_manager):
         super().__init__()
         self._carla_omnet_manager: CarlaOmnetManager = carla_omnet_manager
+
+    def start(self, initial_timestamp, finish_callback):
+        super().start(initial_timestamp, finish_callback)
+        self._carla_omnet_manager.start(initial_timestamp)
 
     def run_next_event(self):
         if self._queue.queue[0].timestamp <= self._carla_omnet_manager.timestamp:

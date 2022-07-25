@@ -62,8 +62,7 @@ class CarlaOmnetManager:
         print("Connected!")
         self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._timeout * 500000)
 
-    def start(self, current_timestamp, step_listener):
-        assert step_listener is not None
+    def start(self, current_timestamp):
         self._connect(current_timestamp)
 
     def do_omnet_step(self):
