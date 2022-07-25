@@ -23,7 +23,7 @@ import src.build_enviroment as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils
-from src.core.Simulator import TODSimulator, Simulator
+from src.core.TeleSimulator import TeleSimulator
 
 
 def main(simulation_conf, scenario_conf):
@@ -120,7 +120,7 @@ def main(simulation_conf, scenario_conf):
     try:
         status_code = tele_sim.do_simulation()
     except Exception as e:
-        status_code = Simulator.FinishCode.TIME_LIMIT
+        status_code = TeleSimulator.FinishCode.TIME_LIMIT
         raise e
     finally:
         build_enviroment.destroy_sim_world(client, sim_world)

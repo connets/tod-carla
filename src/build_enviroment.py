@@ -10,9 +10,10 @@ from src.TeleOutputWriter import DataCollector
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
 from src.carla_bridge.TeleWorld import TeleWorld
-from src.communication.NetworkChannel import TODNetworkChannel, CarlaOmnetNetworkChannel
+from src.communication.NetworkChannel import TODNetworkChannel, NetworkChannel
 import src.utils as utils
-from src.core.Simulator import TODSimulator, CarlaOmnetSimulator
+from src.core.TeleContext import TODTeleContext, CarlaOmnetTeleContext
+from src.core.TeleSimulator import TeleSimulator
 from src.utils.Hud import HUD
 import pygame
 
@@ -234,9 +235,8 @@ def create_data_collector(tele_world, player):
 
 
 def create_simulator_and_network_topology(network_conf, tele_world, clock, player, mec_server, tele_operator):
-    if network_conf['type'] == 'tod':
-        tele_sim = TODSimulator(tele_world, clock)
 
+    if network_conf['type'] == 'tod':
         backhaul_uplink_delay = network_conf['backhaul']['uplink_extra_delay']
         backhaul_downlink_delay = network_conf['backhaul']['downlink_extra_delay']
 
@@ -246,20 +246,22 @@ def create_simulator_and_network_topology(network_conf, tele_world, clock, playe
         operator_vehicle_channel = TODNetworkChannel(player,
                                                      utils.delay_family_to_func[backhaul_downlink_delay['family']](
                                                          **backhaul_downlink_delay['parameters']), 0.1)
+        tele_context = TODTeleContext()
     elif network_conf['type'] == 'carla_omnet':
-        vehicle_operator_channel = CarlaOmnetNetworkChannel(tele_operator)
-        operator_vehicle_channel = CarlaOmnetNetworkChannel(player)
+        vehicle_operator_channel = NetworkChannel(tele_operator)
+        operator_vehicle_channel = NetworkChannel(player)
         carla_omnet_manager = CarlaOmnetManager(network_conf['protocol'], network_conf['port'],
                                                 network_conf['connection_timeout'], network_conf['timeout'],
                                                 lambda: "2")  # player.get_location())
-        tele_sim = CarlaOmnetSimulator(tele_world, clock, carla_omnet_manager)
         carla_omnet_manager.add_default_action(1, player._send_message)  # TODO sucks!
+        tele_context = CarlaOmnetTeleContext(carla_omnet_manager)
 
     else:
         raise RuntimeError("Network type not valid")
 
     player.add_channel(vehicle_operator_channel)
     tele_operator.add_channel(operator_vehicle_channel)
+    tele_sim = TeleSimulator(tele_world, clock, tele_context)
 
     return tele_sim
 

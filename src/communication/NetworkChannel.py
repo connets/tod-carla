@@ -64,27 +64,5 @@ class TODNetworkChannel(NetworkChannel):
         ...
 
 
-class CarlaOmnetNetworkChannel(NetworkChannel):
-    def __init__(self, destination_node):
-        super().__init__(destination_node)
-        self._binded = False
-        self._carla_omnet_manager = None
-
-    @preconditions('_binded', valid=lambda x: x)
-    def start(self, carla_omnet_manager):
-        self._carla_omnet_manager = carla_omnet_manager
-
-    def bind(self, source_node):
-        self._binded = True
-
-    @preconditions('_carla_omnet_manager')
-    def send(self, msg):
-        network_event = self._create_event(msg)
-        self._carla_omnet_manager.send_message(network_event)
-
-    def quit(self):
-        ...
-
-
 if __name__ == '__main__':
     ...

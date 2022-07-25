@@ -3,10 +3,6 @@ import enum
 import json
 
 
-class MESSAGE_TYPE(enum.Enum):
-    ...
-
-
 class CoSimulationAnswer(abc.ABC):
     def to_json(self):
         return json.dumps(self.__dict__).encode("utf-8")

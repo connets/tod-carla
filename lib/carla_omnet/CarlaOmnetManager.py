@@ -35,6 +35,7 @@ class CarlaOmnetManager:
         self._message_to_send = None  # TODO change here for multiple-messages
         self._default_actions = dict()
         self._actions_to_do = dict()
+        self._last_received_request = None
 
     def _receive_data_from_omnet(self):
         message = self.socket.recv()
@@ -66,27 +67,29 @@ class CarlaOmnetManager:
         self._connect(current_timestamp)
 
     def do_omnet_step(self):
-        request = self._receive_data_from_omnet()
-        if isinstance(request, StepRequest):
-            answer = StepAnswer(self._vehicle_actual_location())
-        elif isinstance(request, ReceiveMessageRequest):
-            action = self._actions_to_do.get(request.msg_id, self._default_actions.get(request.msg_id))
-            action()
-            self._actions_to_do.pop(request.msg_id, None)
+        if self._last_received_request is not None:
+            # TODO change to allow multi-messages as answer
             if self._message_to_send is not None:
                 msg_id = next(self._id_iter)
                 self._actions_to_do[msg_id] = self._message_to_send
                 answer = ReceiveMessageAnswer(msg_id, 100)
             else:
                 answer = ReceiveMessageAnswer(-1, -1)
-        else:
-
-            raise RuntimeError("Message don't recognize", request.type)
-        # TODO change to allow multi-messages as answer
-        # messages.append(ReceiveMessageAnswer(msg_id, 100))
-        self._message_to_send = None
-        if answer is not None:
+            self._message_to_send = None
             self._send_data_to_omnet(answer)
+
+        action = None
+        while action is None:
+            self._last_received_request = request = self._receive_data_from_omnet()
+            if isinstance(request, StepRequest):
+                self._send_data_to_omnet(StepAnswer(self._vehicle_actual_location()))
+            elif isinstance(request, ReceiveMessageRequest):
+                action = self._actions_to_do.get(request.msg_id, self._default_actions.get(request.msg_id))
+                self._actions_to_do.pop(request.msg_id, None)
+            else:
+                raise RuntimeError("Message don't recognize", request.type)
+
+        return action
 
     def has_scheduled_events(self):
         return
