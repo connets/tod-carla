@@ -1,0 +1,995 @@
+                                                                
+version 3
+run Classical_TeleOperatedDriving-0-20220726-10:07:08-38570
+attr configname Classical_TeleOperatedDriving
+attr datetime 20220726-10:07:08
+attr datetimef 20220726-100708
+attr experiment Classical_TeleOperatedDriving
+attr inifile omnetpp.ini
+attr iterationvars $packetLen=1000B
+attr iterationvarsd packetLen=1000B
+attr iterationvarsf packetLen=1000B-
+attr measurement $packetLen=1000B
+attr network tod_network.simulations.TODNet
+attr processid 38570
+attr repetition 0
+attr replication #0
+attr resultdir results
+attr runnumber 0
+attr seedset 0
+itervar packetLen 1000B
+config image-path ../../inet4.4/images:../../Simu5G/images:../../veins_inet/images:../../veins-veins-5.2/images
+config network tod_network.simulations.TODNet
+config **.ue[*].numApps 1
+config **.server.numApps 1
+config **.numUe 1
+config **.mobility.constraintAreaMinX 300m
+config **.mobility.constraintAreaMinY 200m
+config **.mobility.constraintAreaMaxX 800m
+config **.mobility.constraintAreaMaxY 400m
+config *.gnb.mobility.initialX 450m
+config *.gnb.mobility.initialY 300m
+config **.ue[*].masterId 1
+config **.ue[*].macCellId 1
+config *.ue[0].nrMacCellId 1
+config *.ue[0].nrMasterId 1
+config **.ue[*].mobility.initFromDisplayString false
+config **.ue[*].mobility.typename StationaryMobility
+config **.ue[*].app[*].typename TODCarApp
+config **.ue[*].app[*].destAddresses "\"server\""
+config **.ue[*].app[*].destPort 3000
+config **.ue[*].app[0].localPort -1
+config **.ue[*].app[0].sendInterval 0.1s
+config **.ue[*].app[0].messageLength 1000B
+config **.ue[*].app[*].startTime "uniform(0s, 0.02s)"
+config **.ue[0].mobility.initialX 450m
+config **.ue[0].mobility.initialY 350m
+config **.server.app[*].typename TODAgentApp
+config **.server.app[*].videoSize 10MiB
+config **.server.app[*].localPort 3000
+config **.server.app[*].destPort 3001
+config **.server.app[*].sendInterval 20ms
+config **.server.app[*].packetLen 1000B
+config **.mtu 10000B
+config output-scalar-file-append false
+config sim-time-limit 20s
+config **.mobility.constraintAreaMinZ 0m
+config **.mobility.constraintAreaMaxZ 0m
+config **.mobility.initFromDisplayString true
+config **.numBands 1
+config **.ueTxPower 26
+config **.eNodeBTxPower 40
+config **.targetBler 0.01
+config **.blerShift 5
+config *.configurator.config "xmldoc(\"./demo.xml\")"
+
+vector 0 TODNet.server.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 1 TODNet.server.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 2 TODNet.server.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 3 TODNet.server.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 4 TODNet.router.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 5 TODNet.router.ppp[1].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 6 TODNet.upf.ppp[0].ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 7 TODNet.upf.pppIf.ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 8 TODNet.upf.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 9 TODNet.upf.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 10 TODNet.upf.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 11 TODNet.gnb.pppIf.ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 12 TODNet.gnb.pppMEHostIf.ppp transmissionState:vector ETV
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source transmissionStateChanged
+attr title "tx state"
+vector 13 TODNet.gnb.udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 14 TODNet.gnb.udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 15 TODNet.gnb.udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 16 TODNet.ue[0].udp passedUpPk:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetSentToUpper
+attr title "packets passed up, count"
+vector 17 TODNet.ue[0].udp droppedPkWrongPort:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsNoPortFound(packetDropped)
+attr title "packets dropped (wrong port), count"
+vector 18 TODNet.ue[0].udp droppedPkBadChecksum:vector(count) ETV
+attr interpolationmode none
+attr recordingmode vector(count)
+attr source packetDropReasonIsIncorrectlyReceived(packetDropped)
+attr title "packets dropped (checksum error), count"
+vector 19 TODNet.ue[0].cellularNic.phy servingCell:vector ETV
+attr recordingmode vector
+attr source servingCell
+attr title "ID of the serving eNodeB for the UE"
+attr unit ""
+vector 20 TODNet.ue[0].cellularNic.nrPhy servingCell:vector ETV
+attr recordingmode vector
+attr source servingCell
+attr title "ID of the serving eNodeB for the UE"
+attr unit ""
+vector 21 TODNet.gnb.cellularNic.mac avgServedBlocksUl:vector ETV
+attr recordingmode vector
+attr source avgServedBlocksUl
+attr title "Avg Served Blocks Ul"
+attr unit blocks
+vector 22 TODNet.gnb.cellularNic.mac avgServedBlocksDl:vector ETV
+attr recordingmode vector
+attr source avgServedBlocksDl
+attr title "Avg Served Blocks Dl"
+attr unit blocks
+vector 23 TODNet.ue[0].cellularNic.channelModel[0] measuredSinrUl:vector ETV
+attr recordingmode vector
+attr source measuredSinrUl
+attr title "SINR measured at feedback computation, UL"
+attr unit dB
+vector 24 TODNet.ue[0].cellularNic.channelModel[0] measuredSinrDl:vector ETV
+attr recordingmode vector
+attr source measuredSinrDl
+attr title "SINR measured at feedback computation, DL"
+attr unit dB
+vector 25 TODNet.gnb.cellularNic.mac receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 26 TODNet.ue[0].cellularNic.nrChannelModel[0] measuredSinrUl:vector ETV
+attr recordingmode vector
+attr source measuredSinrUl
+attr title "SINR measured at feedback computation, UL"
+attr unit dB
+vector 27 TODNet.ue[0].cellularNic.nrChannelModel[0] measuredSinrDl:vector ETV
+attr recordingmode vector
+attr source measuredSinrDl
+attr title "SINR measured at feedback computation, DL"
+attr unit dB
+vector 28 TODNet.ue[0].app[0] packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 29 TODNet.ue[0].udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 30 TODNet.ue[0].cellularNic.pdcpRrc receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 31 TODNet.ue[0].cellularNic.pdcpRrc sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 32 TODNet.ue[0].cellularNic.nrRlc.um receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 33 TODNet.ue[0].cellularNic.nrMac receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 34 TODNet.ue[0].cellularNic.nrMac sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 35 TODNet.gnb.cellularNic.mac sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 36 TODNet.ue[0].cellularNic.nrMac receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 37 TODNet.ue[0].cellularNic.nrMac sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 38 TODNet.ue[0].cellularNic.nrRlc.um rlcPacketLossUl:vector ETV
+attr recordingmode vector
+attr source rlcPacketLossUl
+attr title "rlc Packet Loss"
+attr unit ""
+vector 39 TODNet.ue[0].cellularNic.nrRlc.um sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 40 TODNet.ue[0].cellularNic.nrPhy averageCqiUl:vector ETV
+attr recordingmode vector
+attr source averageCqiUl
+attr title "Average Cqi reported in UL"
+attr unit cqi
+vector 41 TODNet.ue[0].cellularNic.nrChannelModel[0] rcvdSinrUl:vector ETV
+attr recordingmode vector
+attr source rcvdSinrUl
+attr title "SINR measured at packet reception, UL"
+attr unit dB
+vector 42 TODNet.ue[0].cellularNic.nrMac macDelayUl:vector ETV
+attr recordingmode vector
+attr source macDelayUl
+attr title "Delay at the MAC layer UL"
+attr unit s
+vector 43 TODNet.gnb.cellularNic.mac sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 44 TODNet.gnb.cellularNic.rlc.um receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 45 TODNet.ue[0].cellularNic.nrRlc.um rlcPduThroughputUl:vector ETV
+attr recordingmode vector
+attr source rlcPduThroughputUl
+attr title "Throughput at the rlc layer UL"
+attr unit Bps
+vector 46 TODNet.ue[0].cellularNic.nrRlc.um rlcPduDelayUl:vector ETV
+attr recordingmode vector
+attr source rlcPduDelayUl
+attr title "Delay at the rlc layer UL"
+attr unit s
+vector 47 TODNet.ue[0].cellularNic.nrRlc.um rlcPduPacketLossUl:vector ETV
+attr recordingmode vector
+attr source rlcPduPacketLossUl
+attr title "rlc Packet Loss"
+attr unit ""
+vector 48 TODNet.ue[0].cellularNic.nrMac harqErrorRate_1st_Ul:vector ETV
+attr recordingmode vector
+attr source harqErrorRate_1st_Ul
+attr title "Harq Error Rate Ul (1st tx)"
+attr unit ""
+vector 49 TODNet.ue[0].cellularNic.nrMac harqErrorRateUl:vector ETV
+attr recordingmode vector
+attr source harqErrorRateUl
+attr title "Harq Error Rate Ul"
+attr unit ""
+vector 50 TODNet.ue[0].cellularNic.nrMac harqTxAttemptsUl:vector ETV
+attr recordingmode vector
+attr source harqTxAttemptsUl
+attr title "Harq Tx Attempts Ul"
+attr unit ""
+vector 51 TODNet.ue[0].cellularNic.nrRlc.um rlcThroughputUl:vector ETV
+attr recordingmode vector
+attr source rlcThroughputUl
+attr title "Throughput at the rlc layer UL"
+attr unit Bps
+vector 52 TODNet.ue[0].cellularNic.nrRlc.um rlcPacketLossTotal:vector ETV
+attr recordingmode vector
+attr source rlcPacketLossTotal
+attr title "rlc Packet Loss"
+attr unit ""
+vector 53 TODNet.ue[0].cellularNic.nrRlc.um rlcDelayUl:vector ETV
+attr recordingmode vector
+attr source rlcDelayUl
+attr title "Delay at the rlc layer UL"
+attr unit s
+vector 54 TODNet.gnb.cellularNic.rlc.um sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 55 TODNet.gnb.cellularNic.pdcpRrc receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 56 TODNet.gnb.cellularNic.pdcpRrc sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 57 TODNet.gnb.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 58 TODNet.gnb.pppIf.queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 59 TODNet.gnb.pppIf.queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 60 TODNet.gnb.pppIf.queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 61 TODNet.gnb.pppIf.queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 62 TODNet.gnb.pppIf.queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 63 TODNet.gnb.pppIf.ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 64 TODNet.gnb.pppIf.queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 65 TODNet.gnb.pppIf.queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 66 TODNet.upf.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 67 TODNet.upf.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 68 TODNet.upf.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 69 TODNet.upf.pppIf.queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 70 TODNet.upf.pppIf.queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 71 TODNet.upf.pppIf.queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 72 TODNet.upf.pppIf.queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 73 TODNet.upf.pppIf.queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 74 TODNet.upf.pppIf.ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 75 TODNet.upf.pppIf.queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 76 TODNet.upf.pppIf.queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 77 TODNet.router.ppp[1].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 78 TODNet.router.ppp[1].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 79 TODNet.router.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 80 TODNet.router.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 81 TODNet.router.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 82 TODNet.router.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 83 TODNet.router.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 84 TODNet.router.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 85 TODNet.router.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 86 TODNet.router.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 87 TODNet.server.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 88 TODNet.server.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 89 TODNet.server.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 90 TODNet.server.app[0] echoedPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets echoed, packetBytes"
+vector 91 TODNet.server.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 92 TODNet.server.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 93 TODNet.server.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 94 TODNet.server.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 95 TODNet.server.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 96 TODNet.server.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 97 TODNet.server.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 98 TODNet.server.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 99 TODNet.server.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 100 TODNet.router.ppp[0].ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 101 TODNet.router.ppp[0].ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 102 TODNet.router.ppp[1].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 103 TODNet.router.ppp[1].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 104 TODNet.router.ppp[1].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 105 TODNet.router.ppp[1].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 106 TODNet.router.ppp[1].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 107 TODNet.router.ppp[1].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 108 TODNet.router.ppp[1].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 109 TODNet.router.ppp[1].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 110 TODNet.upf.pppIf.ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 111 TODNet.upf.pppIf.ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 112 TODNet.upf.udp packetSent:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSent
+attr title "packets sent, packetBytes"
+vector 113 TODNet.upf.ppp[0].queue incomingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPushStarted)
+attr title "incoming packet lengths"
+attr unit b
+vector 114 TODNet.upf.ppp[0].queue incomingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPushStarted)
+attr title "incoming datarate"
+attr unit bps
+vector 115 TODNet.upf.ppp[0].queue queueingTime:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source queueingTime(packetPulled)
+attr title "queueing times"
+attr unit s
+vector 116 TODNet.upf.ppp[0].queue outgoingPacketLengths:vector ETV
+attr interpolationmode none
+attr recordingmode vector
+attr source packetLength(packetPulled)
+attr title "outgoing packet lengths"
+attr unit b
+vector 117 TODNet.upf.ppp[0].queue outgoingDataRate:vector ETV
+attr interpolationmode linear
+attr recordingmode vector
+attr source throughput(packetPulled)
+attr title "outgoing datarate"
+attr unit bps
+vector 118 TODNet.upf.ppp[0].ppp txPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToLower
+attr title "packets transmitted, packetBytes"
+vector 119 TODNet.upf.ppp[0].queue queueLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + count(packetPushStarted) - count(packetPulled) - count(packetRemoved) - count(packetDropped)))"
+attr title "queue length"
+attr unit pk
+vector 120 TODNet.upf.ppp[0].queue queueBitLength:vector ETV
+attr autoWarmupFilter false
+attr interpolationmode sample-hold
+attr recordingmode vector
+attr source "warmup(atomic(constant0(packetPushEnded) + sum(packetLength(packetPushStarted)) - sum(packetLength(packetPulled)) - sum(packetLength(packetRemoved)) - sum(packetLength(packetDropped))))"
+attr title "queue bit length"
+attr unit b
+vector 121 TODNet.gnb.pppIf.ppp rxPkOk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source rxPkOk
+attr title "packets received OK, packetBytes"
+vector 122 TODNet.gnb.pppIf.ppp passedUpPk:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetSentToUpper
+attr title "packets passed to higher layer, packetBytes"
+vector 123 TODNet.gnb.udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 124 TODNet.gnb.cellularNic.pdcpRrc receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 125 TODNet.gnb.cellularNic.pdcpRrc sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 126 TODNet.gnb.cellularNic.rlc.um receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 127 TODNet.gnb.cellularNic.mac receivedPacketFromUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromUpperLayer
+vector 128 TODNet.gnb.cellularNic.rlc.um rlcPacketLossDl:vector ETV
+attr recordingmode vector
+attr source rlcPacketLossDl
+attr title "rlc Packet Loss"
+attr unit ""
+vector 129 TODNet.gnb.cellularNic.rlc.um sentPacketToLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToLowerLayer
+vector 130 TODNet.ue[0].cellularNic.nrPhy averageCqiDl:vector ETV
+attr recordingmode vector
+attr source averageCqiDl
+attr title "Average Cqi reported in DL"
+attr unit cqi
+vector 131 TODNet.ue[0].cellularNic.nrChannelModel[0] distance:vector ETV
+attr recordingmode vector
+attr source distance
+attr title "distance between UE and serving base station"
+attr unit meters
+vector 132 TODNet.ue[0].cellularNic.nrChannelModel[0] rcvdSinrDl:vector ETV
+attr recordingmode vector
+attr source rcvdSinrDl
+attr title "SINR measured at packet reception, DL"
+attr unit dB
+vector 133 TODNet.gnb.cellularNic.mac macDelayDl:vector ETV
+attr recordingmode vector
+attr source macDelayDl
+attr title "Delay at the MAC layer UL"
+attr unit s
+vector 134 TODNet.ue[0].cellularNic.nrRlc.um receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 135 TODNet.ue[0].cellularNic.nrRlc.um rlcPduThroughputDl:vector ETV
+attr recordingmode vector
+attr source rlcPduThroughputDl
+attr title "Throughput at the rlc layer DL"
+attr unit Bps
+vector 136 TODNet.ue[0].cellularNic.nrRlc.um rlcPduDelayDl:vector ETV
+attr recordingmode vector
+attr source rlcPduDelayDl
+attr title "Delay at the rlc layer UL"
+attr unit s
+vector 137 TODNet.ue[0].cellularNic.nrRlc.um rlcPduPacketLossDl:vector ETV
+attr recordingmode vector
+attr source rlcPduPacketLossDl
+attr title "rlc Packet Loss"
+attr unit ""
+vector 138 TODNet.ue[0].cellularNic.nrRlc.um rlcThroughputDl:vector ETV
+attr recordingmode vector
+attr source rlcThroughputDl
+attr title "Throughput at the rlc layer DL"
+attr unit Bps
+vector 139 TODNet.ue[0].cellularNic.nrRlc.um rlcPacketLossDl:vector ETV
+attr recordingmode vector
+attr source rlcPacketLossDl
+attr title "rlc Packet Loss"
+attr unit ""
+vector 140 TODNet.ue[0].cellularNic.nrRlc.um rlcDelayDl:vector ETV
+attr recordingmode vector
+attr source rlcDelayDl
+attr title "Delay at the rlc layer DL"
+attr unit s
+vector 141 TODNet.ue[0].cellularNic.nrRlc.um sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 142 TODNet.ue[0].cellularNic.pdcpRrc receivedPacketFromLowerLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source receivedPacketFromLowerLayer
+vector 143 TODNet.ue[0].cellularNic.pdcpRrc sentPacketToUpperLayer:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source sentPacketToUpperLayer
+vector 144 TODNet.ue[0].udp packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 145 TODNet.ue[0].app[0] packetReceived:vector(packetBytes) ETV
+attr interpolationmode none
+attr recordingmode vector(packetBytes)
+attr source packetReceived
+attr title "packets received, packetBytes"
+vector 146 TODNet.ue[0].app[0] throughput:vector ETV
+attr recordingmode vector
+attr source throughput(packetReceived)
+attr title throughput
+attr unit bps
+vector 147 TODNet.ue[0].cellularNic.nrMac harqErrorRate_1st_Dl:vector ETV
+attr recordingmode vector
+attr source harqErrorRate_1st_Dl
+attr title "Harq Error Rate Dl (1st tx)"
+attr unit ""
+vector 148 TODNet.ue[0].cellularNic.nrMac harqErrorRateDl:vector ETV
+attr recordingmode vector
+attr source harqErrorRateDl
+attr title "Harq Error Rate Dl"
+attr unit ""
+vector 149 TODNet.ue[0].cellularNic.nrMac harqTxAttemptsDl:vector ETV
+attr recordingmode vector
+attr source harqTxAttemptsDl
+attr title "Harq Tx Attempts Dl"
+attr unit ""
+0	33734 2456 0 27538 0 2.8710027892 109 0 1 54 54
+1	36190 1277 0 27533 0 2.8710026628 55 0 54 1485 53955
+2	37467 8 0 0 0 0 1 0 0 0 0
+3	37475 8 0 0 0 0 1 0 0 0 0
+4	37483 2456 0 27530 0 2.8710026128 109 0 1 54 54
+5	39939 2456 0 27542 0 2.8710029656 109 0 1 54 54
+6	42395 2456 0 27549 0 2.8710031708 109 0 1 54 54
+7	44851 2456 0 27526 0 2.8710017348 109 0 1 54 54
+8	47307 1277 0 27523 0 2.8710009068 55 0 54 1485 53955
+9	48584 8 0 0 0 0 1 0 0 0 0
+10	48592 9 0 0 0 0 1 0 0 0 0
+11	48601 2187 0 27520 0 2.8710008568 109 0 1 54 54
+12	50788 9 0 0 0 0 1 0 0 0 0
+13	50797 1332 0 27552 0 2.8710032208 55 0 54 1485 53955
+14	52129 9 0 0 0 0 1 0 0 0 0
+15	52138 9 0 0 0 0 1 0 0 0 0
+16	52147 954 0 27616 0 2.877 55 0 54 1485 53955
+17	53101 9 0 0 0 0 1 0 0 0 0
+18	53110 9 0 0 0 0 1 0 0 0 0
+19	53119 9 0 0 0 0 1 1 1 1 1
+20	53128 9 0 0 0 0 1 1 1 1 1
+21	53137 47370 11 27644 0.001 2.882 2882 0 1 432 432
+22	100507 47370 11 27644 0.001 2.882 2882 0 1 108 108
+23	147877 14586 19 27648 0.002 2.882 481 25.109534131846 25.109534131846 12077.685917418 303265.06677711
+24	162463 14586 19 27648 0.002 2.882 481 27.489938324927 27.489938324927 13222.66033429 363490.1170811
+25	177049 26379 20 27626 0.002 2.878 1554 1 145 58416 8062836
+26	203428 14075 21 27605 0.002 2.876 480 30.80185615367 30.80185615367 14784.890953762 455402.08440546
+27	217503 14555 21 27605 0.002 2.876 480 43.556728519058 43.556728519058 20907.229689148 910650.5276558
+28	232058 1493 1091 27254 0.20000000596 2.85000000596 54 1000 1000 54000 54000000
+29	233551 1493 1093 27256 0.20000000596 2.85000000596 54 1008 1008 54432 54867456
+30	235044 1493 1096 27259 0.20000000596 2.85000000596 54 1028 1028 55512 57066336
+31	236537 1493 1096 27259 0.20000000596 2.85000000596 54 1029 1029 55566 57177414
+32	238030 1493 1097 27260 0.20000000596 2.85000000596 54 1029 1029 55566 57177414
+33	239523 9503 1099 27458 0.20000000596 2.867 486 44 1031 112104 65234160
+34	249026 10709 1102 27609 0.201 2.877 594 1 145 57456 8061876
+35	259735 17152 1110 27577 0.202 2.873 1026 1 145 9558 1148418
+36	276887 17100 1118 27588 0.203 2.874 1026 1 145 9558 1148418
+37	293987 9162 1131 27609 0.205 2.877 540 1 143 8856 1113804
+38	303149 8100 1133 27507 0.205 2.871 486 0 0 0 0
+39	311249 8010 1133 27456 0.205 2.867 432 44 143 56430 7834266
+40	319259 7632 1138 27461 0.205 2.867 432 15 15 6480 97200
+41	326891 12816 1148 27477 0.206 2.868 432 30.80185615367 30.80185615367 13306.401858385 409861.87596491
+42	339707 8874 1158 27504 0.209 2.871 432 0.004 0.004 1.728 0.0069120000000001
+43	348581 9756 1158 27570 0.209 2.873 540 1 143 56538 7834374
+44	358337 7956 1162 27507 0.209 2.871 432 44 143 56430 7834266
+45	366293 7146 1162 27507 0.209 2.871 432 0 0 0 0
+46	373439 8874 1162 27507 0.209 2.871 432 0.004 0.004 1.728 0.0069120000000001
+47	382313 7146 1162 27507 0.209 2.871 432 0 0 0 0
+48	389459 7092 1174 27569 0.21 2.872 432 0 0 0 0
+49	396551 7092 1174 27569 0.21 2.872 432 0 0 0 0
+50	403643 7092 1174 27569 0.21 2.872 432 1 1 432 432
+51	410735 1653 1338 27507 0.221 2.871 54 4656.1085972851 19354.231974922 921966.87017444 16248696603.7
+52	412388 1800 1338 27612 0.221 2.877 108 0 0 0 0
+53	414188 1548 1338 27507 0.221 2.871 54 0.02099999404 0.02099999404 1.13399967816 0.023813986482722
+54	415736 1062 1338 27507 0.221 2.871 54 1029 1029 55566 57177414
+55	416798 1062 1339 27508 0.221 2.871 54 1029 1029 55566 57177414
+56	417860 1062 1339 27508 0.221 2.871 54 1028 1028 55512 57066336
+57	418922 1062 1343 27512 0.221 2.871 54 1044 1044 56376 58856544
+58	419984 1062 1345 27514 0.221 2.871 54 8512 8512 459648 3912523776
+59	421046 536 1345 27019 0.1 2.8 28 0 170240 4426240 753523097600
+60	421582 900 1345 27514 0.221 2.871 54 0 0 0 0
+61	422482 1062 1345 27514 0.221 2.871 54 8512 8512 459648 3912523776
+62	423544 536 1345 27019 0.1 2.8 28 0 170240 4426240 753523097600
+63	424080 1062 1345 27514 0.221 2.871 54 1071 1071 57834 61940214
+64	425142 900 1345 27514 0.221 2.871 54 0 0 0 0
+65	426042 900 1345 27514 0.221 2.871 54 0 0 0 0
+66	426942 1440 1352 27521 0.2210009068 2.8710009068 54 1071 1071 57834 61940214
+67	428382 1440 1352 27521 0.2210009068 2.8710009068 54 1064 1064 57456 61133184
+68	429822 1440 1354 27523 0.2210009068 2.8710009068 54 1044 1044 56376 58856544
+69	431262 1440 1356 27525 0.2210009068 2.8710009068 54 8224 8224 444096 3652245504
+70	432702 536 1356 27030 0.1 2.8 28 0 164480 4276480 703395430400
+71	433238 1278 1356 27525 0.2210009068 2.8710009068 54 0 0 0 0
+72	434516 1440 1356 27525 0.2210009068 2.8710009068 54 8224 8224 444096 3652245504
+73	435956 536 1356 27030 0.1 2.8 28 0 164480 4276480 703395430400
+74	436492 1440 1356 27525 0.2210009068 2.8710009068 54 1035 1035 55890 57846150
+75	437932 1278 1356 27525 0.2210009068 2.8710009068 54 0 0 0 0
+76	439210 1278 1356 27525 0.2210009068 2.8710009068 54 0 0 0 0
+77	440488 1440 1358 27527 0.2210017848 2.8710017848 54 1035 1035 55890 57846150
+78	441928 1440 1358 27527 0.2210017848 2.8710017848 54 1028 1028 55512 57066336
+79	443368 1440 1360 27529 0.2210017848 2.8710017848 54 8224 8224 444096 3652245504
+80	444808 536 1360 27034 0.1 2.8 28 0 164480 4276480 703395430400
+81	445344 1278 1360 27529 0.2210017848 2.8710017848 54 0 0 0 0
+82	446622 1440 1360 27529 0.2210017848 2.8710017848 54 8224 8224 444096 3652245504
+83	448062 536 1360 27034 0.1 2.8 28 0 164480 4276480 703395430400
+84	448598 1440 1360 27529 0.2210017848 2.8710017848 54 1035 1035 55890 57846150
+85	450038 1278 1360 27529 0.2210017848 2.8710017848 54 0 0 0 0
+86	451316 1278 1360 27529 0.2210017848 2.8710017848 54 0 0 0 0
+87	452594 1440 1362 27531 0.2210026628 2.8710026628 54 1035 1035 55890 57846150
+88	454034 1440 1362 27531 0.2210026628 2.8710026628 54 1028 1028 55512 57066336
+89	455474 1440 1364 27533 0.2210026628 2.8710026628 54 1008 1008 54432 54867456
+90	456914 1386 1365 27534 0.2210026628 2.8710026628 54 123 123 6642 816966
+91	458300 1386 1366 27535 0.2210026628 2.8710026628 54 131 131 7074 926694
+92	459686 1440 1368 27537 0.2210026628 2.8710026628 54 1208 1208 65232 78800256
+93	461126 510 1368 27042 0.1 2.8 28 0 24160 628160 15176345600
+94	461636 1278 1368 27537 0.2210026628 2.8710026628 54 0 0 0 0
+95	462914 1440 1368 27537 0.2210026628 2.8710026628 54 1208 1208 65232 78800256
+96	464354 510 1368 27042 0.1 2.8 28 0 24160 628160 15176345600
+97	464864 1386 1368 27537 0.2210026628 2.8710026628 54 158 158 8532 1348056
+98	466250 1278 1368 27537 0.2210026628 2.8710026628 54 0 0 0 0
+99	467528 1278 1368 27537 0.2210026628 2.8710026628 54 0 0 0 0
+100	468806 1440 1370 27539 0.2210028392 2.8710028392 54 158 158 8532 1348056
+101	470246 1440 1370 27539 0.2210028392 2.8710028392 54 151 151 8154 1231254
+102	471686 1494 1372 27541 0.2210028392 2.8710028392 54 1208 1208 65232 78800256
+103	473180 538 1372 27046 0.1 2.8 28 0 24160 628160 15176345600
+104	473718 1332 1372 27541 0.2210028392 2.8710028392 54 0 0 0 0
+105	475050 1494 1372 27541 0.2210028392 2.8710028392 54 1208 1208 65232 78800256
+106	476544 538 1372 27046 0.1 2.8 28 0 24160 628160 15176345600
+107	477082 1440 1372 27541 0.2210028392 2.8710028392 54 158 158 8532 1348056
+108	478522 1332 1372 27541 0.2210028392 2.8710028392 54 0 0 0 0
+109	479854 1332 1372 27541 0.2210028392 2.8710028392 54 0 0 0 0
+110	481186 1440 1374 27543 0.2210030156 2.8710030156 54 158 158 8532 1348056
+111	482626 1440 1374 27543 0.2210030156 2.8710030156 54 151 151 8154 1231254
+112	484066 1440 1377 27546 0.2210030156 2.8710030156 54 167 167 9018 1506006
+113	485506 1494 1379 27548 0.2210030156 2.8710030156 54 1496 1496 80784 120852864
+114	487000 538 1379 27053 0.1 2.8 28 0 29920 777920 23275366400
+115	487538 1332 1379 27548 0.2210030156 2.8710030156 54 0 0 0 0
+116	488870 1494 1379 27548 0.2210030156 2.8710030156 54 1496 1496 80784 120852864
+117	490364 538 1379 27053 0.1 2.8 28 0 29920 777920 23275366400
+118	490902 1440 1379 27548 0.2210030156 2.8710030156 54 194 194 10476 2032344
+119	492342 1332 1379 27548 0.2210030156 2.8710030156 54 0 0 0 0
+120	493674 1332 1379 27548 0.2210030156 2.8710030156 54 0 0 0 0
+121	495006 1440 1381 27550 0.2210032208 2.8710032208 54 194 194 10476 2032344
+122	496446 1440 1381 27550 0.2210032208 2.8710032208 54 187 187 10098 1888326
+123	497886 1440 1383 27552 0.2210032208 2.8710032208 54 167 167 9018 1506006
+124	499326 1440 1386 27555 0.2210032208 2.8710032208 54 151 151 8154 1231254
+125	500766 1440 1386 27555 0.2210032208 2.8710032208 54 152 152 8208 1247616
+126	502206 1440 1387 27556 0.2210032208 2.8710032208 54 152 152 8208 1247616
+127	503646 3510 1389 27574 0.2210032208 2.873 162 13 154 16740 2394036
+128	507156 1908 1394 27572 0.222 2.873 108 0 0 0 0
+129	509064 2070 1394 27572 0.222 2.873 108 13 143 8424 1113372
+130	511134 2016 1414 27587 0.223 2.874 108 15 15 1620 24300
+131	513150 3420 1414 27587 0.223 2.874 108 285.73840389627 285.73840389627 30859.747620797 8817815.0298083
+132	516570 3420 1414 27587 0.223 2.874 108 43.556728519058 43.556728519058 4704.1266800583 204896.36872256
+133	519990 2340 1433 27609 0.226 2.877 108 0.004 0.004 0.432 0.001728
+134	522330 2070 1436 27612 0.226 2.877 108 13 143 8424 1113372
+135	524400 1908 1436 27612 0.226 2.877 108 0 0 0 0
+136	526308 2340 1436 27612 0.226 2.877 108 0.004 0.004 0.432 0.001728
+137	528648 1908 1436 27612 0.226 2.877 108 0 0 0 0
+138	530556 1700 1443 27612 0.227 2.877 54 669.60352422907 2852.9718456726 135508.59821883 351373524.92387
+139	532256 954 1443 27612 0.227 2.877 54 0 0 0 0
+140	533210 1548 1443 27612 0.227 2.877 54 0.0059967792 0.0059967792 0.3238260768 0.0019419134817718
+141	534758 1062 1443 27612 0.227 2.877 54 152 152 8208 1247616
+142	535820 1062 1444 27613 0.227 2.877 54 152 152 8208 1247616
+143	536882 1062 1444 27613 0.227 2.877 54 151 151 8154 1231254
+144	537944 1062 1447 27616 0.227 2.877 54 131 131 7074 926694
+145	539006 1062 1448 27617 0.227 2.877 54 123 123 6642 816966
+146	540068 538 1448 27122 0.1 2.8 28 0 19680 511680 10069862400
+147	540606 1908 1451 27626 0.227 2.878 108 0 0 0 0
+148	542514 1908 1451 27626 0.227 2.878 108 0 0 0 0
+149	544422 1908 1451 27626 0.227 2.878 108 1 1 108 108
