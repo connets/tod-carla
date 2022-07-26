@@ -6,3 +6,4 @@ out
 log
 analysis
 tmp
+network/**/results

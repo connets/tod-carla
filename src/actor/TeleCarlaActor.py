@@ -1,3 +1,4 @@
+from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.communication.NetworkNode import NetworkNode
 
@@ -44,35 +45,28 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def get_speed_limit(self):
         return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit() / 3.6
 
-    def run(self):
-        @tele_event('sending_info_state')
-        def daemon_state():
-
-            camera_sensor = self.get_sensor_by_class(TeleCarlaCameraSensor)
-            lidar_sensor = self.get_sensor_by_class(TeleCarlaLidarSensor)
-            lidar_image = lidar_sensor.image if lidar_sensor is not None else None
-            visible_vehicles, visible_pedestrians = [], []
-            snapshot = self._tele_world.get_snapshot()
-            if lidar_image and camera_sensor:
-                vehicles_raw = [v for v in self._tele_world.sim_world.get_actors().filter('vehicle.*') if
-                                v.id != self.id]
-                # does it need snap_processing filter?
-                # vehicles = cva.snap_processing(vehicles_raw, snap)
-                if vehicles_raw:
-                    vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image)
-                    visible_vehicles = vehicles_res['vehicles']
-                pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
-                if pedestrian_raw:
-                    pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
-                    visible_pedestrians = pedestrians_res['vehicles']
-            self.send_message(InfoUpdateNetworkMessage(
-                TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
-                                                        visible_pedestrians),
-                timestamp=self._tele_context.timestamp))
-
-            self._tele_context.schedule(daemon_state, self._sending_interval)
-
-        daemon_state()
+    def _send_message(self):
+        camera_sensor = self.get_sensor_by_class(TeleCarlaCameraSensor)
+        lidar_sensor = self.get_sensor_by_class(TeleCarlaLidarSensor)
+        lidar_image = lidar_sensor.image if lidar_sensor is not None else None
+        visible_vehicles, visible_pedestrians = [], []
+        snapshot = self._tele_world.get_snapshot()
+        if lidar_image and camera_sensor:
+            vehicles_raw = [v for v in self._tele_world.sim_world.get_actors().filter('vehicle.*') if
+                            v.id != self.id]
+            # does it need snap_processing filter?
+            # vehicles = cva.snap_processing(vehicles_raw, snap)
+            if vehicles_raw:
+                vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image)
+                visible_vehicles = vehicles_res['vehicles']
+            pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
+            if pedestrian_raw:
+                pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
+                visible_pedestrians = pedestrians_res['vehicles']
+        self.send_message(InfoUpdateNetworkMessage(
+            TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
+                                                    visible_pedestrians),
+            timestamp=self._tele_context.timestamp))
 
     def get_sensor_by_class(self, cls):
         return next(iter([s for s in self.sensors if isinstance(s, cls)]), None)
@@ -145,6 +139,21 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     def done(self, timestamp):
         return all(sensor.done(timestamp) for sensor in self.sensors)
+
+
+class TODTeleCarlaVehicle(TeleCarlaVehicle):
+
+    def run(self):
+        @tele_event('sending_info_state')
+        def daemon_state():
+            self._send_message()
+            self._tele_context.schedule(daemon_state, self._sending_interval)
+
+        daemon_state()
+
+
+class CarlaOmnetTeleCarlaVehicle(TeleCarlaVehicle):
+    ...
 
 
 class TeleCarlaPedestrian(TeleCarlaActor):

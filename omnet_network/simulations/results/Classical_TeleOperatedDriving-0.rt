@@ -1,0 +1,13 @@
++R #0  0s  TODNet.server  10.0.0.1  127.0.0.0/8  <unspec>  lo0
++R #0  0s  TODNet.server  10.0.0.1  10.0.0.0/24  <unspec>  ppp0
++R #0  0s  TODNet.router  10.0.1.1  127.0.0.0/8  <unspec>  lo0
++R #0  0s  TODNet.router  10.0.1.1  10.0.0.0/24  <unspec>  ppp0
++R #0  0s  TODNet.router  10.0.1.1  10.0.1.0/24  <unspec>  ppp1
++R #0  0s  TODNet.upf  10.0.2.1  127.0.0.0/8  <unspec>  lo0
++R #0  0s  TODNet.upf  10.0.2.1  10.0.2.0/24  <unspec>  ppp0
++R #0  0s  TODNet.upf  10.0.2.1  10.0.1.0/24  <unspec>  pppIf
++R #0  0s  TODNet.gnb  10.0.4.1  10.0.3.0/24  <unspec>  cellular
++R #0  0s  TODNet.gnb  10.0.4.1  10.0.2.0/24  <unspec>  pppIf
++R #0  0s  TODNet.gnb  10.0.4.1  10.0.4.0/24  <unspec>  pppMEHostIf
++R #0  0s  TODNet.ue[0]  10.0.3.2  127.0.0.0/8  <unspec>  lo0
++R #0  0s  TODNet.ue[0]  10.0.3.2  10.0.3.0/24  <unspec>  cellular

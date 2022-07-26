@@ -1,17 +1,32 @@
 from abc import ABC, abstractmethod
+from enum import Enum
 
 
-def tele_event(name, log=True):
+class EventType(Enum):
+    NETWORK = 1
+    GENERAL = 2
+
+
+def tele_event(name, event_type: EventType = EventType.GENERAL, log=True):
     def tele_event_aux(f):
         f.name_event = name
+        f.event_type = event_type
         f.log_event = log
         return f
 
     return tele_event_aux
 
+
 if __name__ == '__main__':
-    @tele_event('ciao')
-    def tmp():
-        print('i am tmp')
-        return 'ciao'
-    print(tmp())
+    class Tmp:
+        @property
+        def tmp(self):
+            return 'ciao'
+
+    class Tmp1(Tmp):
+
+        def tmp(self):
+            return "ue"
+
+
+    print(Tmp1().tmp)

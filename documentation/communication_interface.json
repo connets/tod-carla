@@ -1,0 +1,90 @@
+{
+  "message_type": "INIT",
+  "payload": {
+    "cars": [
+      {
+        "node_id": "omnet_module_name",
+        "vehicle_type": "yaml_path"
+      }
+    ],
+    "others_actor": [
+      {
+        "node_id": "omnet_module_name"
+      }
+    ],
+    "tod_agents": [
+      {
+        "node_id": "application_id",
+        "agent_type": "yaml_path"
+      }
+    ]
+  }
+}
+
+
+{
+  "message_type": "INIT_COMPLETED",
+  "payload": {
+    "initial_timestamp": 0
+  }
+}
+
+{
+  "message_type": "SIMULATION_STEP",
+  "payload": {
+
+  },
+  "timestamp": 0
+}
+{
+  "message_type": "UPDATED_POSITIONS",
+  "payload": {
+    "nodes": [
+      {"node_id": "id", "position": "TODO"},
+      {"node_id": "id", "position": "TODO"}
+    ]
+  }
+}
+
+{
+  "message_type": "VEHICLE_STATUS_UPDATE",
+  "node_id": "id",
+  "timestamp": "timestamp"
+}
+{
+  "message_type": "VEHICLE_STATUS",
+  "payload": {
+    "node_id": "id",
+    "status_id": "status_id"
+  }
+}
+
+
+{
+  "message_type": "COMPUTE_INSTRUCTION",
+  "payload": {
+    "node_id": "id",
+    "status_id": "status_id"
+  }
+}
+{
+  "message_type": "INSTRUCTION",
+  "payload": {
+    "node_id": "id",
+    "instruction_id": "instruction_id"
+  }
+}
+
+
+{
+  "message_type": "APPLY_INSTRUCTION",
+  "payload": {
+    "node_id": "id",
+    "instruction_id": "instruction_id"
+  },
+  "timestamp": "timestamp"
+}
+{
+  "message_type": "OK",
+}
+

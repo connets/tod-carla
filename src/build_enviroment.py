@@ -1,14 +1,129 @@
+import abc
+
 from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
 
+from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector
+from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
-from src.communication.NetworkChannel import DiscreteNetworkChannel
+from src.carla_bridge.TeleWorld import TeleWorld
+from src.communication.NetworkChannel import TODNetworkChannel, NetworkChannel
 import src.utils as utils
+from src.core.TeleContext import TODTeleContext, CarlaOmnetTeleContext
+from src.core.TeleSimulator import TeleSimulator
 from src.utils.Hud import HUD
 import pygame
+
+
+class EnvironmentBuilder:
+
+    def __init__(self, simulation_conf, scenario_conf):
+        self.simulation_conf = simulation_conf
+        self.scenario_conf = scenario_conf
+
+        self.clock = pygame.time.Clock()
+        self.render = simulation_conf['render'] or scenario_conf['controller']['type'] == 'manual'
+        self.carla_map = self.tele_world = self.start_transform = self.destination_location = None
+
+    def build(self):
+        self._create_tele_world()
+
+        route_factory = EnvironmentBuilder.PreDefinedRouteFactory(
+            self.scenario_conf['route']) if 'route' in self.scenario_conf else EnvironmentBuilder.RandomlyRouteFactory(
+            self.carla_map)
+        self.start_transform, self.destination_location = route_factory.create_route()
+
+        ...
+
+    def _create_tele_world(self):
+
+        host, port, timeout, world, seed, time_step = self.simulation_conf['host'], self.simulation_conf['port'], \
+                                                      self.simulation_conf['timeout'], self.scenario_conf['world'], \
+                                                      self.simulation_conf['seed'], \
+                                                      self.simulation_conf['simulation_time_step']
+
+        client: libcarla.Client = carla.Client(host, port)
+        client.set_timeout(timeout)
+        sim_world: carla.World = client.load_world(world)
+
+        settings = sim_world.get_settings()
+        settings.synchronous_mode = True
+        settings.fixed_delta_seconds = time_step
+        settings.no_rendering_mode = not self.render
+        sim_world.apply_settings(settings)
+        traffic_manager = client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(True)
+        traffic_manager.set_random_device_seed(seed)
+
+        client.reload_world(False)  # reload map keeping the world settings
+        sim_world.set_weather(carla.WeatherParameters.ClearSunset)
+
+        sim_world.tick()
+        self.client, self.sim_world = client, sim_world
+        self.carla_map = self.sim_world.get_map()
+        self.tele_world = TeleWorld(client)
+
+    def _create_route(self, tele_world, scenario_conf):
+        carla_map = tele_world.carla_map
+        if 'route' in scenario_conf:
+
+            start_transform = Transform(
+                Location(x=scenario_conf['route']['start']['x'], y=scenario_conf['route']['start']['y'],
+                         z=scenario_conf['route']['start']['z']),
+                Rotation(pitch=scenario_conf['route']['start']['pitch'],
+                         yaw=scenario_conf['route']['start']['yaw'],
+                         roll=scenario_conf['route']['start']['roll']))
+            destination_location = Location(x=scenario_conf['route']['end']['x'],
+                                            y=scenario_conf['route']['end']['y'],
+                                            z=scenario_conf['route']['end']['z'])
+        else:
+            spawn_points = carla_map.get_spawn_points()
+            start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
+            destination_location = random.choice(spawn_points).location
+
+        return start_transform, destination_location
+
+    def create_tele_world(self):
+        ...
+
+    def create_controller(self):
+        ...
+
+    class RouteFactory(abc.ABC):
+        @abc.abstractmethod
+        def create_route(self):
+            ...
+
+    class PreDefinedRouteFactory(RouteFactory):
+
+        def __init__(self, route_conf):
+            self._route_conf = route_conf
+
+        def create_route(self):
+            start_transform = Transform(
+                Location(x=self._route_conf['start']['x'], y=self._route_conf['start']['y'],
+                         z=self._route_conf['start']['z']),
+                Rotation(pitch=self._route_conf['start']['pitch'],
+                         yaw=self._route_conf['start']['yaw'],
+                         roll=self._route_conf['start']['roll']))
+            destination_location = Location(x=self._route_conf['end']['x'],
+                                            y=self._route_conf['end']['y'],
+                                            z=self._route_conf['end']['z'])
+
+            return start_transform, destination_location
+
+    class RandomlyRouteFactory(RouteFactory):
+        def __init__(self, carla_map):
+            self._carla_map = carla_map
+
+        def create_route(self):
+            spawn_points = self._carla_map.get_spawn_points()
+            start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
+            destination_location = random.choice(spawn_points).location
+            return start_transform, destination_location
 
 
 def create_display(player, clock, tele_sim, camera_width, camera_height, camera_sensor, output_path=None):
@@ -119,19 +234,36 @@ def create_data_collector(tele_world, player):
                                        }, 0.005)
 
 
-def create_network_topology(scenario_conf, player, mec_server, tele_operator):
-    backhaul_uplink_delay = scenario_conf['delay']['backhaul']['uplink_extra_delay']
-    backhaul_downlink_delay = scenario_conf['delay']['backhaul']['downlink_extra_delay']
+def create_simulator_and_network_topology(network_conf, tele_world, clock, player, mec_server, tele_operator):
 
-    vehicle_operator_channel = DiscreteNetworkChannel(tele_operator,
-                                                      utils.delay_family_to_func[backhaul_uplink_delay['family']](
-                                                          **backhaul_uplink_delay['parameters']), 0.1)
+    if network_conf['type'] == 'tod':
+        backhaul_uplink_delay = network_conf['backhaul']['uplink_extra_delay']
+        backhaul_downlink_delay = network_conf['backhaul']['downlink_extra_delay']
+
+        vehicle_operator_channel = TODNetworkChannel(tele_operator,
+                                                     utils.delay_family_to_func[backhaul_uplink_delay['family']](
+                                                         **backhaul_uplink_delay['parameters']), 0.1)
+        operator_vehicle_channel = TODNetworkChannel(player,
+                                                     utils.delay_family_to_func[backhaul_downlink_delay['family']](
+                                                         **backhaul_downlink_delay['parameters']), 0.1)
+        tele_context = TODTeleContext()
+    elif network_conf['type'] == 'carla_omnet':
+        vehicle_operator_channel = NetworkChannel(tele_operator)
+        operator_vehicle_channel = NetworkChannel(player)
+        carla_omnet_manager = CarlaOmnetManager(network_conf['protocol'], network_conf['port'],
+                                                network_conf['connection_timeout'], network_conf['timeout'],
+                                                lambda: "2")  # player.get_location())
+        carla_omnet_manager.add_default_action(1, player._send_message)  # TODO sucks!
+        tele_context = CarlaOmnetTeleContext(carla_omnet_manager)
+
+    else:
+        raise RuntimeError("Network type not valid")
+
     player.add_channel(vehicle_operator_channel)
-
-    operator_vehicle_channel = DiscreteNetworkChannel(player,
-                                                      utils.delay_family_to_func[backhaul_downlink_delay['family']](
-                                                          **backhaul_downlink_delay['parameters']), 0.1)
     tele_operator.add_channel(operator_vehicle_channel)
+    tele_sim = TeleSimulator(tele_world, clock, tele_context)
+
+    return tele_sim
 
 
 def apply_god_changes(tele_world, player, controller):

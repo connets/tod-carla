@@ -25,6 +25,18 @@ def preconditions(*members, valid=lambda *params: all(p is not None for p in par
 
     return wrapper_method
 
+if __name__ == '__main__':
+
+    class Tmp:
+        def __init__(self, a, b, c):
+            self.a = a
+            self.b = b
+            self.c = c
+
+        @preconditions('a', 'b', 'c', valid=lambda a, b, c: a == 1 and b == c)
+        def tmp(self):
+            print(" *** ")
+    Tmp("1","2","3").tmp()
 
 def synchronized(lock: threading.RLock):
     def _decorator(wrapped):
