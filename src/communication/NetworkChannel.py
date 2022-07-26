@@ -45,7 +45,7 @@ class TODNetworkChannel(NetworkChannel):
         self._delay = distr_func()
 
     def start(self, tele_context):
-        super(TODNetworkChannel, self).start()
+        super(TODNetworkChannel, self).start(tele_context)
 
         @tele_event('change_delay_network_channel-' + str(id(self)))
         def change_delay():
