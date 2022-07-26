@@ -1,9 +1,10 @@
 import itertools
+from abc import ABC, abstractmethod
 
 import zmq
 import json
 
-from lib.carla_omnet.CommunicationMessage import *
+from src.carla_omnet.CommunicationMessage import *
 
 
 class CarlaOmnetError(RuntimeError):
@@ -22,20 +23,60 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
         return "I don't know how to handle the following msg: " + self.unknown_msg
 
 
+class MessageHandlerState(ABC):
+    def __init__(self, carla_omnet_manager):
+        self._carla_omnet_manager = carla_omnet_manager
+
+    @abstractmethod
+    def handle_message(self, message: OMNeTMessage):
+        ...
+
+
+class StartMessageHandlerState(MessageHandlerState):
+
+    def handle_message(self, message: OMNeTMessage):
+        if isinstance(message, InitOMNeTMessage):
+            ...
+        else:
+            RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
+            I don't know how to handle {message.__class__.__name__} message""")
+
+
+class CarlaOMNeTManager(ABC):
+
+    def __init__(self):
+        self._socket = None
+        self._message_handler_state = None
+
+        self.set_message_handler_state(StartMessageHandlerState)
+
+    def set_message_handler_state(self, msg_handler_cls):
+        self._message_handler_state = msg_handler_cls(self)
+
+    @abstractmethod
+    def handle_message(self):
+        ...
+
+    def _receive_data_from_omnet(self):
+        message = self._socket.recv()
+        json_data = json.loads(message.decode("utf-8"))
+        request = CoSimulationRequest.from_json(json_data)
+        self.timestamp = request.timestamp
+        return request
+
+    def _send_data_to_omnet(self, answer: CoSimulationAnswer):
+        self._socket.send(answer.to_json())
+
+
 class CarlaOmnetManager:
     _id_iter = itertools.count(1000)
 
-    def __init__(self, protocol, port, connection_timeout, timeout, vehicle_actual_position):
+    def __init__(self, protocol, port, connection_timeout, timeout):
         self._protocol = protocol
         self._port = port
         self._connection_timeout = connection_timeout
         self._timeout = timeout
-        self._vehicle_actual_location = vehicle_actual_position
         self.timestamp = 0
-        self._message_to_send = None  # TODO change here for multiple-messages
-        self._default_actions = dict()
-        self._actions_to_do = dict()
-        self._last_received_request = None
 
     def _receive_data_from_omnet(self):
         message = self.socket.recv()
@@ -43,9 +84,6 @@ class CarlaOmnetManager:
         request = CoSimulationRequest.from_json(json_data)
         self.timestamp = request.timestamp
         return request
-
-    def _send_data_to_omnet(self, answer: CoSimulationAnswer):
-        self.socket.send(answer.to_json())
 
     def _connect(self, current_timestamp):
         context = zmq.Context()
@@ -61,9 +99,6 @@ class CarlaOmnetManager:
         self._send_data_to_omnet(HandshakeAnswer(current_timestamp))
         print("Connected!")
         self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._timeout * 500000)
-
-    def start(self, current_timestamp):
-        self._connect(current_timestamp)
 
     def do_omnet_step(self):
         if self._last_received_request is not None:

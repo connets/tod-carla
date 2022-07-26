@@ -1,7 +1,7 @@
 import abc
 from queue import PriorityQueue
 
-from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
+from src.carla_omnet.CarlaOmnetSimulator import CarlaOmnetManager
 from src.TeleOutputWriter import TeleLogger
 from src.core import TeleEvent
 from src.utils.decorators import preconditions

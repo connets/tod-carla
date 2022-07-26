@@ -1,9 +1,6 @@
-from abc import abstractmethod, ABC
+from abc import ABC
 from enum import Enum
 
-from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
-from src.communication.NetworkNode import NetworkNode
-from src.core.TeleContext import TeleContext
 from src.actor.TeleCarlaActor import TeleCarlaActor
 
 

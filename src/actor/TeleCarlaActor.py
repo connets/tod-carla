@@ -1,4 +1,3 @@
-from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.communication.NetworkNode import NetworkNode
 

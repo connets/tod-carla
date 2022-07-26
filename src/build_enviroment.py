@@ -4,10 +4,9 @@ from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
 
-from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
+from src.carla_omnet.CarlaOmnetSimulator import CarlaOmnetManager
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector
-from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 from src.actor.InfoSimulationActor import PeriodicDataCollectorActor
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.communication.NetworkChannel import TODNetworkChannel, NetworkChannel

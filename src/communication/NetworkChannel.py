@@ -1,8 +1,6 @@
 import re
-from abc import ABC, abstractmethod
+from abc import ABC
 
-from lib.carla_omnet.CarlaOmnetManager import CarlaOmnetManager
-from src.core import TeleEvent
 from src.core.TeleEvent import tele_event, EventType
 from src.utils.decorators import preconditions
 

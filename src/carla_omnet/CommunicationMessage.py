@@ -3,6 +3,14 @@ import enum
 import json
 
 
+class OMNeTMessage(abc.ABC):
+    ...
+
+
+class InitOMNeTMessage(OMNeTMessage):
+    ...
+
+
 class CoSimulationAnswer(abc.ABC):
     def to_json(self):
         return json.dumps(self.__dict__).encode("utf-8")
