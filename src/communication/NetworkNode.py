@@ -13,14 +13,10 @@ class NetworkNode(TeleActor):
         super().__init__()
         # self._network_delay_manager = NetworkChannel()
         self._channels: List[NetworkChannel] = []
-        self._network_context = None
 
     def add_channel(self, channel):
         channel.bind(self)
         self._channels.append(channel)
-
-    def set_network_context(self, network_context):
-        self._network_context = network_context
 
     def send_message(self, network_message):
         for channel in self._channels:
@@ -36,5 +32,5 @@ class NetworkNode(TeleActor):
     @preconditions('_tele_context')
     def start(self):
         for channel in self._channels:
-            channel.start(self._network_context)
+            channel.start(self._tele_context)
         super(NetworkNode, self).start()

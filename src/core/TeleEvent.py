@@ -10,7 +10,7 @@ class EventType(Enum):
 def tele_event(name, event_type: EventType = EventType.GENERAL, log=True):
     def tele_event_aux(f):
         f.name_event = name
-        f.type_event = event_type
+        f.event_type = event_type
         f.log_event = log
         return f
 

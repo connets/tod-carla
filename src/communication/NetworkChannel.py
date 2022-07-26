@@ -11,6 +11,7 @@ class NetworkChannel(ABC):
     def __init__(self, destination_node):
         self.destination_node = destination_node
         self._binded = False
+        self._tele_context = None
 
     def bind(self, source_node):
         self._binded = True
@@ -23,11 +24,15 @@ class NetworkChannel(ABC):
 
         return network_event
 
-    @abstractmethod
-    def send(self, msg):
-        ...
+    @preconditions('_binded', valid=lambda x: x)
+    def start(self, tele_context):
+        self._tele_context = tele_context
 
-    @abstractmethod
+    @preconditions('_tele_context')
+    def send(self, msg):
+        network_event = self._create_event(msg)
+        self._tele_context.schedule(network_event, None)
+
     def quit(self):
         ...
 
@@ -38,12 +43,9 @@ class TODNetworkChannel(NetworkChannel):
         self._distr_func = distr_func
         self._interval = interval
         self._delay = distr_func()
-        self._binded = False
-        self._tele_context = None
 
-    @preconditions('_binded', valid=lambda x: x)
     def start(self, tele_context):
-        self._tele_context = tele_context
+        super(TODNetworkChannel, self).start(tele_context)
 
         @tele_event('change_delay_network_channel-' + str(id(self)))
         def change_delay():
@@ -56,28 +58,6 @@ class TODNetworkChannel(NetworkChannel):
     def send(self, msg):
         network_event = self._create_event(msg)
         self._tele_context.schedule(network_event, self._delay)
-
-    def quit(self):
-        ...
-
-
-class CarlaOmnetNetworkChannel(NetworkChannel):
-    def __init__(self, destination_node):
-        super().__init__(destination_node)
-        self._binded = False
-        self._carla_omnet_manager = None
-
-    @preconditions('_binded', valid=lambda x: x)
-    def start(self, carla_omnet_manager):
-        self._carla_omnet_manager = carla_omnet_manager
-
-    def bind(self, source_node):
-        self._binded = True
-
-    @preconditions('_carla_omnet_manager')
-    def send(self, msg):
-        network_event = self._create_event(msg)
-        self._carla_omnet_manager.send_message(network_event)
 
     def quit(self):
         ...

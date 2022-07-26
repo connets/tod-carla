@@ -13,7 +13,8 @@ from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
 from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
-from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian
+from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian, TODTeleCarlaVehicle, \
+    CarlaOmnetTeleCarlaVehicle
 from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
@@ -22,7 +23,7 @@ import src.build_enviroment as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils
-from src.core.Simulator import TODSimulator, Simulator
+from src.core.TeleSimulator import TeleSimulator
 
 
 def main(simulation_conf, scenario_conf):
@@ -60,7 +61,8 @@ def main(simulation_conf, scenario_conf):
     player_attrs = {'role_name': 'hero'}
     # start_transform.location.x, start_transform.location.y, start_transform.location.z = 376.449982, 87.529510, 0.3
 
-    player = TeleCarlaVehicle(scenario_conf['player']['refresh_interval'],
+    vehicle_class = TODTeleCarlaVehicle if simulation_conf['network']['type'] == 'tod' else CarlaOmnetTeleCarlaVehicle
+    player = vehicle_class(scenario_conf['player']['refresh_interval'],
                               scenario_conf['player']['speed_limit'],
                               scenario_conf['player']['model'],
                               player_attrs,
@@ -118,7 +120,7 @@ def main(simulation_conf, scenario_conf):
     try:
         status_code = tele_sim.do_simulation()
     except Exception as e:
-        status_code = Simulator.FinishCode.TIME_LIMIT
+        status_code = TeleSimulator.FinishCode.TIME_LIMIT
         raise e
     finally:
         build_enviroment.destroy_sim_world(client, sim_world)

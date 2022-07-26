@@ -2,9 +2,8 @@ import itertools
 
 import zmq
 import json
-from types import SimpleNamespace
 
-from lib.carla_omnet.CommunicationMessage import CommunicationMessage, SimulationStepRequest
+from lib.carla_omnet.CommunicationMessage import *
 
 
 class CarlaOmnetError(RuntimeError):
@@ -24,58 +23,102 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
 
 
 class CarlaOmnetManager:
-    _id_iter = itertools.count(0)
+    _id_iter = itertools.count(1000)
 
     def __init__(self, protocol, port, connection_timeout, timeout, vehicle_actual_position):
-        self.step_listener = None
-        self._vehicle_actual_position = vehicle_actual_position
+        self._protocol = protocol
+        self._port = port
+        self._connection_timeout = connection_timeout
+        self._timeout = timeout
+        self._vehicle_actual_location = vehicle_actual_position
+        self.timestamp = 0
+        self._message_to_send = None  # TODO change here for multiple-messages
+        self._default_actions = dict()
+        self._actions_to_do = dict()
+        self._last_received_request = None
 
-        self._messages_to_send = set()
-        self._queued_messages = dict()
+    def _receive_data_from_omnet(self):
+        message = self.socket.recv()
+        json_data = json.loads(message.decode("utf-8"))
+        request = CoSimulationRequest.from_json(json_data)
+        self.timestamp = request.timestamp
+        return request
 
+    def _send_data_to_omnet(self, answer: CoSimulationAnswer):
+        self.socket.send(answer.to_json())
+
+    def _connect(self, current_timestamp):
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
-        self.socket.bind(f"{protocol}://*:{port}")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = connection_timeout * 1000
+        self.socket.bind(f"{self._protocol}://*:{self._port}")
+        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 100000)
 
         print("Waiting for connection...")
-        handshake = self._receive_data()
-        print(handshake)
-        self.socket.send(b"Hello")
+        handshake = self._receive_data_from_omnet()
+        if not isinstance(handshake, HandshakeRequest):
+            raise RuntimeError("Error in connection")
 
+        self._send_data_to_omnet(HandshakeAnswer(current_timestamp))
         print("Connected!")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = timeout * 1000
+        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._timeout * 500000)
 
-    def _receive_data(self):
-        message = self.socket.recv()
-        return json.loads(message.decode("utf-8"))
+    def start(self, current_timestamp):
+        self._connect(current_timestamp)
 
-    def start(self, step_listener=None):
-        self.step_listener = step_listener
-        self._do_simulation()
+    def do_omnet_step(self):
+        if self._last_received_request is not None:
+            # TODO change to allow multi-messages as answer
+            if self._message_to_send is not None:
+                msg_id = next(self._id_iter)
+                self._actions_to_do[msg_id] = self._message_to_send
+                answer = ReceiveMessageAnswer(msg_id, 100)
+            else:
+                answer = ReceiveMessageAnswer(-1, -1)
+            self._message_to_send = None
+            self._send_data_to_omnet(answer)
 
-    def _do_simulation(self):
-        message = self._receive_data()
-        if message.type == 'simulation_step':
-            if self.step_listener is not None:
-                self.step_listener(message.timestamp)
-        elif message.type == 'receive_msg':
-            ...
-        else:
-            ...
-        for msg in self._messages_to_send:
-            msg_id = next(self._id_iter)
-            self._queued_messages[msg_id] = msg
-        self._messages_to_send.clear()
+        action = None
+        while action is None:
+            self._last_received_request = request = self._receive_data_from_omnet()
+            if isinstance(request, StepRequest):
+                self._send_data_to_omnet(StepAnswer(self._vehicle_actual_location()))
+            elif isinstance(request, ReceiveMessageRequest):
+                action = self._actions_to_do.get(request.msg_id, self._default_actions.get(request.msg_id))
+                self._actions_to_do.pop(request.msg_id, None)
+            else:
+                raise RuntimeError("Message don't recognize", request.type)
 
-        self.socket.send(b"Hello")
+        return action
 
-    def send_message(self, message):
-        self._messages_to_send.add(message)
+    def has_scheduled_events(self):
+        return
+
+    def add_default_action(self, id, action):
+        self._default_actions[id] = action
+
+    def schedule_message(self, message):
+        self._message_to_send = message
 
 
 #  Socket to talk to server
 if __name__ == '__main__':
-    tmp = '{"timestamp": 2345}'
-    obj = SimulationStepRequest.from_json(tmp)
-    print(obj.timestamp)
+    manager = CarlaOmnetManager('tcp', 5555, 100, 20, lambda: "2")
+
+
+    def car_send_msg():
+        print('**** CAR send msg')
+        manager.schedule_message(server_receive_msg)
+
+
+    def server_receive_msg():
+        print('**** SERVER received msg')
+        manager.schedule_message(car_receive_msg)
+
+
+    def car_receive_msg():
+        print('**** CAR received msg')
+
+
+    manager.add_default_action(1, car_send_msg)
+
+    manager.start(lambda ts: print("updated with timestamp", ts))
