@@ -4,11 +4,29 @@ import json
 
 
 class OMNeTMessage(abc.ABC):
-    ...
+    def __init__(self, timestamp, payload):
+        self.timestamp = timestamp
+        self.payload = payload
 
 
 class InitOMNeTMessage(OMNeTMessage):
-    ...
+    MESSAGE_TYPE = "INIT"
+
+
+class SimulationStepOMNetMessage(OMNeTMessage):
+    MESSAGE_TYPE = 'SIMULATION_STEP'
+
+
+class VehicleStatusOMNetMessage(OMNeTMessage):
+    MESSAGE_TYPE = 'VEHICLE_STATUS_UPDATE'
+
+
+class ComputeInstructionOMNeTMessage(OMNeTMessage):
+    MESSAGE_TYPE = 'COMPUTE_INSTRUCTION'
+
+
+class ApplyInstructionOMNeTMessage(OMNeTMessage):
+    MESSAGE_TYPE = 'APPLY_INSTRUCTION'
 
 
 class CoSimulationAnswer(abc.ABC):

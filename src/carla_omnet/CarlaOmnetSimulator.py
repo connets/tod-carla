@@ -25,30 +25,48 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
 
 class MessageHandlerState(ABC):
     def __init__(self, carla_omnet_manager):
-        self._carla_omnet_manager = carla_omnet_manager
+        self._manager = carla_omnet_manager
 
-    @abstractmethod
     def handle_message(self, message: OMNeTMessage):
-        ...
+        RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
+                    I don't know how to handle {message.__class__.__name__} message""")
 
 
 class StartMessageHandlerState(MessageHandlerState):
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, InitOMNeTMessage):
+            self._init_world(message.payload['cars'], message.payload['agents'], message.payload['other_actors'])
+            return None  # HandshakeAnswer(current_timestamp)
+        else:
+            super(StartMessageHandlerState, self).handle_message(message)
+
+    def _init_world(self, cars, agents, other_actors):
+        print(cars, agents, other_actors)
+
+
+class RunningMessageHandlerState(MessageHandlerState):
+
+    def handle_message(self, message: OMNeTMessage):
+        if isinstance(message, InitOMNeTMessage):
+            ...
+        if isinstance(message, InitOMNeTMessage):
             ...
         else:
-            RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
-            I don't know how to handle {message.__class__.__name__} message""")
+            super().handle_message(message)
 
 
 class CarlaOMNeTManager(ABC):
+    _id_iter = itertools.count(1000)
 
-    def __init__(self):
-        self._socket = None
-        self._message_handler_state = None
-
-        self.set_message_handler_state(StartMessageHandlerState)
+    def __init__(self, protocol, port, connection_timeout, timeout):
+        self._protocol = protocol
+        self._port = port
+        self._connection_timeout = connection_timeout
+        self._timeout = timeout
+        self.timestamp = 0
+        self.socket = None
+        self._message_handler_state: MessageHandlerState = None
 
     def set_message_handler_state(self, msg_handler_cls):
         self._message_handler_state = msg_handler_cls(self)
@@ -58,17 +76,30 @@ class CarlaOMNeTManager(ABC):
         ...
 
     def _receive_data_from_omnet(self):
-        message = self._socket.recv()
+        message = self.socket.recv()
         json_data = json.loads(message.decode("utf-8"))
         request = CoSimulationRequest.from_json(json_data)
         self.timestamp = request.timestamp
         return request
 
     def _send_data_to_omnet(self, answer: CoSimulationAnswer):
-        self._socket.send(answer.to_json())
+        self.socket.send(answer.to_json())
+
+    def _start_server(self):
+        context = zmq.Context()
+        self.socket = context.socket(zmq.REP)
+        self.socket.bind(f"{self._protocol}://*:{self._port}")
+        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 1000)
+
+    def start_simulation(self):
+        self._start_server()
+        self.set_message_handler_state(StartMessageHandlerState)
+        while True:
+            message = self._receive_data_from_omnet()
+            self._message_handler_state.handle_message(message)
 
 
-class CarlaOmnetManager:
+class CarlaOmnetManagerOld:
     _id_iter = itertools.count(1000)
 
     def __init__(self, protocol, port, connection_timeout, timeout):
@@ -137,23 +168,6 @@ class CarlaOmnetManager:
 
 #  Socket to talk to server
 if __name__ == '__main__':
-    manager = CarlaOmnetManager('tcp', 5555, 100, 20, lambda: "2")
+    manager = CarlaOMNeTManager('tcp', 5555, 100, 20)
+    manager.start_simulation()
 
-
-    def car_send_msg():
-        print('**** CAR send msg')
-        manager.schedule_message(server_receive_msg)
-
-
-    def server_receive_msg():
-        print('**** SERVER received msg')
-        manager.schedule_message(car_receive_msg)
-
-
-    def car_receive_msg():
-        print('**** CAR received msg')
-
-
-    manager.add_default_action(1, car_send_msg)
-
-    manager.start(lambda ts: print("updated with timestamp", ts))
