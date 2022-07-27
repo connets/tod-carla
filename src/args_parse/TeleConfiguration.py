@@ -11,17 +11,15 @@ from src.utils.decorators import DecoratorSingleton
 @DecoratorSingleton
 class TeleConfiguration(dict):
 
-    def __init__(self, carla_simulation_config_path, carla_scenario_config_path):
+    def __init__(self, carla_simulation_config_path=None):
         super().__init__()
-        self['carla_simulation_path'] = carla_simulation_config_path
-        self['carla_scenario_path'] = carla_scenario_config_path
-        self._parse()
+        if carla_simulation_config_path is not None:
+            self['carla_server_configuration_path'] = carla_simulation_config_path
+            self._parse()
 
     def _parse(self):
-        self['carla_simulation_config_readable'] = self._parse_carla_server_args(self['carla_simulation_path'])
-        self['carla_scenario_config_readable'] = self._parse_carla_simulation_args(self['carla_scenario_path'])
-        self['carla_simulation_config'] = parser_utils.parse_unit_measurement(self['carla_simulation_config_readable'])
-        self['carla_scenario_config'] = parser_utils.parse_unit_measurement(self['carla_scenario_config_readable'])
+        self['carla_server_configuration_readable'] = self._parse_carla_server_args(self['carla_configuration_path'])
+        self['carla_server_configuration'] = parser_utils.parse_unit_measurement(self['carla_configuration_readable'])
 
     def save_config(self, simulation_file_out_path, scenario_file_out_path, readable=True):
         if readable:
@@ -36,7 +34,7 @@ class TeleConfiguration(dict):
         with open(scenario_file_out_path, 'w') as outfile:
             yaml.dump(scenario_config, outfile, default_flow_style=False)
 
-    def _parse_carla_server_args(self, configuration_path, args=None):
+    def _parse_carla_server_args_tmp(self, configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
         if self.config_file is not None:
             with open(self.config_file, 'r') as stream:
@@ -44,26 +42,12 @@ class TeleConfiguration(dict):
                 if config_vars_complete is None: config_vars_complete = {}
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
-
     def _parse_carla_server_args(self, configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
         parser.add('--host', metavar='H', help='IP of the host server', required=True)
         parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)
         parser.add('--render', help='show display', default=False, action='store_true')
-        parser.add('--camera.width', metavar='V', type=int, help='model of other vehicles', default=1280)
-        parser.add('--camera.height', metavar='V', type=int, help='model of other vehicles', default=720)
-        parser.add('--simulation_time_step', metavar='T', help='time-step, mandatory for synchronicity simulation')
-        parser.add('--output_results_sampling', metavar='T', help='interval for save results')
-        parser.add('--seed', metavar='S', type=int, default=int(time.time()), help='simulation seed')
-
-        parser.add('--network.type', help='network manager type')
-        parser.add('--network.backhaul.uplink_extra_delay', help='backhaul uplink extra delay')
-        parser.add('--network.backhaul.downlink_extra_delay', help='backhaul downlink extra delay')
-        parser.add('--network.protocol', help='protocol used for the co-simulation')
-        parser.add('--network.port', help='port used for the co-simulation')
-        parser.add('--network.connection_timeout', help='initial connection timeout used for the co-simulation')
-        parser.add('--network.timeout', help='timeout used for the co-simulation')
 
         parser.add('--output.log', type=str, help='Log output directory', required=True)
         parser.add('--output.results', type=str, help='Result output directory', required=True)
@@ -78,7 +62,6 @@ class TeleConfiguration(dict):
         parser.add('--player.speed_limit', metavar='V', help='speed limit of vehicle player ', default=None)
 
         parser.add('--time_limit', metavar='V', help='time limit of scenario simulation ', default=None)
-
 
         parser.add('--bot.vehicle_model', metavar='V', help='model of other vehicles', required=True)
 

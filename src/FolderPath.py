@@ -6,6 +6,9 @@ class FolderPath:
     PROJECT_PATH = ''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-2]))
     SRC_PATH = PROJECT_PATH + 'src/'
 
+    CONFIGURATION_PATH = PROJECT_PATH + 'configuration/'
+    CONFIGURATION_ACTORS = CONFIGURATION_PATH + 'actors/'
+    CONFIGURATION_AGENTS = CONFIGURATION_PATH + 'agents/'
 
     OUTPUT_RESULTS_PATH = None
     OUTPUT_LOG_PATH = None
