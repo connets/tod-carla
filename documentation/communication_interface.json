@@ -3,22 +3,18 @@
   "payload": {
     "carla_configuration": "yaml_path",
     "carla_timestep": "double timestep",
-    "vehicles": [
+    "actors": [
       {
         "vehicle_id": "omnet_module_name",
         "vehicle_type": "yaml_path",
-        "agent": {
+        "agents": [{
           "agent_type": "yaml_path",
           "agent_id": "omnet_module_name"
-        }
-      }
-    ],
-    "others_actor": [
-      {
-        "actor_id": "omnet_module_name"
+        }]
       }
     ]
-  }
+  },
+  "timestamp": "double_timestamp"
 }
 
 
@@ -29,9 +25,14 @@
   }
 }
 
+
+
+
+
 {
   "message_type": "SIMULATION_STEP",
   "payload": {
+    "timestep": "timestep"
   },
   "timestamp": 0
 }
@@ -63,9 +64,12 @@
 
 {
   "message_type": "VEHICLE_STATUS_UPDATE",
-  "node_id": "id",
+  "payload": {
+    "node_id": "id"
+  },
   "timestamp": "timestamp"
 }
+
 {
   "message_type": "VEHICLE_STATUS",
   "payload": {
@@ -80,7 +84,8 @@
   "payload": {
     "node_id": "id",
     "status_id": "status_id"
-  }
+  },
+  "timestamp": "timestamp"
 }
 {
   "message_type": "INSTRUCTION",
