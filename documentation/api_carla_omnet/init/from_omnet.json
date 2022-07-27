@@ -1,0 +1,21 @@
+{
+  "message_type": "INIT",
+  "timestamp": 0,
+  "payload": {
+    "carla_configuration": "configuration/default_simulation.yaml",
+    "carla_timestep": 5,
+    "seed": 11120,
+    "actors": [
+      {
+        "vehicle_id": "omnet_module_car_0",
+        "vehicle_type": "configuration/actor_configurations/simple_vehicle.yaml",
+        "agents": [
+          {
+            "agent_type": "configuration/agent_configurations/simple_agent.yaml",
+            "agent_id": "omnet_module_name"
+          }
+        ]
+      }
+    ]
+  }
+}

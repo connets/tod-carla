@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import zmq
 import json
 
+from src.build_enviroment import EnvironmentBuilder
 from src.carla_omnet.CommunicationMessage import *
 
 
@@ -36,8 +37,13 @@ class StartMessageHandlerState(MessageHandlerState):
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, InitOMNeTMessage):
-            self._init_world(message.payload['cars'], message.payload['agents'], message.payload['other_actors'])
-            return None  # HandshakeAnswer(current_timestamp)
+            payload = message.payload
+            print(payload, message.timestamp)
+            world_builder = EnvironmentBuilder(payload['seed'], payload['carla_configuration'],
+                                               payload['carla_timestep'], payload['actors'])
+            world_builder.build()
+            self._init_world(message.payload['actors'])
+            return HandshakeAnswer(0)
         else:
             super(StartMessageHandlerState, self).handle_message(message)
 
@@ -71,18 +77,14 @@ class CarlaOMNeTManager(ABC):
     def set_message_handler_state(self, msg_handler_cls):
         self._message_handler_state = msg_handler_cls(self)
 
-    @abstractmethod
-    def handle_message(self):
-        ...
-
     def _receive_data_from_omnet(self):
         message = self.socket.recv()
         json_data = json.loads(message.decode("utf-8"))
-        request = CoSimulationRequest.from_json(json_data)
+        request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
         return request
 
-    def _send_data_to_omnet(self, answer: CoSimulationAnswer):
+    def _send_data_to_omnet(self, answer):
         self.socket.send(answer.to_json())
 
     def _start_server(self):
@@ -90,13 +92,15 @@ class CarlaOMNeTManager(ABC):
         self.socket = context.socket(zmq.REP)
         self.socket.bind(f"{self._protocol}://*:{self._port}")
         self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 1000)
+        print("server running")
 
     def start_simulation(self):
         self._start_server()
         self.set_message_handler_state(StartMessageHandlerState)
         while True:
             message = self._receive_data_from_omnet()
-            self._message_handler_state.handle_message(message)
+            answer = self._message_handler_state.handle_message(message)
+
 
 
 class CarlaOmnetManagerOld:
@@ -170,4 +174,3 @@ class CarlaOmnetManagerOld:
 if __name__ == '__main__':
     manager = CarlaOMNeTManager('tcp', 5555, 100, 20)
     manager.start_simulation()
-

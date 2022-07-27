@@ -38,6 +38,15 @@ class TeleConfiguration(dict):
 
     def _parse_carla_server_args(self, configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
+        if self.config_file is not None:
+            with open(self.config_file, 'r') as stream:
+                config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
+                if config_vars_complete is None: config_vars_complete = {}
+        return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
+
+
+    def _parse_carla_server_args(self, configuration_path, args=None):
+        parser = ConfigurationParser(configuration_path)
         parser.add('--host', metavar='H', help='IP of the host server', required=True)
         parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)

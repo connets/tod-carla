@@ -3,6 +3,7 @@
   "payload": {
     "carla_configuration": "yaml_path",
     "carla_timestep": "double timestep",
+    "seed": 0,
     "actors": [
       {
         "vehicle_id": "omnet_module_name",

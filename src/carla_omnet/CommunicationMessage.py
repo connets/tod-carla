@@ -4,9 +4,21 @@ import json
 
 
 class OMNeTMessage(abc.ABC):
+
     def __init__(self, timestamp, payload):
         self.timestamp = timestamp
         self.payload = payload
+
+    @classmethod
+    def from_json(cls, j):
+        classes = cls.__subclasses__()
+        msg_type = j['message_type']
+        del j['message_type']
+        for msg_cls in classes:
+            if msg_cls.MESSAGE_TYPE == msg_type:
+                return msg_cls(**j)
+
+        raise RuntimeError(f"Message type {msg_type} not recognized")
 
 
 class InitOMNeTMessage(OMNeTMessage):
@@ -29,9 +41,30 @@ class ApplyInstructionOMNeTMessage(OMNeTMessage):
     MESSAGE_TYPE = 'APPLY_INSTRUCTION'
 
 
-class CoSimulationAnswer(abc.ABC):
+class CarlaMessage(abc.ABC):
     def to_json(self):
-        return json.dumps(self.__dict__).encode("utf-8")
+        res = self.__dict__.copy()
+        res['message_type'] = self.__class__.MESSAGE_TYPE
+        return json.dumps(res).encode("utf-8")
+
+
+class InitCompletedCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'INIT_COMPLETED'
+
+    def __init__(self, payload):
+        self.payload = payload
+
+
+if __name__ == '__main__':
+    tmp = dict()
+    tmp['initial_timestamp'] = 100.34
+
+    i = InitCompletedCarlaMessage(tmp)
+    print(i.to_json())
+
+
+class CoSimulationAnswer(abc.ABC):
+    ...
 
 
 class CoSimulationRequest:
@@ -41,10 +74,10 @@ class CoSimulationRequest:
     @staticmethod
     def from_json(j):
         classes = {HandshakeRequest, StepRequest, ReceiveMessageRequest}
-        msg_type = j['request_type']
+        msg_type = j['message_type']
         del j['request_type']
         for cls in classes:
-            if cls.request_type == msg_type:
+            if cls.message_type == msg_type:
                 return cls(**j)
 
         raise RuntimeError(f"Message type {msg_type} not recognized")

@@ -2,7 +2,7 @@ from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSenso
 from src.communication.NetworkNode import NetworkNode
 
 
-class TeleCarlaActor(NetworkNode):
+class TeleCarlaActor:
     def __init__(self):
         super().__init__()
 
@@ -24,12 +24,13 @@ import lib.camera_visibility.carla_vehicle_annotator as cva
 from src.utils.decorators import preconditions
 
 
+
+
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, sending_interval, speed_limit, actor_filter='vehicle.tesla.model3', attrs=None,
-                 start_transform=None, modify_vehicle_physics=False):
-        super().__init__()
+    def __init__(self, speed_limit, actor_id, actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None,
+                 modify_vehicle_physics=False):
+
         self._tele_world = None
-        self._sending_interval = sending_interval
         self._speed_limit = speed_limit if speed_limit != 'auto' else None
         if attrs is None:
             attrs = dict()
@@ -138,17 +139,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     def done(self, timestamp):
         return all(sensor.done(timestamp) for sensor in self.sensors)
-
-
-class TODTeleCarlaVehicle(TeleCarlaVehicle):
-
-    def run(self):
-        @tele_event('sending_info_state')
-        def daemon_state():
-            self._send_message()
-            self._tele_context.schedule(daemon_state, self._sending_interval)
-
-        daemon_state()
 
 
 class CarlaOmnetTeleCarlaVehicle(TeleCarlaVehicle):
