@@ -9,3 +9,5 @@ model: vehicle.tesla.model3
 camera:
   width: 1280
   height: 720
+
+

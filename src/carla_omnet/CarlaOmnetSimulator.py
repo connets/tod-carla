@@ -39,7 +39,7 @@ class StartMessageHandlerState(MessageHandlerState):
         if isinstance(message, InitOMNeTMessage):
             payload = message.payload
             print(payload, message.timestamp)
-            world_builder = EnvironmentBuilder(payload['seed'], payload['carla_configuration'],
+            world_builder = EnvironmentBuilder(payload['seed'], payload['carla_world_configuration'],
                                                payload['carla_timestep'], payload['actors'])
             world_builder.build()
             self._init_world(message.payload['actors'])

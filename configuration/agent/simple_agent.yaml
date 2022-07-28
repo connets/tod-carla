@@ -1,2 +1,3 @@
 behavior: normal
 sampling_resolution: 10m
+time_limit: 50s

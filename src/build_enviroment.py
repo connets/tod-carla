@@ -8,6 +8,7 @@ from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController
 from src.actor.TeleCarlaActor import TeleCarlaVehicle
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
 from src.actor.TeleOperator import TeleOperator
+from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils.Hud import HUD
 import pygame
@@ -17,10 +18,16 @@ from src.utils.decorators import preconditions
 
 class EnvironmentBuilder:
 
-    def __init__(self, seed, carla_conf, timestep, vehicles_conf):
+    def __init__(self, seed, carla_world_conf, timestep, actors_conf):
         self.seed = seed
-        self._carla_conf = carla_conf
-        self._vehicles_conf = vehicles_conf
+
+        configuration = TeleConfiguration.instance
+        self._carla_server_conf = configuration['carla_server_configuration']
+        self._carla_world_conf = configuration.parse_world_conf(carla_world_conf)
+        self._carla_actors_conf = configuration.parse_actor_conf(carla_world_conf)
+        self.render = self._carla_server_conf['render']
+
+        self.clock = pygame.time.Clock()
         self.timestep = timestep
 
         self.vehicles = dict()
@@ -28,10 +35,7 @@ class EnvironmentBuilder:
         self.other_actors = dict()
         self.tick_listeners = set()
 
-        self.clock = pygame.time.Clock()
         self.carla_map = self.tele_world = None
-
-        self.render = carla_conf['render']
 
     def build(self):
         self._create_tele_world()
@@ -40,8 +44,9 @@ class EnvironmentBuilder:
         ...
 
     def _create_tele_world(self):
-        host, port, timeout, world = self._carla_conf['host'], self._carla_conf['port'], \
-                                     self._carla_conf['timeout'], self._carla_conf['world']
+        host, port, timeout = self._carla_server_conf['host'], self._carla_server_conf['port'], \
+                              self._carla_server_conf['timeout']
+        world = self._carla_world_conf['world']
 
         client: libcarla.Client = carla.Client(host, port)
         client.set_timeout(timeout)
@@ -99,7 +104,7 @@ class EnvironmentBuilder:
                 controller = BehaviorAgentTeleWorldAdapterController(agent_type['behavior'],
                                                                      agent_type['sampling_resolution'],
                                                                      start_position, end_location)
-                tele_operator = TeleOperator(controller, self._carla_conf['time_limit'])
+                tele_operator = TeleOperator(controller, self._carla_world_conf['time_limit'])
                 controller.add_player_in_world(vehicle)
                 self.operators[agent_id] = tele_operator
 
