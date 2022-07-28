@@ -1,33 +1,43 @@
-from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
-from src.communication.NetworkNode import NetworkNode
-
-
-class TeleCarlaActor:
-
-    def spawn_in_the_world(self, tele_world):
-        ...
-
-
+import abc
 import random
 import sys
+from abc import abstractmethod
 
 import carla
 from carla import ActorBlueprint, VehicleControl
 
+from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.core.TeleEvent import tele_event
 from src.communication.TeleVehicleState import TeleVehicleState
-from src.communication.NetworkMessage import InfoUpdateNetworkMessage
+from src.communication.NetworkMessage import InfoUpdateMessage
 import lib.camera_visibility.carla_vehicle_annotator as cva
 
 from src.utils.decorators import preconditions
 
 
+class TeleCarlaActor(abc.ABC):
+
+    def __init__(self):
+        self.model = None
+
+    @abstractmethod
+    def spawn_in_the_world(self, tele_world):
+        ...
+
+    @abstractmethod
+    def generate_status(self):
+        ...
+
+    @preconditions('model')
+    def __getattr__(self, *args):
+        return self.model.__getattribute__(*args)
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
     def __init__(self, speed_limit, actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None,
                  modify_vehicle_physics=False):
 
+        super().__init__()
         self._tele_world = None
         self._speed_limit = speed_limit if speed_limit != 'auto' else None
         if attrs is None:
@@ -35,7 +45,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._actor_filter = actor_filter
         self._attrs = attrs
         self._start_transform = start_transform
-        self.model = None
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
         self.sensors = set()
@@ -43,7 +52,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def get_speed_limit(self):
         return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit() / 3.6
 
-    def _send_message(self):
+    def generate_status(self):
         camera_sensor = self.get_sensor_by_class(TeleCarlaCameraSensor)
         lidar_sensor = self.get_sensor_by_class(TeleCarlaLidarSensor)
         lidar_image = lidar_sensor.image if lidar_sensor is not None else None
@@ -61,20 +70,13 @@ class TeleCarlaVehicle(TeleCarlaActor):
             if pedestrian_raw:
                 pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
                 visible_pedestrians = pedestrians_res['vehicles']
-        self.send_message(InfoUpdateNetworkMessage(
-            TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles,
-                                                    visible_pedestrians),
-            timestamp=self._tele_context.timestamp))
+        return TeleVehicleState.generate_vehicle_state(snapshot.timestamp, self, visible_vehicles, visible_pedestrians)
 
     def get_sensor_by_class(self, cls):
         return next(iter([s for s in self.sensors if isinstance(s, cls)]), None)
 
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)
-
-    @preconditions('model')
-    def __getattr__(self, *args):
-        return self.model.__getattribute__(*args)
 
     def spawn_in_the_world(self, tele_world):
         self._tele_world = tele_world
@@ -149,7 +151,6 @@ class TeleCarlaPedestrian(TeleCarlaActor):
         super().__init__()
         self._initial_location = initial_location
         self._tele_world = None
-        self.model = None
 
     def spawn_in_the_world(self, tele_world):
         self._tele_world = tele_world
@@ -162,3 +163,6 @@ class TeleCarlaPedestrian(TeleCarlaActor):
         response = tele_world.apply_sync_command(carla.command.SpawnActor(blueprint, spawn_point))[0]
 
         self.model = sim_world.get_actor(response.actor_id)
+
+    def generate_status(self):
+        pass

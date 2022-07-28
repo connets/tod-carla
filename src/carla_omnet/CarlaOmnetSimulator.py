@@ -1,6 +1,7 @@
 import itertools
 from abc import ABC, abstractmethod
 
+import carla
 import zmq
 import json
 
@@ -35,8 +36,8 @@ class CarlaOMNeTManager(ABC):
         self._connection_timeout = connection_timeout
         self._timeout = timeout
 
-        self._tele_world: TeleWorld = None
-        self._actors = self._operators = None
+        self.tele_world: TeleWorld = None
+        self.actors = self._operators = None
         self.timestamp = 0
         self.socket = None
         self._message_handler_state: MessageHandlerState = None
@@ -88,27 +89,44 @@ class StartMessageHandlerState(MessageHandlerState):
                                                payload['carla_timestep'], payload['actors'])
             world_builder.build()
 
-            self._manager._actors = world_builder.actors.copy()
+            self._manager.actors = world_builder.actors.copy()
             self._manager._operators = world_builder.operators.copy()
-            self._manager._tele_world = world_builder.tele_world
+            self._manager.tele_world = world_builder.tele_world
 
             self._manager.set_message_handler_state(RunningMessageHandlerState)
 
-            return InitCompletedCarlaMessage(round(self._manager._tele_world.timestamp.elapsed_seconds, 9))
+            return InitCompletedCarlaMessage(round(self._manager.tele_world.timestamp.elapsed_seconds, 9))
         else:
             super(StartMessageHandlerState, self).handle_message(message)
 
 
 class RunningMessageHandlerState(MessageHandlerState):
 
+    def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
+        super().__init__(carla_omnet_manager)
+        self.status = dict()
+
     def handle_message(self, message: OMNeTMessage):
-        print("***********")
         if isinstance(message, SimulationStepOMNetMessage):
-            self._manager._tele_world.tick()
-            return InitCompletedCarlaMessage(round(self._manager._tele_world.timestamp.elapsed_seconds, 9))
+            self._manager.tele_world.tick()
+            payload = dict()
+            actors_payload = []
+            for actor_id, actor in self._manager.actors.items():
+                transorm: carla.Transform = actor.get_transform()
+                velocity: carla.Vector3D = actor.get_velocity()
+                actor_payload = dict()
+                actor_payload['actor_id'] = actor_id
+                actor_payload['position'] = [transorm.location.x, transorm.location.y, transorm.location.z]
+                actor_payload['rotation'] = [transorm.rotation.pitch, transorm.rotation.yaw, transorm.rotation.roll]
+                actor_payload['velocity'] = [velocity.x, velocity.y, velocity.z]
+                actors_payload.append(actor_payload)
+            payload['actors'] = actors_payload
+            return UpdatedPositionCarlaMessage(payload)
 
         elif isinstance(message, ActorStatusOMNetMessage):
-            ...
+            actor_id = message.payload['actor_id']
+            actor_status = self._manager.actors[actor_id].generate_status()
+
         elif isinstance(message, ComputeInstructionOMNeTMessage):
             ...
         elif isinstance(message, ApplyInstructionOMNeTMessage):

@@ -2,6 +2,11 @@ import abc
 import enum
 import json
 import re
+from typing import List
+
+import carla
+
+from src.actor.TeleCarlaActor import TeleCarlaActor
 
 
 class OMNeTMessage(abc.ABC):
@@ -56,6 +61,9 @@ class ApplyInstructionOMNeTMessage(OMNeTMessage):
 
 
 class CarlaMessage(abc.ABC):
+    def __init__(self, payload):
+        self.payload = payload
+
     def to_json(self):
         res = self.__dict__.copy()
         res['message_type'] = self.__class__.MESSAGE_TYPE
@@ -65,5 +73,14 @@ class CarlaMessage(abc.ABC):
 class InitCompletedCarlaMessage(CarlaMessage):
     MESSAGE_TYPE = 'INIT_COMPLETED'
 
-    def __init__(self, payload):
-        self.payload = payload
+
+class UpdatedPositionCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'UPDATED_POSITIONS'
+
+    @staticmethod
+    def generate_payload(actors : List[TeleCarlaActor]):
+        payload = dict()
+        for actor in actors:
+            t = actor.get_transform()
+
+
