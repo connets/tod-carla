@@ -14,13 +14,14 @@ def send_info(socket, t):
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://localhost:5555")
+socket.connect("tcp://localhost:1234")
 print("connected")
 
-req = read_json('documentation/api_carla_omnet/init/from_omnet.json')
-print(req)
-send_info(socket, req)
-message = socket.recv()
+for i in range(100):
+    req = read_json('documentation/api_carla_omnet/init/from_omnet.json')
+    send_info(socket, req)
+    message = socket.recv()
+    print(message)
 # print(f"Received reply  [ {message} ]")
 # while True:
 #     #  Wait for next request from client
