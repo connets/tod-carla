@@ -1,6 +1,7 @@
 import abc
 import enum
 import json
+import re
 
 
 class OMNeTMessage(abc.ABC):
@@ -11,12 +12,25 @@ class OMNeTMessage(abc.ABC):
 
     @classmethod
     def from_json(cls, j):
+        def remove_null_object(item: dict):
+            keys_to_remove = set()
+            for key, value in item.items():
+                if isinstance(value, dict):
+                    remove_null_object(value)
+                elif isinstance(value, str) and re.match(r'^\s*$', value):
+                    keys_to_remove.add(key)
+            for key in keys_to_remove: del item[key]
+
         classes = cls.__subclasses__()
         msg_type = j['message_type']
+        print(cls.__subclasses__())
         del j['message_type']
         for msg_cls in classes:
             if msg_cls.MESSAGE_TYPE == msg_type:
-                return msg_cls(**j)
+                instance = msg_cls(**j)
+                payload = instance.payload
+                remove_null_object(payload)
+                return instance
 
         raise RuntimeError(f"Message type {msg_type} not recognized")
 
@@ -53,65 +67,3 @@ class InitCompletedCarlaMessage(CarlaMessage):
 
     def __init__(self, payload):
         self.payload = payload
-
-
-if __name__ == '__main__':
-    tmp = dict()
-    tmp['initial_timestamp'] = 100.34
-
-    i = InitCompletedCarlaMessage(tmp)
-    print(i.to_json())
-
-
-class CoSimulationAnswer(abc.ABC):
-    ...
-
-
-class CoSimulationRequest:
-    def __init__(self, timestamp):
-        self.timestamp = timestamp
-
-    @staticmethod
-    def from_json(j):
-        classes = {HandshakeRequest, StepRequest, ReceiveMessageRequest}
-        msg_type = j['message_type']
-        del j['request_type']
-        for cls in classes:
-            if cls.message_type == msg_type:
-                return cls(**j)
-
-        raise RuntimeError(f"Message type {msg_type} not recognized")
-        # for key, value in json.loads(j):
-        #     setattr(self, key, value)
-
-
-class HandshakeRequest(CoSimulationRequest):
-    request_type = 'handshake'
-
-
-class HandshakeAnswer(CoSimulationAnswer):
-    def __init__(self, timestamp):
-        self.timestamp = timestamp
-
-
-class StepRequest(CoSimulationRequest):
-    request_type = 'simulation_step'
-
-
-class StepAnswer(CoSimulationAnswer):
-    def __init__(self, location):
-        self.location = location
-
-
-class ReceiveMessageRequest(CoSimulationRequest):
-    request_type = 'receive_msg'
-
-    def __init__(self, timestamp, msg_id):
-        super().__init__(timestamp)
-        self.msg_id = msg_id
-
-
-class ReceiveMessageAnswer(CoSimulationAnswer):
-    def __init__(self, msg_id, size):
-        self.msg_id = msg_id
-        self.size = size

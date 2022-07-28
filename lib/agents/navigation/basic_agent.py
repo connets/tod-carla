@@ -159,6 +159,7 @@ class BasicAgent(object):
             # start_location = self._start_location
             clean_queue = False
 
+        print("***** => ,", type(start_location))
         start_waypoint = self._map.get_waypoint(start_location)
         end_waypoint = self._map.get_waypoint(end_location)
 

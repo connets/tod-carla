@@ -2,7 +2,7 @@
   "message_type": "INIT",
   "timestamp": 0,
   "payload": {
-    "carla_world_configuration": "configuration/default_simulation.yaml",
+    "carla_world_configuration": "simple_curve_world",
     "carla_timestep": 0.05,
     "seed": 11120,
     "actors": [
@@ -12,7 +12,7 @@
         "route": "",
         "agents": [
           {
-            "agent_configuration": "configuration/agent_configurations/simple_agent.yaml",
+            "agent_configuration": "simple_agent",
             "agent_id": "omnet_module_name"
           }
         ]

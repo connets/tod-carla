@@ -19,8 +19,10 @@ class TeleConfiguration(dict):
             self._parse()
 
     def _parse(self):
-        self['carla_server_configuration_readable'] = self._parse_carla_server_args(self['carla_server_configuration_path'])
-        self['carla_server_configuration'] = parser_utils.parse_unit_measurement(self['carla_server_configuration_readable'])
+        self['carla_server_configuration_readable'] = self._parse_carla_server_args(
+            self['carla_server_configuration_path'])
+        self['carla_server_configuration'] = parser_utils.parse_unit_measurement(
+            self['carla_server_configuration_readable'])
 
     def save_config(self, simulation_file_out_path, scenario_file_out_path, readable=True):
         if readable:
@@ -48,17 +50,27 @@ class TeleConfiguration(dict):
     def _parse_yaml_file(file_path):
         with open(file_path, 'r') as stream:
             config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
-            return config_vars_complete
+
+            return parser_utils.parse_unit_measurement(config_vars_complete)
 
     def parse_actor_conf(self, configuration_name):
-        file_path = FolderPath.CONFIGURATION_ACTORS + configuration_name
+        file_path = FolderPath.CONFIGURATION_ACTOR + configuration_name + '.yaml'
+        return self._parse_yaml_file(file_path)
+
+    def parse_world_conf(self, configuration_name):
+        file_path = FolderPath.CONFIGURATION_WORLD + configuration_name + '.yaml'
         return self._parse_yaml_file(file_path)
 
     def parse_agent_conf(self, configuration_name):
-        file_path = FolderPath.CONFIGURATION_AGENTS + configuration_name
+        file_path = FolderPath.CONFIGURATION_AGENT + configuration_name + '.yaml'
+        return self._parse_yaml_file(file_path)
+
+    def parse_route_conf(self, configuration_name):
+        file_path = FolderPath.CONFIGURATION_ROUTE + configuration_name + '.yaml'
         return self._parse_yaml_file(file_path)
 
 
 if __name__ == '__main__':
-    TeleConfiguration('configuration/server/default_simulation.yaml')
-    print(TeleConfiguration.instance['carla_server_configuration_readable'])
+    # TeleConfiguration('configuration/server/default_simulation.yaml')
+    # print(TeleConfiguration.instance['carla_server_configuration_readable'])
+    ...

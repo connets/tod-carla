@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import zmq
 import json
 
+from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import EnvironmentBuilder
 from src.carla_omnet.CommunicationMessage import *
 
@@ -37,18 +38,19 @@ class StartMessageHandlerState(MessageHandlerState):
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, InitOMNeTMessage):
+            print("INIT")
             payload = message.payload
             print(payload, message.timestamp)
             world_builder = EnvironmentBuilder(payload['seed'], payload['carla_world_configuration'],
                                                payload['carla_timestep'], payload['actors'])
             world_builder.build()
-            self._init_world(message.payload['actors'])
-            return HandshakeAnswer(0)
+            print(world_builder.actors, world_builder.operators)
+            return InitCompletedCarlaMessage(world_builder.tele_world.timestamp.elapsed_seconds)
         else:
             super(StartMessageHandlerState, self).handle_message(message)
 
     def _init_world(self, cars, agents, other_actors):
-        print(cars, agents, other_actors)
+        ...
 
 
 class RunningMessageHandlerState(MessageHandlerState):
@@ -100,7 +102,7 @@ class CarlaOMNeTManager(ABC):
         while True:
             message = self._receive_data_from_omnet()
             answer = self._message_handler_state.handle_message(message)
-
+            self._send_data_to_omnet(answer)
 
 
 class CarlaOmnetManagerOld:
@@ -172,5 +174,6 @@ class CarlaOmnetManagerOld:
 
 #  Socket to talk to server
 if __name__ == '__main__':
-    manager = CarlaOMNeTManager('tcp', 5555, 100, 20)
+    TeleConfiguration('configuration/server/ubiquity.yaml')
+    manager = CarlaOMNeTManager('tcp', 1234, 100, 20)
     manager.start_simulation()

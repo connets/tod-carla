@@ -3,8 +3,6 @@ from src.communication.NetworkNode import NetworkNode
 
 
 class TeleCarlaActor:
-    def __init__(self):
-        super().__init__()
 
     def spawn_in_the_world(self, tele_world):
         ...
@@ -27,7 +25,7 @@ from src.utils.decorators import preconditions
 
 
 class TeleCarlaVehicle(TeleCarlaActor):
-    def __init__(self, speed_limit, actor_id, actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None,
+    def __init__(self, speed_limit, actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None,
                  modify_vehicle_physics=False):
 
         self._tele_world = None
@@ -83,9 +81,9 @@ class TeleCarlaVehicle(TeleCarlaActor):
         sim_world = tele_world.sim_world
         carla_map = tele_world.carla_map
         blueprint: ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(self._actor_filter))
-        if blueprint.has_attribute('color'):
-            color = random.choice(blueprint.get_attribute('color').recommended_values)
-            blueprint.set_attribute('color', color)
+        # if blueprint.has_attribute('color'):
+        #     color = random.choice(blueprint.get_attribute('color').recommended_values)
+        #     blueprint.set_attribute('color', color)
 
         if blueprint.has_attribute('speed'):
             self.player_max_speed = float(blueprint.get_attribute('speed').recommended_values[1])

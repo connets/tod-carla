@@ -1,4 +1,5 @@
 import abc
+import sys
 
 from carla import libcarla, Transform, Location, Rotation
 import carla
@@ -18,19 +19,19 @@ from src.utils.decorators import preconditions
 
 class EnvironmentBuilder:
 
-    def __init__(self, seed, carla_world_conf, timestep, actors_conf):
+    def __init__(self, seed, carla_world_conf_path, timestep, actors_settings):
         self.seed = seed
 
-        configuration = TeleConfiguration.instance
-        self._carla_server_conf = configuration['carla_server_configuration']
-        self._carla_world_conf = configuration.parse_world_conf(carla_world_conf)
-        self._carla_actors_conf = configuration.parse_actor_conf(carla_world_conf)
+        self.tele_configuration = TeleConfiguration.instance
+        self._carla_server_conf = self.tele_configuration['carla_server_configuration']
+        self._carla_world_conf = self.tele_configuration.parse_world_conf(carla_world_conf_path)
+        self._actors_settings = actors_settings
         self.render = self._carla_server_conf['render']
 
         self.clock = pygame.time.Clock()
         self.timestep = timestep
 
-        self.vehicles = dict()
+        self.actors = dict()
         self.operators = dict()
         self.other_actors = dict()
         self.tick_listeners = set()
@@ -70,15 +71,14 @@ class EnvironmentBuilder:
         self.tele_world = TeleWorld(client)
 
     def _create_carla_actors(self):
-        for vehicle_conf in self._vehicles_conf:
-            vehicle_id = vehicle_conf['vehicle_id']
-            vehicle_type = vehicle_conf['vehicle_type']
-            start_position = self._create_start(vehicle_type.get('start_position'))
-            end_location = self._create_destination(vehicle_type.get('end_location'))
+        for actor_setting in self._actors_settings:
+            actor_id = actor_setting['actor_id']
+            actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
+            start_position, end_location, time_limit = self._create_route(actor_conf.get('route'))
 
-            vehicle_attrs = vehicle_type['attrs']
-            vehicle = TeleCarlaVehicle(vehicle_type['speed_limit'],
-                                       vehicle_type['model'],
+            vehicle_attrs = actor_setting.get('attrs')
+            vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
+                                       actor_conf['model'],
                                        vehicle_attrs,
                                        start_transform=start_position,
                                        modify_vehicle_physics=True)
@@ -89,28 +89,27 @@ class EnvironmentBuilder:
             vehicle.spawn_in_the_world(self.tele_world)
             camera_sensor = TeleCarlaCameraSensor(2.2)
             # TODO change here to attach camera to different actor
-            if 'display' in vehicle_conf:
-                display_conf = vehicle_conf['display']
-                self._create_display(vehicle, display_conf['camera_width'], display_conf['camera_height'],
-                                     camera_sensor)
+            if 'camera' in actor_conf:
+                display_conf = actor_conf['camera']
+                self._create_display(vehicle, display_conf['width'], display_conf['height'], camera_sensor)
 
             # TODO handle the situation in which one vehicle has multiple agents
-            if 'agents' in vehicle_conf and vehicle['agents']:
-                agent_conf = vehicle_conf['agents'][0]
-                agent_type = agent_conf['agent_type']
-                agent_id = agent_conf['agent_id']
+            if 'agents' in actor_setting and actor_setting['agents']:
+                print("****"*7)
+                agent_settings = actor_setting['agents'][0]
+                agent_id = agent_settings['agent_id']
+                agent_conf = self.tele_configuration.parse_agent_conf(agent_settings['agent_configuration'])
 
                 # TODO change here to allow different agents
-                controller = BehaviorAgentTeleWorldAdapterController(agent_type['behavior'],
-                                                                     agent_type['sampling_resolution'],
-                                                                     start_position, end_location)
-                tele_operator = TeleOperator(controller, self._carla_world_conf['time_limit'])
+                controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
+                                                                     agent_conf['sampling_resolution'],
+                                                                     start_position.location, end_location)
+                tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
                 self.operators[agent_id] = tele_operator
 
-            self.vehicles[vehicle_id] = vehicle
+            self.actors[actor_id] = vehicle
 
-    @preconditions('_vehicle_conf', valid=lambda v: 'display' in v)
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()
         pygame.font.init()
@@ -129,63 +128,20 @@ class EnvironmentBuilder:
         self.tick_listeners.add(render)
         self.tick_listeners.add(hud.tick)
 
-    def _create_start(self, start_coordinates=None):
-        if start_coordinates is not None:
+    def _create_route(self, route_conf=None):
+        if route_conf is not None:
+            route_conf = self.tele_configuration.parse_world_conf(route_conf)
             start_transform = Transform(
-                Location(x=start_coordinates['x'], y=start_coordinates['y'], z=start_coordinates['z']),
-                Rotation(pitch=start_coordinates['pitch'], yaw=start_coordinates['yaw'],
-                         roll=start_coordinates['roll']))
+                Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
+                Rotation(pitch=route_conf['origin']['pitch'], yaw=route_conf['origin']['yaw'],
+                         roll=route_conf['origin']['roll']))
+            destination_location = Location(x=route_conf['destination']['x'], y=route_conf['destination']['y'],
+                                            z=route_conf['destination']['z'])
+            time_limit = route_conf['time_limit']
         else:
             carla_map = self.tele_world.carla_map
             spawn_points = carla_map.get_spawn_points()
             start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
-        return start_transform
-
-    def _create_destination(self, end_coordinates=None):
-        if end_coordinates is not None:
-            destination_location = Location(x=end_coordinates['x'], y=end_coordinates['y'], z=end_coordinates['z'])
-        else:
-            carla_map = self.tele_world.carla_map
-            spawn_points = carla_map.get_spawn_points()
             destination_location = random.choice(spawn_points).location
-
-        return destination_location
-
-    def create_tele_world(self):
-        ...
-
-    def create_controller(self):
-        ...
-
-    class RouteFactory(abc.ABC):
-        @abc.abstractmethod
-        def create_route(self):
-            ...
-
-    class PreDefinedRouteFactory(RouteFactory):
-
-        def __init__(self, route_conf):
-            self._route_conf = route_conf
-
-        def create_route(self):
-            start_transform = Transform(
-                Location(x=self._route_conf['start']['x'], y=self._route_conf['start']['y'],
-                         z=self._route_conf['start']['z']),
-                Rotation(pitch=self._route_conf['start']['pitch'],
-                         yaw=self._route_conf['start']['yaw'],
-                         roll=self._route_conf['start']['roll']))
-            destination_location = Location(x=self._route_conf['end']['x'],
-                                            y=self._route_conf['end']['y'],
-                                            z=self._route_conf['end']['z'])
-
-            return start_transform, destination_location
-
-    class RandomlyRouteFactory(RouteFactory):
-        def __init__(self, carla_map):
-            self._carla_map = carla_map
-
-        def create_route(self):
-            spawn_points = self._carla_map.get_spawn_points()
-            start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
-            destination_location = random.choice(spawn_points).location
-            return start_transform, destination_location
+            time_limit = sys.maxsize
+        return start_transform, destination_location, time_limit
