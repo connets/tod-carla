@@ -1,0 +1,7 @@
+{
+  "message_type": "INSTRUCTION",
+  "payload": {
+    "actor_id": "id",
+    "instruction_id": "instruction_id"
+  }
+}

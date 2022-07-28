@@ -1,0 +1,8 @@
+{
+  "message_type": "COMPUTE_INSTRUCTION",
+  "payload": {
+    "actor_id": "id",
+    "status_id": "status_id"
+  },
+  "timestamp": "timestamp"
+}

@@ -3,15 +3,16 @@
   "timestamp": 0,
   "payload": {
     "carla_world_configuration": "configuration/default_simulation.yaml",
-    "carla_timestep": 5,
+    "carla_timestep": 0.05,
     "seed": 11120,
     "actors": [
       {
-        "vehicle_id": "omnet_module_car_0",
-        "vehicle_type": "configuration/actor_configurations/simple_vehicle.yaml",
+        "actor_id": "omnet_module_car_0",
+        "actor_configuration": "simple_vehicle",
+        "route": "",
         "agents": [
           {
-            "agent_type": "configuration/agent_configurations/simple_agent.yaml",
+            "agent_configuration": "configuration/agent_configurations/simple_agent.yaml",
             "agent_id": "omnet_module_name"
           }
         ]

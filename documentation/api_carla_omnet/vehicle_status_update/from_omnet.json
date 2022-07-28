@@ -1,0 +1,7 @@
+{
+  "message_type": "VEHICLE_STATUS_UPDATE",
+  "payload": {
+    "actor_id": "id"
+  },
+  "timestamp": "timestamp"
+}
