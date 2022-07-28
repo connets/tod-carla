@@ -1,5 +1,5 @@
 {
-  "message_type": "VEHICLE_STATUS",
+  "message_type": "ACTOR_STATUS",
   "payload": {
     "actor_id": "id",
     "status_id": "status_id"

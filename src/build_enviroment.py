@@ -33,8 +33,6 @@ class EnvironmentBuilder:
 
         self.actors = dict()
         self.operators = dict()
-        self.other_actors = dict()
-        self.tick_listeners = set()
 
         self.carla_map = self.tele_world = None
 
@@ -68,7 +66,7 @@ class EnvironmentBuilder:
         sim_world.tick()
         self.client, self.sim_world = client, sim_world
         self.carla_map = self.sim_world.get_map()
-        self.tele_world = TeleWorld(client)
+        self.tele_world = TeleWorld(client, self.clock)
 
     def _create_carla_actors(self):
         for actor_setting in self._actors_settings:
@@ -84,14 +82,16 @@ class EnvironmentBuilder:
                                        modify_vehicle_physics=True)
             collisions_sensor = TeleCarlaCollisionSensor()
             vehicle.attach_sensor(collisions_sensor)
-            lidar_sensor = TeleCarlaLidarSensor()
-            vehicle.attach_sensor(lidar_sensor)
-            vehicle.spawn_in_the_world(self.tele_world)
             camera_sensor = TeleCarlaCameraSensor(2.2)
             # TODO change here to attach camera to different actor
             if 'camera' in actor_conf:
                 display_conf = actor_conf['camera']
                 self._create_display(vehicle, display_conf['width'], display_conf['height'], camera_sensor)
+            vehicle.attach_sensor(camera_sensor)
+
+            lidar_sensor = TeleCarlaLidarSensor()
+            vehicle.attach_sensor(lidar_sensor)
+            vehicle.spawn_in_the_world(self.tele_world)
 
             # TODO handle the situation in which one vehicle has multiple agents
             if 'agents' in actor_setting and actor_setting['agents']:
@@ -125,8 +125,8 @@ class EnvironmentBuilder:
             hud.render()
             pygame.display.flip()
 
-        self.tick_listeners.add(render)
-        self.tick_listeners.add(hud.tick)
+        self.tele_world.add_tick_callback(render)
+        self.tele_world.add_tick_callback(hud.tick)
 
     def _create_route(self, route_conf=None):
         if route_conf is not None:

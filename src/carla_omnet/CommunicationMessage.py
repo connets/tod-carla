@@ -43,7 +43,7 @@ class SimulationStepOMNetMessage(OMNeTMessage):
     MESSAGE_TYPE = 'SIMULATION_STEP'
 
 
-class VehicleStatusOMNetMessage(OMNeTMessage):
+class ActorStatusOMNetMessage(OMNeTMessage):
     MESSAGE_TYPE = 'VEHICLE_STATUS_UPDATE'
 
 

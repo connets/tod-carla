@@ -7,13 +7,13 @@
     "seed": 11120,
     "actors": [
       {
-        "actor_id": "omnet_module_car_0",
+        "actor_id": "car_id",
         "actor_configuration": "simple_vehicle",
         "route": "",
         "agents": [
           {
             "agent_configuration": "simple_agent",
-            "agent_id": "omnet_module_name"
+            "agent_id": "agent_id"
           }
         ]
       }

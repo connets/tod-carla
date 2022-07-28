@@ -6,6 +6,7 @@ import json
 
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import EnvironmentBuilder
+from src.carla_bridge.TeleWorld import TeleWorld
 from src.carla_omnet.CommunicationMessage import *
 
 
@@ -25,45 +26,6 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
         return "I don't know how to handle the following msg: " + self.unknown_msg
 
 
-class MessageHandlerState(ABC):
-    def __init__(self, carla_omnet_manager):
-        self._manager = carla_omnet_manager
-
-    def handle_message(self, message: OMNeTMessage):
-        RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
-                    I don't know how to handle {message.__class__.__name__} message""")
-
-
-class StartMessageHandlerState(MessageHandlerState):
-
-    def handle_message(self, message: OMNeTMessage):
-        if isinstance(message, InitOMNeTMessage):
-            print("INIT")
-            payload = message.payload
-            print(payload, message.timestamp)
-            world_builder = EnvironmentBuilder(payload['seed'], payload['carla_world_configuration'],
-                                               payload['carla_timestep'], payload['actors'])
-            world_builder.build()
-            print(world_builder.actors, world_builder.operators)
-            return InitCompletedCarlaMessage(world_builder.tele_world.timestamp.elapsed_seconds)
-        else:
-            super(StartMessageHandlerState, self).handle_message(message)
-
-    def _init_world(self, cars, agents, other_actors):
-        ...
-
-
-class RunningMessageHandlerState(MessageHandlerState):
-
-    def handle_message(self, message: OMNeTMessage):
-        if isinstance(message, InitOMNeTMessage):
-            ...
-        if isinstance(message, InitOMNeTMessage):
-            ...
-        else:
-            super().handle_message(message)
-
-
 class CarlaOMNeTManager(ABC):
     _id_iter = itertools.count(1000)
 
@@ -72,6 +34,9 @@ class CarlaOMNeTManager(ABC):
         self._port = port
         self._connection_timeout = connection_timeout
         self._timeout = timeout
+
+        self._tele_world: TeleWorld = None
+        self._actors = self._operators = None
         self.timestamp = 0
         self.socket = None
         self._message_handler_state: MessageHandlerState = None
@@ -103,6 +68,53 @@ class CarlaOMNeTManager(ABC):
             message = self._receive_data_from_omnet()
             answer = self._message_handler_state.handle_message(message)
             self._send_data_to_omnet(answer)
+
+
+class MessageHandlerState(ABC):
+    def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
+        self._manager = carla_omnet_manager
+
+    def handle_message(self, message: OMNeTMessage) -> CarlaMessage:
+        raise RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
+                    I don't know how to handle {message.__class__.__name__} message""")
+
+
+class StartMessageHandlerState(MessageHandlerState):
+
+    def handle_message(self, message: OMNeTMessage):
+        if isinstance(message, InitOMNeTMessage):
+            payload = message.payload
+            world_builder = EnvironmentBuilder(payload['seed'], payload['carla_world_configuration'],
+                                               payload['carla_timestep'], payload['actors'])
+            world_builder.build()
+
+            self._manager._actors = world_builder.actors.copy()
+            self._manager._operators = world_builder.operators.copy()
+            self._manager._tele_world = world_builder.tele_world
+
+            self._manager.set_message_handler_state(RunningMessageHandlerState)
+
+            return InitCompletedCarlaMessage(round(self._manager._tele_world.timestamp.elapsed_seconds, 9))
+        else:
+            super(StartMessageHandlerState, self).handle_message(message)
+
+
+class RunningMessageHandlerState(MessageHandlerState):
+
+    def handle_message(self, message: OMNeTMessage):
+        print("***********")
+        if isinstance(message, SimulationStepOMNetMessage):
+            self._manager._tele_world.tick()
+            return InitCompletedCarlaMessage(round(self._manager._tele_world.timestamp.elapsed_seconds, 9))
+
+        elif isinstance(message, ActorStatusOMNetMessage):
+            ...
+        elif isinstance(message, ComputeInstructionOMNeTMessage):
+            ...
+        elif isinstance(message, ApplyInstructionOMNeTMessage):
+            ...
+        else:
+            super().handle_message(message)
 
 
 class CarlaOmnetManagerOld:

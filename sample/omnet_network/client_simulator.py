@@ -21,6 +21,11 @@ req = read_json('documentation/api_carla_omnet/init/from_omnet.json')
 send_info(socket, req)
 message = socket.recv()
 print(message)
+while True:
+    req = read_json('documentation/api_carla_omnet/simulation_step/from_omnet.json')
+    send_info(socket, req)
+    message = socket.recv()
+    print(message)
 # print(f"Received reply  [ {message} ]")
 # while True:
 #     #  Wait for next request from client

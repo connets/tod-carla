@@ -13,13 +13,13 @@ from carla.libcarla import World
 class TeleWorld:
     """ Class representing the surrounding environment """
 
-    def __init__(self, client: libcarla.Client):
+    def __init__(self, client: libcarla.Client, clock):
         """Constructor method"""
 
         self.client = client
+        self.clock = clock
         self.sim_world: World = self.client.get_world()
         self._last_snapshot: carla.WorldSnapshot = self.sim_world.get_snapshot()
-
         # builds = self.sim_world.get_environment_objects(carla.CityObjectLabel.Buildings)
         # objects_to_toggle = {build.id for build in builds}
         # self.sim_world.enable_environment_objects(objects_to_toggle, True)
@@ -71,11 +71,16 @@ class TeleWorld:
     #     sensor.spawn_in_world(parent)
     #     self._sensors.append(sensor)
 
+    def add_tick_callback(self, callback):
+        self._tick_callbacks.add(callback)
+
     def tick(self):  # TODO change here, put NetworkNode
         """Method for every tick"""
+        self.clock.tick()
         before = self.sim_world.get_snapshot().frame
         frame = self.sim_world.tick()
         self._last_snapshot = self.sim_world.get_snapshot()
+        for callback in self._tick_callbacks: callback(self.timestamp)
 
         # command = self._controller.do_action(clock)
         # if command is None:
