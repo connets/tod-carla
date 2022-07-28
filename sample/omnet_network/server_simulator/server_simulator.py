@@ -20,24 +20,20 @@ def generate_init_completed(first_row):
     res['payload']['initial_timestamp'] = first_row['timestamp']
     return json.dumps(res).encode("utf-8")
 
+
 def generate_updated_position(row):
     res = dict()
     res['message_type'] = "UPDATED_POSITIONS"
-    node = dict()
-    node['actor_id'] = 'car'
-    node['position'] = dict()
-    node['velocity'] = dict()
-    node['rotation'] = dict()
-    node['position']['x'] = row['location_x']
-    node['position']['y'] = row['location_y']
-    node['position']['z'] = row['location_z']
-    node['velocity']['x'] = row['velocity_x']
-    node['velocity']['y'] = row['velocity_y']
-    node['velocity']['z'] = row['velocity_z']
-    node['rotation']['pitch'] = row['rotation_pitch']
-    node['rotation']['yaw'] = row['rotation_yaw']
-    node['rotation']['roll'] = row['rotation_roll']
-    res['payload'] = [node]
+    actor = dict()
+    actor['actor_id'] = 'car'
+    actor['position'] = dict()
+    actor['velocity'] = dict()
+    actor['rotation'] = dict()
+    actor['position'] = [row['location_x'], row['location_y'], row['location_z']]
+    actor['velocity'] = [row['velocity_x'], row['velocity_y'], row['velocity_z']]
+    actor['rotation'] = [row['rotation_pitch'], row['rotation_yaw'], row['rotation_roll']]
+    res['payload'] = dict()
+    res['payload']['actors'] = [actor]
 
     return json.dumps(res).encode("utf-8")
 
