@@ -7,9 +7,9 @@
     "seed": 11120,
     "actors": [
       {
-        "actor_id": "car_id",
+        "actor_id": "actor_id",
         "actor_configuration": "simple_vehicle",
-        "route": "",
+        "route": "simple_curve",
         "agents": [
           {
             "agent_configuration": "simple_agent",

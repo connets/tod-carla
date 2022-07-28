@@ -1,7 +1,7 @@
 {
   "message_type": "ACTOR_STATUS",
   "payload": {
-    "actor_id": "id",
+    "actor_id": "actor_id",
     "status_id": "status_id"
   }
 }

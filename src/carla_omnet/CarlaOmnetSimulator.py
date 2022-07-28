@@ -37,7 +37,7 @@ class CarlaOMNeTManager(ABC):
         self._timeout = timeout
 
         self.tele_world: TeleWorld = None
-        self.actors = self._operators = None
+        self.actors = self.operators = None
         self.timestamp = 0
         self.socket = None
         self._message_handler_state: MessageHandlerState = None
@@ -90,7 +90,7 @@ class StartMessageHandlerState(MessageHandlerState):
             world_builder.build()
 
             self._manager.actors = world_builder.actors.copy()
-            self._manager._operators = world_builder.operators.copy()
+            self._manager.operators = world_builder.operators.copy()
             self._manager.tele_world = world_builder.tele_world
 
             self._manager.set_message_handler_state(RunningMessageHandlerState)
@@ -101,10 +101,12 @@ class StartMessageHandlerState(MessageHandlerState):
 
 
 class RunningMessageHandlerState(MessageHandlerState):
+    _id_iter = itertools.count(1000)
 
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         super().__init__(carla_omnet_manager)
         self.status = dict()
+        self.instructions = dict()
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, SimulationStepOMNetMessage):
@@ -126,11 +128,33 @@ class RunningMessageHandlerState(MessageHandlerState):
         elif isinstance(message, ActorStatusOMNetMessage):
             actor_id = message.payload['actor_id']
             actor_status = self._manager.actors[actor_id].generate_status()
+            status_id = str(next(self._id_iter))
+            self.status[status_id] = actor_status
+            payload = dict()
+            payload['actor_id'] = actor_id
+            payload['status_id'] = status_id
+            return ActorStatusCarlaMessage(payload)
 
         elif isinstance(message, ComputeInstructionOMNeTMessage):
-            ...
+            agent_id = message.payload['agent_id']
+            actor_id = message.payload['actor_id']
+            status_id = message.payload['status_id']
+            status = self.status[status_id]
+            agent = self._manager.operators[agent_id]
+            instruction = agent.receive_vehicle_state_info(status, self._manager.tele_world.timestamp.elapsed_seconds)
+            instruction_id = str(next(self._id_iter))
+            self.instructions[instruction_id] = instruction
+            payload = dict()
+            payload['instruction_id'] = instruction_id
+            payload['actor_id'] = actor_id
+            return InstructionCarlaMessage(payload)
+
         elif isinstance(message, ApplyInstructionOMNeTMessage):
-            ...
+            instruction_id = message.payload['instruction_id']
+            actor_id = message.payload['actor_id']
+            actor = self._manager.actors[actor_id]
+            actor.apply_instruction(self.instructions[instruction_id])
+            return OkCarlaMessage(dict())
         else:
             super().handle_message(message)
 

@@ -129,7 +129,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
             sensor.attach_to_actor(tele_world, self)
 
     @preconditions('_tele_world')
-    def receive_instruction_network_message(self, command):
+    def apply_instruction(self, command):
         self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
 
     def quit(self):

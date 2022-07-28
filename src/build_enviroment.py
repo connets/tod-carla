@@ -72,7 +72,7 @@ class EnvironmentBuilder:
         for actor_setting in self._actors_settings:
             actor_id = actor_setting['actor_id']
             actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
-            start_position, end_location, time_limit = self._create_route(actor_conf.get('route'))
+            start_position, end_location, time_limit = self._create_route(actor_setting.get('route'))
 
             vehicle_attrs = actor_setting.get('attrs')
             vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
@@ -130,7 +130,7 @@ class EnvironmentBuilder:
 
     def _create_route(self, route_conf=None):
         if route_conf is not None:
-            route_conf = self.tele_configuration.parse_world_conf(route_conf)
+            route_conf = self.tele_configuration.parse_route_conf(route_conf)
             start_transform = Transform(
                 Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
                 Rotation(pitch=route_conf['origin']['pitch'], yaw=route_conf['origin']['yaw'],

@@ -2,7 +2,7 @@
   "message_type": "COMPUTE_INSTRUCTION",
   "payload": {
     "actor_id": "actor_id",
-    "agent_id": "id",
+    "agent_id": "agent_id",
     "status_id": "status_id"
   },
   "timestamp": "timestamp"

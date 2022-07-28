@@ -49,7 +49,7 @@ class SimulationStepOMNetMessage(OMNeTMessage):
 
 
 class ActorStatusOMNetMessage(OMNeTMessage):
-    MESSAGE_TYPE = 'VEHICLE_STATUS_UPDATE'
+    MESSAGE_TYPE = 'ACTOR_STATUS_UPDATE'
 
 
 class ComputeInstructionOMNeTMessage(OMNeTMessage):
@@ -77,10 +77,14 @@ class InitCompletedCarlaMessage(CarlaMessage):
 class UpdatedPositionCarlaMessage(CarlaMessage):
     MESSAGE_TYPE = 'UPDATED_POSITIONS'
 
-    @staticmethod
-    def generate_payload(actors : List[TeleCarlaActor]):
-        payload = dict()
-        for actor in actors:
-            t = actor.get_transform()
+
+class ActorStatusCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'ACTOR_STATUS'
 
 
+class InstructionCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'INSTRUCTION'
+
+
+class OkCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'OK'
