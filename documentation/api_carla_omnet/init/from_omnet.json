@@ -3,7 +3,7 @@
   "timestamp": 0,
   "payload": {
     "carla_world_configuration": "simple_curve_world",
-    "carla_timestep": 0.05,
+    "carla_timestep": 0.01,
     "seed": 11120,
     "actors": [
       {

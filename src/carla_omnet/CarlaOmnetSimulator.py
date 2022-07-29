@@ -5,10 +5,12 @@ import carla
 import zmq
 import json
 
+from src.TeleOutputWriter import DataCollector
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.build_enviroment import EnvironmentBuilder
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.carla_omnet.CommunicationMessage import *
+from src.utils import utils
 
 
 class CarlaOmnetError(RuntimeError):
@@ -107,10 +109,24 @@ class RunningMessageHandlerState(MessageHandlerState):
         super().__init__(carla_omnet_manager)
         self.status = dict()
         self.instructions = dict()
+        self._collector = DataCollector("tmp/" + 'results.csv')
+        self._collector.write('timestamp', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y',
+                              'acceleration_z', 'location_x', 'location_y', 'location_z')
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, SimulationStepOMNetMessage):
             self._manager.tele_world.tick()
+            player = self._manager.actors['actor_id']
+            self._collector.write(utils.format_number(self._manager.tele_world.timestamp.elapsed_seconds, 5),
+                                  utils.format_number(player.get_velocity().x, 8),
+                                  utils.format_number(player.get_velocity().y, 8),
+                                  utils.format_number(player.get_velocity().z, 8),
+                                  utils.format_number(player.get_acceleration().x, 5),
+                                  utils.format_number(player.get_acceleration().y, 5),
+                                  utils.format_number(player.get_acceleration().z, 5),
+                                  utils.format_number(player.get_location().x, 8),
+                                  utils.format_number(player.get_location().y, 8),
+                                  utils.format_number(player.get_location().z, 8))
             payload = dict()
             actors_payload = []
             for actor_id, actor in self._manager.actors.items():
@@ -126,6 +142,8 @@ class RunningMessageHandlerState(MessageHandlerState):
             return UpdatedPositionCarlaMessage(payload)
 
         elif isinstance(message, ActorStatusOMNetMessage):
+            while any(not actor.done(self._manager.tele_world.timestamp) for actor in self._manager.actors.values()):
+                ...
             actor_id = message.payload['actor_id']
             actor_status = self._manager.actors[actor_id].generate_status()
             status_id = str(next(self._id_iter))

@@ -76,9 +76,12 @@ class TeleWorld:
 
     def tick(self):  # TODO change here, put NetworkNode
         """Method for every tick"""
+        elapsed_seconds_old = self.timestamp.elapsed_seconds
         self.clock.tick()
         before = self.sim_world.get_snapshot().frame
         frame = self.sim_world.tick()
+        while elapsed_seconds_old == self.timestamp.elapsed_seconds:
+            ...
         self._last_snapshot = self.sim_world.get_snapshot()
         for callback in self._tick_callbacks: callback(self.timestamp)
 

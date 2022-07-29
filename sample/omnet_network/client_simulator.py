@@ -28,7 +28,7 @@ send_info(socket, req)
 message = receive_info(socket)
 print(message)
 while True:
-    for _ in range(1):
+    for _ in range(5):
         req = read_json('simulation_step')
         send_info(socket, req)
         message = receive_info(socket)
