@@ -26,7 +26,6 @@ class TeleSimulator(ABC):
 
         self._tele_context = tele_context
 
-
     def finish(self, finish_code):
         self._finish_code = finish_code
         self._finished = True
@@ -53,7 +52,7 @@ class TeleSimulator(ABC):
         for actor in self._actors:
             actor.start()
         while not self._finished:  # and self._tele_context.has_runnable_events():
-            simulator_timestamp = round(self._tele_context.next_timestamp_event, 6)
+            simulator_timestamp = int(self._tele_context.next_timestamp_event * 6) / 6
 
             while simulator_timestamp > self._tele_world.timestamp.elapsed_seconds:
                 self._clock.tick()
