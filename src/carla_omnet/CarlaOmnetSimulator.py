@@ -7,7 +7,7 @@ import json
 
 from src.TeleOutputWriter import DataCollector
 from src.args_parse.TeleConfiguration import TeleConfiguration
-from src.build_enviroment import EnvironmentBuilder
+from src.EnvironmentBuilder import EnvironmentBuilder
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.carla_omnet.CommunicationMessage import *
 from src.utils import utils
@@ -97,7 +97,9 @@ class StartMessageHandlerState(MessageHandlerState):
 
             self._manager.set_message_handler_state(RunningMessageHandlerState)
 
-            return InitCompletedCarlaMessage(round(self._manager.tele_world.timestamp.elapsed_seconds, 9))
+            payload = dict()
+            payload['initial_timestamp'] = round(self._manager.tele_world.timestamp.elapsed_seconds, 9)
+            return InitCompletedCarlaMessage(payload)
         else:
             super(StartMessageHandlerState, self).handle_message(message)
 
@@ -113,20 +115,13 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._collector.write('timestamp', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y',
                               'acceleration_z', 'location_x', 'location_y', 'location_z')
 
+        self.status_msg_id = 1
+        self.compute_instruction_msg_id = 1
+        self.apply_instruction_msg_id = 1
+
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, SimulationStepOMNetMessage):
             self._manager.tele_world.tick()
-            player = self._manager.actors['actor_id']
-            self._collector.write(utils.format_number(self._manager.tele_world.timestamp.elapsed_seconds, 5),
-                                  utils.format_number(player.get_velocity().x, 8),
-                                  utils.format_number(player.get_velocity().y, 8),
-                                  utils.format_number(player.get_velocity().z, 8),
-                                  utils.format_number(player.get_acceleration().x, 5),
-                                  utils.format_number(player.get_acceleration().y, 5),
-                                  utils.format_number(player.get_acceleration().z, 5),
-                                  utils.format_number(player.get_location().x, 8),
-                                  utils.format_number(player.get_location().y, 8),
-                                  utils.format_number(player.get_location().z, 8))
             payload = dict()
             actors_payload = []
             for actor_id, actor in self._manager.actors.items():
@@ -142,6 +137,9 @@ class RunningMessageHandlerState(MessageHandlerState):
             return UpdatedPositionCarlaMessage(payload)
 
         elif isinstance(message, ActorStatusOMNetMessage):
+            print(self.status_msg_id, message)
+            self.status_msg_id += 1
+
             while any(not actor.done(self._manager.tele_world.timestamp) for actor in self._manager.actors.values()):
                 ...
             actor_id = message.payload['actor_id']
@@ -154,6 +152,9 @@ class RunningMessageHandlerState(MessageHandlerState):
             return ActorStatusCarlaMessage(payload)
 
         elif isinstance(message, ComputeInstructionOMNeTMessage):
+            print(self.compute_instruction_msg_id, message)
+            self.compute_instruction_msg_id += 1
+
             agent_id = message.payload['agent_id']
             actor_id = message.payload['actor_id']
             status_id = message.payload['status_id']
@@ -168,6 +169,9 @@ class RunningMessageHandlerState(MessageHandlerState):
             return InstructionCarlaMessage(payload)
 
         elif isinstance(message, ApplyInstructionOMNeTMessage):
+            print(self.apply_instruction_msg_id, message)
+            self.apply_instruction_msg_id += 1
+
             instruction_id = message.payload['instruction_id']
             actor_id = message.payload['actor_id']
             actor = self._manager.actors[actor_id]
@@ -177,75 +181,8 @@ class RunningMessageHandlerState(MessageHandlerState):
             super().handle_message(message)
 
 
-class CarlaOmnetManagerOld:
-    _id_iter = itertools.count(1000)
-
-    def __init__(self, protocol, port, connection_timeout, timeout):
-        self._protocol = protocol
-        self._port = port
-        self._connection_timeout = connection_timeout
-        self._timeout = timeout
-        self.timestamp = 0
-
-    def _receive_data_from_omnet(self):
-        message = self.socket.recv()
-        json_data = json.loads(message.decode("utf-8"))
-        request = CoSimulationRequest.from_json(json_data)
-        self.timestamp = request.timestamp
-        return request
-
-    def _connect(self, current_timestamp):
-        context = zmq.Context()
-        self.socket = context.socket(zmq.REP)
-        self.socket.bind(f"{self._protocol}://*:{self._port}")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 100000)
-
-        print("Waiting for connection...")
-        handshake = self._receive_data_from_omnet()
-        if not isinstance(handshake, HandshakeRequest):
-            raise RuntimeError("Error in connection")
-
-        self._send_data_to_omnet(HandshakeAnswer(current_timestamp))
-        print("Connected!")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._timeout * 500000)
-
-    def do_omnet_step(self):
-        if self._last_received_request is not None:
-            # TODO change to allow multi-messages as answer
-            if self._message_to_send is not None:
-                msg_id = next(self._id_iter)
-                self._actions_to_do[msg_id] = self._message_to_send
-                answer = ReceiveMessageAnswer(msg_id, 100)
-            else:
-                answer = ReceiveMessageAnswer(-1, -1)
-            self._message_to_send = None
-            self._send_data_to_omnet(answer)
-
-        action = None
-        while action is None:
-            self._last_received_request = request = self._receive_data_from_omnet()
-            if isinstance(request, StepRequest):
-                self._send_data_to_omnet(StepAnswer(self._vehicle_actual_location()))
-            elif isinstance(request, ReceiveMessageRequest):
-                action = self._actions_to_do.get(request.msg_id, self._default_actions.get(request.msg_id))
-                self._actions_to_do.pop(request.msg_id, None)
-            else:
-                raise RuntimeError("Message don't recognize", request.type)
-
-        return action
-
-    def has_scheduled_events(self):
-        return
-
-    def add_default_action(self, id, action):
-        self._default_actions[id] = action
-
-    def schedule_message(self, message):
-        self._message_to_send = message
-
-
 #  Socket to talk to server
 if __name__ == '__main__':
     TeleConfiguration('configuration/server/ubiquity.yaml')
-    manager = CarlaOMNeTManager('tcp', 1234, 100, 20)
+    manager = CarlaOMNeTManager('tcp', 5555, 100, 20)
     manager.start_simulation()

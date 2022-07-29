@@ -14,8 +14,6 @@ from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils.Hud import HUD
 import pygame
 
-from src.utils.decorators import preconditions
-
 
 class EnvironmentBuilder:
 
@@ -95,7 +93,6 @@ class EnvironmentBuilder:
 
             # TODO handle the situation in which one vehicle has multiple agents
             if 'agents' in actor_setting and actor_setting['agents']:
-                print("****"*7)
                 agent_settings = actor_setting['agents'][0]
                 agent_id = agent_settings['agent_id']
                 agent_conf = self.tele_configuration.parse_agent_conf(agent_settings['agent_configuration'])

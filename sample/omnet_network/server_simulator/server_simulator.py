@@ -43,10 +43,11 @@ if __name__ == '__main__':
     data_iterators = data.iterrows()
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://*:1234")
+    socket.bind(f"tcp://*:5555")
 
     msg = (generate_init_completed(next(data_iterators)[1]))
     recv_msg = socket.recv()
+    print(recv_msg)
     json_data = json.loads(recv_msg.decode("utf-8"))
     print("recv:", json_data)
     socket.send(msg)

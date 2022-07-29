@@ -7,7 +7,6 @@ import carla
 from carla import ActorBlueprint, VehicleControl
 
 from src.actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
-from src.core.TeleEvent import tele_event
 from src.communication.TeleVehicleState import TeleVehicleState
 from src.communication.NetworkMessage import InfoUpdateMessage
 import lib.camera_visibility.carla_vehicle_annotator as cva
@@ -140,9 +139,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def done(self, timestamp):
         return all(sensor.done(timestamp) for sensor in self.sensors)
 
-
-class CarlaOmnetTeleCarlaVehicle(TeleCarlaVehicle):
-    ...
 
 
 class TeleCarlaPedestrian(TeleCarlaActor):

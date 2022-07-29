@@ -1,9 +1,5 @@
 import threading
 
-from src.communication.NetworkMessage import InstructionNetworkMessage
-from src.communication.NetworkNode import NetworkNode
-from src.core.TeleSimulator import TeleSimulator
-
 
 class TeleOperator:
     lock = threading.RLock()

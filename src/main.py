@@ -19,7 +19,7 @@ from src.actor.TeleMEC import TeleMEC
 from src.actor.TeleOperator import TeleOperator
 from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.args_parse.TeleConfiguration import TeleConfiguration
-import src.build_enviroment as build_enviroment
+import src.EnvironmentBuilder as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
 import src.utils.carla_utils as carla_utils

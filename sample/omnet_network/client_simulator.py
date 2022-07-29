@@ -20,7 +20,7 @@ def receive_info(socket):
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://localhost:1234")
+socket.connect("tcp://localhost:5555")
 print("connected")
 
 req = read_json('init')

@@ -3,7 +3,6 @@ import collections
 import math
 import weakref
 from abc import ABC, abstractmethod
-from queue import Queue
 
 import carla
 import numpy as np

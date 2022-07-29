@@ -17,27 +17,40 @@ class OMNeTMessage(abc.ABC):
 
     @classmethod
     def from_json(cls, j):
-        def remove_null_object(item: dict):
+        def clean_objects(item: dict):
             keys_to_remove = set()
             for key, value in item.items():
-                if isinstance(value, dict):
-                    remove_null_object(value)
-                elif isinstance(value, str) and re.match(r'^\s*$', value):
-                    keys_to_remove.add(key)
+                if isinstance(value, list):
+                    for v in value: clean_objects(v)
+                elif isinstance(value, dict):
+                    clean_objects(value)
+                elif isinstance(value, str):  # remove null object or empty string
+                    if re.match(r'^\s*$', value):
+                        keys_to_remove.add(key)
+                    else:
+
+                        item[key] = value.replace('"', '')
             for key in keys_to_remove: del item[key]
 
         classes = cls.__subclasses__()
         msg_type = j['message_type']
-        print(cls.__subclasses__())
         del j['message_type']
         for msg_cls in classes:
             if msg_cls.MESSAGE_TYPE == msg_type:
                 instance = msg_cls(**j)
                 payload = instance.payload
-                remove_null_object(payload)
+                clean_objects(payload)
                 return instance
 
         raise RuntimeError(f"Message type {msg_type} not recognized")
+
+    def __repr__(self) -> str:
+        return self.to_json()
+
+    def to_json(self):
+        res = self.__dict__.copy()
+        res['message_type'] = self.__class__.MESSAGE_TYPE
+        return json.dumps(res)
 
 
 class InitOMNeTMessage(OMNeTMessage):
