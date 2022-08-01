@@ -3,5 +3,6 @@
   "payload": {
     "actor_id": "id",
     "instruction_id": "instruction_id"
-  }
+  },
+  "simulation_finished": true
 }

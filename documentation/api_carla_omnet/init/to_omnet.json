@@ -2,5 +2,6 @@
   "message_type": "INIT_COMPLETED",
   "payload": {
     "initial_timestamp": 0.05
-  }
+  },
+  "simulation_finished": true
 }

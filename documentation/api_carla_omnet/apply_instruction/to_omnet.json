@@ -1,3 +1,4 @@
 {
-  "message_type": "OK"
+  "message_type": "OK",
+  "simulation_finished": true
 }
