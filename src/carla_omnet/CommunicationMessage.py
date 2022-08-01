@@ -74,8 +74,9 @@ class ApplyInstructionOMNeTMessage(OMNeTMessage):
 
 
 class CarlaMessage(abc.ABC):
-    def __init__(self, payload):
+    def __init__(self, payload, simulation_finished=False):
         self.payload = payload
+        self.simulation_finished = simulation_finished
 
     def to_json(self):
         res = self.__dict__.copy()

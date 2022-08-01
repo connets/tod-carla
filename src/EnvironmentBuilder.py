@@ -37,8 +37,17 @@ class EnvironmentBuilder:
     def build(self):
         self._create_tele_world()
         self._create_carla_actors()
-
         ...
+
+    def destroy(self):
+        pygame.quit()
+        settings = self.sim_world.get_settings()
+        settings.synchronous_mode = False
+        settings.fixed_delta_seconds = None
+        self.sim_world.apply_settings(settings)
+        traffic_manager = self.client.get_trafficmanager()
+        traffic_manager.set_synchronous_mode(False)
+        self.client.reload_world(False)  # reload map keeping the world settings
 
     def _create_tele_world(self):
         host, port, timeout = self._carla_server_conf['host'], self._carla_server_conf['port'], \

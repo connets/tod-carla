@@ -6,6 +6,7 @@ import zmq
 import json
 
 from src.TeleOutputWriter import DataCollector
+from src.actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.EnvironmentBuilder import EnvironmentBuilder
 from src.carla_bridge.TeleWorld import TeleWorld
@@ -61,7 +62,7 @@ class CarlaOMNeTManager(ABC):
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
         self.socket.bind(f"{self._protocol}://*:{self._port}")
-        self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 1000)
+        # self.socket.RCVTIMEO = self.socket.SNDTIMEO = int(self._connection_timeout * 1000)
         print("server running")
 
     def start_simulation(self):
@@ -160,13 +161,25 @@ class RunningMessageHandlerState(MessageHandlerState):
             status_id = message.payload['status_id']
             status = self.status[status_id]
             agent = self._manager.operators[agent_id]
-            instruction = agent.receive_vehicle_state_info(status, self._manager.tele_world.timestamp.elapsed_seconds)
-            instruction_id = str(next(self._id_iter))
-            self.instructions[instruction_id] = instruction
+            operator_status, instruction = agent.receive_vehicle_state_info(status,
+                                                                            self._manager.tele_world.timestamp.elapsed_seconds)
             payload = dict()
-            payload['instruction_id'] = instruction_id
             payload['actor_id'] = actor_id
-            return InstructionCarlaMessage(payload)
+
+            simulation_finished = operator_status == TeleOperator.OperatorStatus.FINISHED
+            if simulation_finished:
+                self._manager.tele_world.quit()
+                payload['instruction_id'] = '-1'
+                self._manager.set_message_handler_state(StartMessageHandlerState)
+                for actor in self._manager.actors.values(): actor.quit()
+                for operator in self._manager.operators.values(): operator.quit()
+                # self._manager.bui
+            else:
+                instruction_id = str(next(self._id_iter))
+                self.instructions[instruction_id] = instruction
+                payload['instruction_id'] = instruction_id
+
+            return InstructionCarlaMessage(payload, simulation_finished)
 
         elif isinstance(message, ApplyInstructionOMNeTMessage):
             print(self.apply_instruction_msg_id, message)

@@ -1,8 +1,11 @@
+import enum
 import threading
 
 
 class TeleOperator:
-    lock = threading.RLock()
+    class OperatorStatus(enum.Enum):
+        RUNNING = 0,
+        FINISHED = 1
 
     def __init__(self, controller, maximum_time):
         super().__init__()
@@ -14,12 +17,15 @@ class TeleOperator:
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
         # if timestamp > self._maximum_time:
         #     self._tele_context.finish(TeleSimulator.FinishCode.TIME_LIMIT)
-        # if self._controller.done():
-        #     self._tele_context.finish(TeleSimulator.FinishCode.OK)
+        if self._controller.done():
+            return TeleOperator.OperatorStatus.FINISHED, None
         # elif tele_vehicle_state.collisions:
         #     self._tele_context.finish(TeleSimulator.FinishCode.ACCIDENT)
         # else:
-        return self._controller.do_action(tele_vehicle_state)
+        return TeleOperator.OperatorStatus.RUNNING, self._controller.do_action(tele_vehicle_state)
 
-            # if command is not None:
-            #     self.send_message(InstructionNetworkMessage(command))
+        # if command is not None:
+        #     self.send_message(InstructionNetworkMessage(command))
+
+    def quit(self):
+        ...

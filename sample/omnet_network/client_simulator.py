@@ -14,6 +14,7 @@ def send_info(socket, t):
 
 def receive_info(socket):
     message = socket.recv()
+    print(message.decode("utf-8"))
     json_data = json.loads(message.decode("utf-8"))
     return json_data
 
@@ -26,32 +27,27 @@ print("connected")
 req = read_json('init')
 send_info(socket, req)
 message = receive_info(socket)
-print(message)
 while True:
     for _ in range(5):
         req = read_json('simulation_step')
         send_info(socket, req)
         message = receive_info(socket)
-        print(message)
 
     req = read_json('actor_status_update')
     send_info(socket, req)
     message = receive_info(socket)
-    print(message)
     status_id = message['payload']['status_id']
 
     req = read_json('compute_instruction')
     req['payload']['status_id'] = status_id
     send_info(socket, req)
     message = receive_info(socket)
-    print(message)
     instruction_id = message['payload']['instruction_id']
 
     req = read_json('apply_instruction')
     req['payload']['instruction_id'] = instruction_id
     send_info(socket, req)
     message = receive_info(socket)
-    print(message)
 
 
 # print(f"Received reply  [ {message} ]")

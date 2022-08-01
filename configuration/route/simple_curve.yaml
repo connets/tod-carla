@@ -5,6 +5,7 @@ origin:
   pitch: 0.
   yaw: -90.000298
   roll: 0.
+
 destination:
   x: 365.
   y: -2.
