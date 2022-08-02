@@ -15,7 +15,7 @@ from src.utils.Hud import HUD
 import pygame
 
 
-class EnvironmentBuilder:
+class EnvironmentHandler:
 
     def __init__(self, seed, carla_world_conf_path, timestep, actors_settings):
         self.seed = seed
@@ -29,8 +29,8 @@ class EnvironmentBuilder:
         self.clock = pygame.time.Clock()
         self.timestep = timestep
 
-        self.actors = dict()
-        self.operators = dict()
+        self.carla_actors = dict()
+        self.external_actors = dict()
 
         self.carla_map = self.tele_world = None
 
@@ -41,6 +41,9 @@ class EnvironmentBuilder:
 
     def destroy(self):
         pygame.quit()
+        self.tele_world.quit()
+        for actor in self.carla_actors.values(): actor.quit()
+        for actor in self.external_actors.values(): actor.quit()
         settings = self.sim_world.get_settings()
         settings.synchronous_mode = False
         settings.fixed_delta_seconds = None
@@ -112,9 +115,9 @@ class EnvironmentBuilder:
                                                                      start_position.location, end_location)
                 tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
-                self.operators[agent_id] = tele_operator
+                self.external_actors[agent_id] = tele_operator
 
-            self.actors[actor_id] = vehicle
+            self.carla_actors[actor_id] = vehicle
 
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()
