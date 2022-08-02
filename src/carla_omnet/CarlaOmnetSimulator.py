@@ -48,7 +48,6 @@ class CarlaOMNeTManager(ABC):
 
     def _receive_data_from_omnet(self):
         message = self.socket.recv()
-        print(message)
         json_data = json.loads(message.decode("utf-8"))
         request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
@@ -70,6 +69,7 @@ class CarlaOMNeTManager(ABC):
             try:
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
+                print(message, answer, '\n\n')
                 self._send_data_to_omnet(answer)
             except zmq.error.Again:
                 print("Timeout happened")
@@ -123,7 +123,6 @@ class RunningMessageHandlerState(MessageHandlerState):
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         super().__init__(carla_omnet_manager)
         self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = 100 * 1000
-        print("***" * 10, " =>", self._manager.environment_handler is not None)
 
         self.status = dict()
         self.instructions = dict()
@@ -187,11 +186,11 @@ class RunningMessageHandlerState(MessageHandlerState):
 
         simulation_finished = operator_status == TeleOperator.OperatorStatus.FINISHED
         if simulation_finished:
-            instruction_id = self._do_nothing_id
+            instruction_id = str(self._do_nothing_id)
             self._finish_current_simulation()
             # self._manager.bui
         elif instruction is None:
-            instruction_id = self._do_nothing_id
+            instruction_id = str(self._do_nothing_id)
         else:
             instruction_id = str(next(self._id_iter))
         self.instructions[instruction_id] = instruction

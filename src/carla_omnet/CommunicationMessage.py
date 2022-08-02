@@ -78,10 +78,12 @@ class CarlaMessage(abc.ABC):
         self.payload = payload
         self.simulation_finished = simulation_finished
 
+    def __repr__(self) -> str:
+        return self.to_json().decode('utf-8')
     def to_json(self):
         res = self.__dict__.copy()
         res['message_type'] = self.__class__.MESSAGE_TYPE
-        return json.dumps(res).encode("utf-8")
+        return json.dumps(res).encode('utf-8')
 
 
 class InitCompletedCarlaMessage(CarlaMessage):

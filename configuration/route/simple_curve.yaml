@@ -7,8 +7,13 @@ origin:
   roll: 0.
 
 destination:
-  x: 365.
-  y: -2.
-  z: 0.
+  x: 396.449982
+  y: 68.529510
+  z: 0.3
+
+#destination:
+#  x: 365.
+#  y: -2.
+#  z: 0.
 
 time_limit: 50s
