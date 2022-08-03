@@ -1,3 +1,3 @@
 behavior: normal
-sampling_resolution: 10m
+sampling_resolution: 0.01m
 time_limit: 50s

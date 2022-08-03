@@ -122,7 +122,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         super().__init__(carla_omnet_manager)
-        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = 100 * 1000
+        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = -1
 
         self.status = dict()
         self.instructions = dict()
