@@ -49,7 +49,7 @@ class InstructionNetworkMessage(NetworkMessage):
 
 
 # from vehicle to mec
-class InfoUpdateNetworkMessage(NetworkMessage):
+class InfoUpdateMessage(NetworkMessage):
     def __init__(self, tele_vehicle_state, timestamp=None, periodic=False):
         super().__init__(timestamp, periodic)
 

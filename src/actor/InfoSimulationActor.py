@@ -1,6 +1,5 @@
 import time
 
-from src.core.TeleEvent import tele_event
 from src.TeleOutputWriter import DataCollector
 from src.actor.TeleActor import TeleActor
 
@@ -15,7 +14,7 @@ class PeriodicDataCollectorActor(TeleActor):
         self._last_rows = None
 
     def run(self):
-        @tele_event('writing_out', log=False)
+        # @tele_event('writing_out', log=False)
         def daemon_write():
             current_rows = [func() for func in self._items.values()]
             if self._last_rows != current_rows:

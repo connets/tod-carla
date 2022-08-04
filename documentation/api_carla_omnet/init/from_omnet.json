@@ -1,0 +1,23 @@
+{
+  "message_type": "INIT",
+  "timestamp": 0,
+  "payload": {
+    "carla_world_configuration": "simple_curve_world",
+    "carla_timestep": 0.01,
+    "seed": 11120,
+    "run_id": "id current simulation",
+    "actors": [
+      {
+        "actor_id": "actor_id",
+        "actor_configuration": "simple_vehicle",
+        "route": "simple_curve",
+        "agents": [
+          {
+            "agent_configuration": "simple_agent",
+            "agent_id": "agent_id"
+          }
+        ]
+      }
+    ]
+  }
+}

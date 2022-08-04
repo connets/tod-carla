@@ -1,0 +1,32 @@
+IMPORT:
+  $cmd$: "import os;from datetime import datetime"
+
+host: ubiquity
+port: 3000
+timeout: 8s
+#camera:
+#  width: 1280
+#  height: 720
+render: False
+time_limit: 40s
+#  sensors_data: 0.005
+#  interval_channel_change_delay: 0.01
+
+
+
+_PROJECT_PATH:
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
+_CURRENT_SIMULATION_DIRECTORY_PATH:
+  $cmd$: "self['network.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+output:
+  log:
+    $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
+  results:
+    $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['_CURRENT_SIMULATION_DIRECTORY_PATH'] + '/'"
+
+#seed: 9
+
+
+
+

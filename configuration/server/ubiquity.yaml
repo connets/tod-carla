@@ -1,0 +1,15 @@
+host: ubiquity
+port: 3000
+timeout: 8s
+render: True
+
+#time_limit: 40s
+#  sensors_data: 0.005
+#  interval_channel_change_delay: 0.01
+
+
+
+
+
+
+
