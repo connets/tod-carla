@@ -1,7 +1,14 @@
 world: Town07_Opt
-
 player:
   model: vehicle.tesla.model3
+  refresh_interval: 50ms
+  speed_limit: auto
+time_limit: 80s
+
+controller:
+  type: auto
+  behavior: normal
+  sampling_resolution: 10m
 bot:
   vehicle_model: vehicle.tesla.model3 #TODO change this
 route:
@@ -17,20 +24,3 @@ route:
     x: 28.
     y: -234.
     z: 0.
-
-delay:
-#    ran:
-#      base_station_processing_distribution: constant(0.0)
-#      uplink_urllc_distribution: constant(0.0)
-#      uplink_embb_distribution: constant(0.0)
-#      downlink_embb_distribution: constant(0.0)
-
-    backhaul:
-#      queue_urllc_distribution: constant(0.0)
-#      queue_embb_distribution: constant(0.0)
-
-      uplink_extra_delay: constant(20ms)
-      downlink_extra_delay: constant(20ms) #+  uniform(-1ms, 1ms)
-#      extra_delay: uniform(1ms, 5ms)
-
-#      M_node_processing_time_distribution: constant(0.0)
