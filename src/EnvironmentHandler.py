@@ -1,42 +1,53 @@
+import os
 import sys
 
 from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
 
+from src.FolderPath import FolderPath
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController
 from src.actor.carla_actor.TeleCarlaActor import TeleCarlaVehicle
 from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
 from src.actor.external_active_actor.TeleOperator import TeleOperator
+from src.actor.external_passive_actor.InfoSimulationActor import PeriodicDataCollectorActor
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
+from src.utils import utils
 from src.utils.Hud import HUD
 import pygame
 
 
 class EnvironmentHandler:
 
-    def __init__(self, seed, carla_world_conf_path, timestep, actors_settings):
-        self.seed = seed
+    def __init__(self, world_configuration):
+        self.seed = world_configuration['seed']
+        carla_world_conf_path = world_configuration['carla_world_configuration']
+        self.timestep = world_configuration['carla_timestep']
+        self._actors_settings = world_configuration['actors']
+        self.run_id = world_configuration["run_id"]
 
         self.tele_configuration = TeleConfiguration.instance
-        self._carla_server_conf = self.tele_configuration['carla_server_configuration']
+        self._simulator_conf = self.tele_configuration['carla_server_configuration']
         self._carla_world_conf = self.tele_configuration.parse_world_conf(carla_world_conf_path)
-        self._actors_settings = actors_settings
-        self.render = self._carla_server_conf['render']
+        self.render = self._simulator_conf['render']
 
         self.clock = pygame.time.Clock()
-        self.timestep = timestep
 
         self.carla_actors = dict()
         self.external_active_actors = dict()
-        self.external_passive_actors = dict()
+        self.external_passive_actors = set()
 
         self.carla_map = self.tele_world = None
+
+
+
 
     def build(self):
         self._create_tele_world()
         self._create_active_actors()
+        if 'output' in self._simulator_conf:
+            self._create_passive_actors()
         # self._create_active_
         ...
 
@@ -54,9 +65,9 @@ class EnvironmentHandler:
         self.client.reload_world(False)  # reload map keeping the world settings
 
     def _create_tele_world(self):
-        host = self._carla_server_conf['carla_server']['host']
-        port = self._carla_server_conf['carla_server']['port']
-        timeout = self._carla_server_conf['carla_server']['timeout']
+        host = self._simulator_conf['carla_server']['host']
+        port = self._simulator_conf['carla_server']['port']
+        timeout = self._simulator_conf['carla_server']['timeout']
         world = self._carla_world_conf['world']
 
         client: libcarla.Client = carla.Client(host, port)
@@ -122,7 +133,31 @@ class EnvironmentHandler:
             self.carla_actors[actor_id] = vehicle
 
     def _create_passive_actors(self):
-        ...
+        tele_world = self.tele_world
+        out_dir = self._simulator_conf['output']['result']['directory'] + f'/{self.run_id}/'
+        os.makedirs(out_dir)
+        for carla_actor in self.carla_actors.values():
+            actor = PeriodicDataCollectorActor(
+                self._simulator_conf['output']['result']['interval'],
+                out_dir + 'sensor.csv',
+                {'timestamp': lambda: utils.format_number(tele_world.timestamp.elapsed_seconds, 5),
+                 'velocity_x': lambda: utils.format_number(carla_actor.get_velocity().x, 8),
+                 'velocity_y': lambda: utils.format_number(carla_actor.get_velocity().y, 8),
+                 'velocity_z': lambda: utils.format_number(carla_actor.get_velocity().z, 8),
+                 'acceleration_x': lambda: utils.format_number(carla_actor.get_acceleration().x, 5),
+                 'acceleration_y': lambda: utils.format_number(carla_actor.get_acceleration().y, 5),
+                 'acceleration_z': lambda: utils.format_number(carla_actor.get_acceleration().z, 5),
+                 'location_x': lambda: utils.format_number(carla_actor.get_location().x, 8),
+                 'location_y': lambda: utils.format_number(carla_actor.get_location().y, 8),
+                 'location_z': lambda: utils.format_number(carla_actor.get_location().z, 8),
+                 # 'altitude': lambda: round(gnss_sensor.altitude, 5),
+                 # 'longitude': lambda: round(gnss_sensor.longitude, 5),
+                 # 'latitude': lambda: round(gnss_sensor.latitude, 5),
+                 # 'throttle': lambda: round(player.get_control().throttle, 5),
+                 # 'steer': lambda: round(player.get_control().steer, 5),
+                 # 'brake': lambda: round(player.get_control().brake, 5)
+                 })
+            self.external_passive_actors.add(actor)
 
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()

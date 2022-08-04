@@ -19,9 +19,6 @@ class PeriodicDataCollectorActor(ExternalPassiveActor):
         # if self._last_rows != current_rows:
         self._data_collector.write(*current_rows)
 
-    def tick(self, timestamp):
-        super().tick(timestamp)
-
 
 class SimulationRatioActor(ExternalPassiveActor):
     def __init__(self, writing_interval: float, file_path, timestamp_func):

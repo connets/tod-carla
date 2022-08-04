@@ -94,8 +94,7 @@ class StartMessageHandlerState(MessageHandlerState):
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, InitOMNeTMessage):
             payload = message.payload
-            environment_handler = EnvironmentHandler(payload['seed'], payload['carla_world_configuration'],
-                                                     payload['carla_timestep'], payload['actors'])
+            environment_handler = EnvironmentHandler(payload)
             environment_handler.build()
 
             # self._manager.actors = world_builder.carla_actors.copy()
@@ -126,7 +125,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         environment_handler = self._manager.environment_handler
         self._tele_world = environment_handler.tele_world
         self._carla_actors = environment_handler.carla_actors
-        self._external_actors = environment_handler.external_active_actors
+        self._external_active_actors = environment_handler.external_active_actors
+        self._external_passive_actors = environment_handler.external_passive_actors
 
         # self._collector = DataCollector("tmp/" + 'results.csv')
         # self._collector.write('timestamp', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y',
@@ -140,6 +140,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._tele_world.tick()
         payload = dict()
         actors_payload = []
+        for actor in self._external_passive_actors:
+            actor.tick(message.timestamp)
         for actor_id, actor in self._carla_actors.items():
             transorm: carla.Transform = actor.get_transform()
             velocity: carla.Vector3D = actor.get_velocity()
@@ -150,6 +152,7 @@ class RunningMessageHandlerState(MessageHandlerState):
             actor_payload['velocity'] = [velocity.x, velocity.y, velocity.z]
             actors_payload.append(actor_payload)
         payload['actors'] = actors_payload
+
         return UpdatedPositionCarlaMessage(payload)
 
     def _actor_status(self, message: ActorStatusOMNetMessage):
@@ -175,7 +178,7 @@ class RunningMessageHandlerState(MessageHandlerState):
         actor_id = message.payload['actor_id']
         status_id = message.payload['status_id']
         status = self.status.pop(status_id)
-        agent = self._external_actors[agent_id]
+        agent = self._external_active_actors[agent_id]
         operator_status, instruction = agent.receive_vehicle_state_info(status,
                                                                         self._tele_world.timestamp.elapsed_seconds)
         payload = dict()
@@ -222,6 +225,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1])
     simulator_conf = simulation_conf = configuration['carla_server_configuration']
+    # print(simulator_conf)
     # configuration = TeleConfiguration(sys.argv[1])
     manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
                                 simulator_conf['carla_api_zmq']['connection_timeout'],

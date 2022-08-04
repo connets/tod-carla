@@ -6,7 +6,7 @@ import re
 class OMNeTMessage(abc.ABC):
 
     def __init__(self, timestamp, payload):
-        self.timestamp = timestamp
+        self.timestamp = round(timestamp, 6)
         self.payload = payload
 
     @classmethod
@@ -74,6 +74,7 @@ class CarlaMessage(abc.ABC):
 
     def __repr__(self) -> str:
         return self.to_json().decode('utf-8')
+
     def to_json(self):
         res = self.__dict__.copy()
         res['message_type'] = self.__class__.MESSAGE_TYPE

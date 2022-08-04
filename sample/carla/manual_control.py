@@ -1179,7 +1179,7 @@ def game_loop(args):
         client = carla.Client(args.host, args.port)
         client.set_timeout(20.0)
 
-        sim_world = client.load_world("Town05")
+        sim_world = client.load_world("OpenDriveMap")
         if args.sync:
             original_settings = sim_world.get_settings()
             settings = sim_world.get_settings()
