@@ -18,46 +18,66 @@ def generate_init_completed(first_row):
     res['message_type'] = "INIT_COMPLETED"
     res['payload'] = dict()
     res['payload']['initial_timestamp'] = first_row['timestamp']
-    return json.dumps(res).encode("utf-8")
+    # return json.dumps(res).encode("utf-8")
+    return res
 
 
 def generate_updated_position(row):
     res = dict()
     res['message_type'] = "UPDATED_POSITIONS"
     actor = dict()
-    actor['actor_id'] = 'car'
-    actor['position'] = dict()
-    actor['velocity'] = dict()
-    actor['rotation'] = dict()
+    actor['actor_id'] = 'actor_id'
     actor['position'] = [row['location_x'], row['location_y'], row['location_z']]
     actor['velocity'] = [row['velocity_x'], row['velocity_y'], row['velocity_z']]
     actor['rotation'] = [row['rotation_pitch'], row['rotation_yaw'], row['rotation_roll']]
     res['payload'] = dict()
     res['payload']['actors'] = [actor]
+    res['simulation_finished'] = False
 
-    return json.dumps(res).encode("utf-8")
+    # return json.dumps(res).encode("utf-8")
+    return res
 
 
 if __name__ == '__main__':
-    data = pd.read_csv('sensors.csv')
+    data = pd.read_csv('sample/omnet_network/server_simulator/sensors.csv')
     data_iterators = data.iterrows()
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(f"tcp://*:5555")
 
-    msg = (generate_init_completed(next(data_iterators)[1]))
     recv_msg = socket.recv()
     print(recv_msg)
     json_data = json.loads(recv_msg.decode("utf-8"))
     print("recv:", json_data)
-    socket.send(msg)
+    msg = read_json('documentation/api_carla_omnet/init/to_omnet.json')
+    print(msg)
+    print("\n\n")
+    send_info(socket, msg)
 
-    for _, row in data_iterators:
+    # for _, row in data_iterators:
+    while not msg['simulation_finished']:
         recv_msg = socket.recv()
         json_data = json.loads(recv_msg.decode("utf-8"))
         print("recv:", json_data)
+        if json_data['message_type'] == 'COMPUTE_INSTRUCTION':
+            msg = read_json('documentation/api_carla_omnet/compute_instruction/to_omnet.json')
+        elif json_data['message_type'] == 'APPLY_INSTRUCTION':
+            msg = read_json('documentation/api_carla_omnet/apply_instruction/to_omnet.json')
+        elif json_data['message_type'] == 'ACTOR_STATUS_UPDATE':
+            msg = read_json('documentation/api_carla_omnet/actor_status_update/to_omnet.json')
+        elif json_data['message_type'] == 'SIMULATION_STEP':
+            next_position = next(data_iterators, None)
+            if next_position is None:
+                msg = read_json('documentation/api_carla_omnet/simulation_step/to_omnet.json')
+                msg['simulation_finished'] = True
+            else:
+                msg = generate_updated_position(next_position[1])
+            msg['payload']['actors'][0]['actor_id'] = 'car'
 
-        msg = (generate_updated_position(row))
-        socket.send(msg)
+        else:
+            raise Exception("Message not recognized")
+        print(msg)
+        print("\n\n")
+        send_info(socket, msg)
 
 #
