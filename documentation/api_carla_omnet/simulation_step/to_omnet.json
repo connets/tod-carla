@@ -3,7 +3,7 @@
   "payload": {
     "actors": [
       {
-        "actor_id": "id",
+        "actor_id": "actor_id",
         "position": [
           0.1,
           0.1,
