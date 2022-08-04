@@ -1,28 +1,24 @@
 import os
 import sys
-from datetime import datetime
 
 import carla
 import pygame
-import yaml
-from pathlib import Path
 
 from numpy import random
 
 from src import utils
 from src.FolderPath import FolderPath
 from src.TeleOutputWriter import DataCollector, TeleLogger
-from src.actor.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
-from src.actor.TeleCarlaActor import TeleCarlaVehicle, TeleCarlaPedestrian, TODTeleCarlaVehicle, \
+from src.actor.external_passive_actors.InfoSimulationActor import SimulationRatioActor, PeriodicDataCollectorActor
+from src.actor.carla_actor.TeleCarlaActor import TeleCarlaPedestrian, TODTeleCarlaVehicle, \
     CarlaOmnetTeleCarlaVehicle
-from src.actor.TeleMEC import TeleMEC
-from src.actor.TeleOperator import TeleOperator
-from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
+from src.actor.external_active_actors.TeleMEC import TeleMEC
+from src.actor.external_active_actors.TeleOperator import TeleOperator
+from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaCameraSensor, TeleCarlaLidarSensor
 from src.args_parse.TeleConfiguration import TeleConfiguration
 import src.EnvironmentHandler as build_enviroment
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController, KeyboardTeleWorldAdapterController
-import src.utils.carla_utils as carla_utils
 from src.core.TeleSimulator import TeleSimulator
 
 

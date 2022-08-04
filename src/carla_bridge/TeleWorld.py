@@ -1,11 +1,8 @@
-import random
 import sys
-import threading
 
 import carla
 from carla import libcarla
 
-from src.actor.TeleCarlaSensor import TeleCarlaRenderingSensor
 from src.utils.carla_utils import find_weather_presets
 from carla.libcarla import World
 

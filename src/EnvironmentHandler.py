@@ -1,4 +1,3 @@
-import abc
 import sys
 
 from carla import libcarla, Transform, Location, Rotation
@@ -6,9 +5,9 @@ import carla
 from numpy import random
 
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController
-from src.actor.TeleCarlaActor import TeleCarlaVehicle
-from src.actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
-from src.actor.TeleOperator import TeleOperator
+from src.actor.carla_actor.TeleCarlaActor import TeleCarlaVehicle
+from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
+from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils.Hud import HUD
@@ -30,20 +29,22 @@ class EnvironmentHandler:
         self.timestep = timestep
 
         self.carla_actors = dict()
-        self.external_actors = dict()
+        self.external_active_actors = dict()
+        self.external_passive_actors = dict()
 
         self.carla_map = self.tele_world = None
 
     def build(self):
         self._create_tele_world()
-        self._create_carla_actors()
+        self._create_active_actors()
+        # self._create_active_
         ...
 
     def destroy(self):
         pygame.quit()
         self.tele_world.quit()
         for actor in self.carla_actors.values(): actor.quit()
-        for actor in self.external_actors.values(): actor.quit()
+        for actor in self.external_active_actors.values(): actor.quit()
         settings = self.sim_world.get_settings()
         settings.synchronous_mode = False
         settings.fixed_delta_seconds = None
@@ -53,8 +54,9 @@ class EnvironmentHandler:
         self.client.reload_world(False)  # reload map keeping the world settings
 
     def _create_tele_world(self):
-        host, port, timeout = self._carla_server_conf['host'], self._carla_server_conf['port'], \
-                              self._carla_server_conf['timeout']
+        host = self._carla_server_conf['carla_server']['host']
+        port = self._carla_server_conf['carla_server']['port']
+        timeout = self._carla_server_conf['carla_server']['timeout']
         world = self._carla_world_conf['world']
 
         client: libcarla.Client = carla.Client(host, port)
@@ -78,7 +80,7 @@ class EnvironmentHandler:
         self.carla_map = self.sim_world.get_map()
         self.tele_world = TeleWorld(client, self.clock)
 
-    def _create_carla_actors(self):
+    def _create_active_actors(self):
         for actor_setting in self._actors_settings:
             actor_id = actor_setting['actor_id']
             actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
@@ -115,9 +117,12 @@ class EnvironmentHandler:
                                                                      start_position.location, end_location)
                 tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
-                self.external_actors[agent_id] = tele_operator
+                self.external_active_actors[agent_id] = tele_operator
 
             self.carla_actors[actor_id] = vehicle
+
+    def _create_passive_actors(self):
+        ...
 
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()

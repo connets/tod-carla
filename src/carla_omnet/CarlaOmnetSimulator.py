@@ -1,17 +1,14 @@
 import itertools
-from abc import ABC, abstractmethod
+import sys
+from abc import ABC
 
 import carla
 import zmq
-import json
 
-from src.TeleOutputWriter import DataCollector
-from src.actor.TeleOperator import TeleOperator
+from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.EnvironmentHandler import EnvironmentHandler
-from src.carla_bridge.TeleWorld import TeleWorld
 from src.carla_omnet.CommunicationMessage import *
-from src.utils import utils
 
 
 class CarlaOmnetError(RuntimeError):
@@ -33,11 +30,11 @@ class UnknownMessageCarlaOmnetError(RuntimeError):
 class CarlaOMNeTManager(ABC):
     _id_iter = itertools.count(1000)
 
-    def __init__(self, protocol, port, connection_timeout, timeout):
+    def __init__(self, protocol, port, connection_timeout, data_transfer_timeout):
         self._protocol = protocol
         self._port = port
-        self._connection_timeout = connection_timeout
-        self._timeout = timeout
+        self.connection_timeout = connection_timeout
+        self.data_transfer_timeout = data_transfer_timeout
         self.environment_handler: EnvironmentHandler = None
         self.timestamp = 0
         self.socket = None
@@ -92,7 +89,7 @@ class StartMessageHandlerState(MessageHandlerState):
 
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         super().__init__(carla_omnet_manager)
-        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = -1
+        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = self._manager.connection_timeout
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, InitOMNeTMessage):
@@ -122,14 +119,14 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         super().__init__(carla_omnet_manager)
-        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = -1
+        self._manager.socket.RCVTIMEO = self._manager.socket.SNDTIMEO = self._manager.data_transfer_timeout
 
         self.status = dict()
         self.instructions = dict()
         environment_handler = self._manager.environment_handler
         self._tele_world = environment_handler.tele_world
         self._carla_actors = environment_handler.carla_actors
-        self._external_actors = environment_handler.external_actors
+        self._external_actors = environment_handler.external_active_actors
 
         # self._collector = DataCollector("tmp/" + 'results.csv')
         # self._collector.write('timestamp', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y',
@@ -223,6 +220,10 @@ class RunningMessageHandlerState(MessageHandlerState):
 
 #  Socket to talk to server
 if __name__ == '__main__':
-    TeleConfiguration('configuration/server/ubiquity.yaml')
-    manager = CarlaOMNeTManager('tcp', 5555, 1, 1)
+    configuration = TeleConfiguration(sys.argv[1])
+    simulator_conf = simulation_conf = configuration['carla_server_configuration']
+    # configuration = TeleConfiguration(sys.argv[1])
+    manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
+                                simulator_conf['carla_api_zmq']['connection_timeout'],
+                                simulator_conf['carla_api_zmq']['data_transfer_timeout'])
     manager.start_simulation()

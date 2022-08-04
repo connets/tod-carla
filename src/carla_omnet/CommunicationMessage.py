@@ -1,12 +1,6 @@
 import abc
-import enum
 import json
 import re
-from typing import List
-
-import carla
-
-from src.actor.TeleCarlaActor import TeleCarlaActor
 
 
 class OMNeTMessage(abc.ABC):

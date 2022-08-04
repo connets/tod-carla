@@ -86,6 +86,12 @@ def _parse_single_unit_value(value_str):
     # length unit
     if unit == 'm':
         return float(value)
+    if unit == 'mm':
+        return float(value) / (10 ** 3)
+    if unit == 'cm':
+        return float(value) / (10 ** 2)
+    if unit == 'dm':
+        return float(value) / 10
     if unit == 'km':
         return float(value) * 1000
     if unit == '%':

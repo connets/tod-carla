@@ -36,13 +36,27 @@ class TeleConfiguration(dict):
     @staticmethod
     def _parse_carla_server_args(configuration_path, args=None):
         parser = ConfigurationParser(configuration_path)
-        parser.add('--host', metavar='H', help='IP of the host server', required=True)
-        parser.add('-p', '--port', metavar='P', type=int, help='TCP port to listen to', required=True)
-        parser.add('--timeout', metavar='T', help='Timeout of connection', required=True)
-        parser.add('--render', help='show display', default=False, action='store_true')
+        parser.add('--tag', metavar='H', help='Tag of current simulation', required=True)
 
-        parser.add('--output.log', type=str, help='Log output directory')
-        parser.add('--output.results', type=str, help='Result output directory')
+        parser.add('--carla_server.host', metavar='H', help='IP of the host server', required=True)
+        parser.add('--carla_server.port', metavar='P', type=int, help='TCP port to listen to', required=True)
+        parser.add('--carla_server.timeout', metavar='T', help='Timeout of connection', required=True)
+        parser.add('--render', help='Show display', default=False, action='store_true')
+        parser.add('--results_output_interval', help='Interval of output results sampling', default=False,
+                   action='store_true')
+
+        # parser.add('--carla_api_zmq.host', metavar='H', help='IP of the ZMQ server', required=True)
+        parser.add('--carla_api_zmq.protocol', metavar='P', type=str, help='ZMQ protocol to use for the communication',
+                   required=True)
+        parser.add('--carla_api_zmq.port', metavar='P', type=int, help='ZMQ port to listen to', required=True)
+        parser.add('--carla_api_zmq.connection_timeout', metavar='T', type=int, help='ZMQ Timeout of listen connection',
+                   required=True)
+        parser.add('--carla_api_zmq.data_transfer_timeout', metavar='T', type=int,
+                   help='ZMQ Timeout of trasmission communication', required=True)
+
+        parser.add('--output.log.directory', type=str, help='Log output directory')
+        parser.add('--output.result.directory', type=str, help='Result output directory')
+        parser.add('--output.result.interval', help='Interval of results storage')
         parser.add('--output.images', type=str, help='Images output directory')
         return parser.parse(args=args, description=__doc__, argument_default=argparse.SUPPRESS)
 
