@@ -142,14 +142,14 @@ class BasicAgent(object):
         """Get method for protected member local planner"""
         return self._global_planner
 
-    def set_destination(self, end_location, start_location=None):
+    def set_destinations(self, *end_locations, start_location=None):
         """
         This method creates a list of waypoints between a starting and ending location,
         based on the route returned by the global router, and adds it to the local planner.
         If no starting location is passed, the vehicle local planner's target location is chosen,
         which corresponds (by default), to a location about 5 meters in front of the vehicle.
 
-            :param end_location (carla.Location): final location of the route
+            :param end_locations (carla.Location): final location of the route
             :param start_location (carla.Location): starting location of the route
         """
         if not start_location:
@@ -160,13 +160,20 @@ class BasicAgent(object):
             clean_queue = False
 
         start_waypoint = self._map.get_waypoint(start_location)
-        end_waypoint = self._map.get_waypoint(end_location)
+        route_trace = []
+        end_waypoints = [self._map.get_waypoint(destination) for destination in end_locations]
+        route_trace = self._trace_route(start_waypoint, end_waypoints)
 
-        route_trace = self.trace_route(start_waypoint, end_waypoint)
         waypoints = [{'x': item[0].transform.location.x, 'y': item[0].transform.location.y,
                       'z': item[0].transform.location.z} for item in route_trace]
+        # print("***** =>", waypoints)
 
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
+        # tmp = self._map.get_waypoint(carla.Location(**{'x': 396.28753662109375, 'y': 87.53955841064453, 'z': 0.0}))
+
+
+        # print(route_trace[0][0].id, '===', tmp.id)
+        # print(route_trace[0][0].s, '===', tmp.s)
         return waypoints
 
     def set_global_plan(self, plan, stop_waypoint_creation=True, clean_queue=True):
@@ -183,16 +190,16 @@ class BasicAgent(object):
             clean_queue=clean_queue
         )
 
-    def trace_route(self, start_waypoint, end_waypoint):
+    def _trace_route(self, start_waypoint, end_waypoints):
         """
         Calculates the shortest route between a starting and ending waypoint.
 
             :param start_waypoint (carla.Waypoint): initial waypoint
-            :param end_waypoint (carla.Waypoint): final waypoint
+            :param end_waypoints (carla.Waypoint): final waypoint
         """
         start_location = start_waypoint.transform.location
-        end_location = end_waypoint.transform.location
-        return self._global_planner.trace_route(start_location, end_location)
+        end_locations = [end_waypoint.transform.location for end_waypoint in end_waypoints]
+        return self._global_planner.trace_route(start_location, end_locations)
 
     def run_step(self):
         """Execute one step of navigation."""

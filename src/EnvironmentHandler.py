@@ -92,7 +92,7 @@ class EnvironmentHandler:
         for actor_setting in self._actors_settings:
             actor_id = actor_setting['actor_id']
             actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
-            start_position, end_location, time_limit = self._create_route(actor_setting.get('route'))
+            start_position, end_locations, time_limit = self._create_route(actor_setting.get('route'))
 
             vehicle_attrs = actor_setting.get('attrs')
             vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
@@ -122,7 +122,7 @@ class EnvironmentHandler:
                 # TODO change here to allow different agents
                 controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
                                                                      agent_conf['sampling_resolution'],
-                                                                     start_position.location, end_location)
+                                                                     start_position.location, end_locations)
                 tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
                 self.external_active_actors[agent_id] = tele_operator
@@ -184,13 +184,16 @@ class EnvironmentHandler:
                 Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
                 Rotation(pitch=route_conf['origin']['pitch'], yaw=route_conf['origin']['yaw'],
                          roll=route_conf['origin']['roll']))
-            destination_location = Location(x=route_conf['destination']['x'], y=route_conf['destination']['y'],
-                                            z=route_conf['destination']['z'])
+            destination_locations = []
+            for destination in route_conf['destinations']:
+                destination_locations.append(Location(x=destination['x'], y=destination['y'],
+                                                      z=destination['z']))
+
             time_limit = route_conf['time_limit']
         else:
             carla_map = self.tele_world.carla_map
             spawn_points = carla_map.get_spawn_points()
             start_transform = random.choice(spawn_points) if spawn_points else carla.Transform()
-            destination_location = random.choice(spawn_points).location
+            destination_locations = [random.choice(spawn_points).location]
             time_limit = sys.maxsize
-        return start_transform, destination_location, time_limit
+        return start_transform, destination_locations, time_limit

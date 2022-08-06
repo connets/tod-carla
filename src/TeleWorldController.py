@@ -104,12 +104,12 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
-    def __init__(self, behavior, sampling_resolution, start_location, destination_location):
+    def __init__(self, behavior, sampling_resolution, start_location, destination_locations):
         super().__init__()
         self._behavior = behavior
         self._sampling_resolution = sampling_resolution
         self._start_location = start_location
-        self._destination_location = destination_location
+        self._destination_locations = destination_locations
         self._player = None
         self.carla_agent = None
         self._waypoints = None
@@ -118,8 +118,8 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, self._sampling_resolution, behavior=self._behavior)
 
-        self._waypoints = self.carla_agent.set_destination(self._destination_location,
-                                                           start_location=self._start_location)
+        self._waypoints = self.carla_agent.set_destinations(*self._destination_locations,
+                                                            start_location=self._start_location)
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))

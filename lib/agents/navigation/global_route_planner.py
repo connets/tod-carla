@@ -9,6 +9,8 @@ This module provides GlobalRoutePlanner implementation.
 """
 
 import math
+import os
+
 import numpy as np
 import networkx as nx
 
@@ -31,16 +33,34 @@ class GlobalRoutePlanner(object):
         self._id_map = None
         self._road_id_to_edge = None
 
+        self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
+
         self._intersection_end_node = -1
         self._previous_decision = RoadOption.VOID
 
         # Build the graph
-        self._build_topology()
-        self._build_graph()
-        self._find_loose_ends()
-        self._lane_change_link()
 
-    def trace_route(self, origin, destination):
+    def trace_route(self, origin, destinations):
+        def repr_location(location):
+            return f'{location.x}_{location.y}_{location.z}'
+
+        route_id = ','.join((str(self._sampling_resolution), repr_location(origin), *map(repr_location, destinations)))
+        cache_file_path = self._cache_dir + route_id
+        # if
+        if self._graph is None:
+            self._build_topology()
+            self._build_graph()
+            self._find_loose_ends()
+            self._lane_change_link()
+        route = []
+        for destination in destinations:
+            route.extend(self._generate_first_time_trace_route(origin, destination))
+            origin = destination
+        route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
+
+        return route
+
+    def _generate_first_time_trace_route(self, origin, destination):
         """
         This method returns list of (carla.Waypoint, RoadOption)
         from origin to destination
@@ -86,7 +106,6 @@ class GlobalRoutePlanner(object):
                             break
                     route_trace.append((current_waypoint, road_option))
 
-        route_trace = joint_safe_area(route_trace, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
         return route_trace
 
     def _build_topology(self):
