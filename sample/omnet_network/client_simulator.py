@@ -1,5 +1,9 @@
 import json
+import random
+import sys
 import time
+
+import numpy as np
 import zmq
 
 
@@ -19,36 +23,49 @@ def receive_info(socket):
     return json_data
 
 
+simulation_step = 0.01
+refresh_status = 0.05
+delay = 0  # TODO implements this feature
+
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5555")
 print("connected")
 
 req = read_json('init')
+req['payload']['run_id'] = str(random.randint(0, 10000))
 send_info(socket, req)
 message = receive_info(socket)
+timestamp = message['payload']['initial_timestamp']
+
 while True:
-    for _ in range(5):
+    for _ in np.arange(0, refresh_status, simulation_step):
+        timestamp += simulation_step
         req = read_json('simulation_step')
+        req['timestamp'] = timestamp
         send_info(socket, req)
         message = receive_info(socket)
 
     req = read_json('actor_status_update')
+    req['timestamp'] = timestamp
     send_info(socket, req)
     message = receive_info(socket)
     status_id = message['payload']['status_id']
 
     req = read_json('compute_instruction')
     req['payload']['status_id'] = status_id
+    req['timestamp'] = timestamp
     send_info(socket, req)
     message = receive_info(socket)
     instruction_id = message['payload']['instruction_id']
+    if message['simulation_finished']:
+        break
 
     req = read_json('apply_instruction')
     req['payload']['instruction_id'] = instruction_id
+    req['timestamp'] = timestamp
     send_info(socket, req)
     message = receive_info(socket)
-
 
 # print(f"Received reply  [ {message} ]")
 # while True:
