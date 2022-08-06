@@ -155,7 +155,7 @@ class EnvironmentHandler:
                  # 'brake': lambda: round(player.get_control().brake, 5)
                  })
             self.external_passive_actors.add(actor)
-        simulation_ratio_actor = SimulationRatioActor(0.1, out_dir + 'simulation_radio.txt',
+        simulation_ratio_actor = SimulationRatioActor(1, out_dir + 'simulation_radio.txt',
                                                       lambda: tele_world.timestamp.elapsed_seconds)
         self.external_passive_actors.add(simulation_ratio_actor)
 
