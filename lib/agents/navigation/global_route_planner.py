@@ -15,6 +15,7 @@ import networkx as nx
 import carla
 from lib.agents.navigation.local_planner import RoadOption
 from lib.agents.tools.misc import vector
+from lib.agents.tools.trajectory import joint_safe_area
 
 
 class GlobalRoutePlanner(object):
@@ -78,13 +79,14 @@ class GlobalRoutePlanner(object):
                             destination) < self._sampling_resolution:
                         route_trace.append((destination_waypoint, route))
                         break
-                    elif len(route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
+                    elif len(
+                            route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
                         destination_index = self._find_closest_in_list(destination_waypoint, path)
                         if closest_index > destination_index:
                             break
                     route_trace.append((current_waypoint, road_option))
 
-
+        route_trace = joint_safe_area(route_trace, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
         return route_trace
 
     def _build_topology(self):

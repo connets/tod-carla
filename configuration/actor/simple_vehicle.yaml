@@ -1,0 +1,13 @@
+type: car
+
+attrs:
+  role_name: hero
+
+speed_limit: 90km/h
+model: vehicle.tesla.model3
+
+camera:
+  width: 1280
+  height: 720
+
+

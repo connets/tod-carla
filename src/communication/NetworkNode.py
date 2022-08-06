@@ -3,7 +3,6 @@ from abc import ABC
 from typing import List
 
 from src.actor.TeleActor import TeleActor
-from src.communication.NetworkChannel import NetworkChannel
 from src.utils.decorators import preconditions
 
 
