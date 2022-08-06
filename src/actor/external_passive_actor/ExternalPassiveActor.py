@@ -8,7 +8,6 @@ class ExternalPassiveActor(TeleActor):
         self.interval = interval
 
     def tick(self, timestamp):
-        print(timestamp, self.last_action + self.interval)
         if timestamp >= self.last_action + self.interval:
             self.last_action = timestamp
             self.do_action()

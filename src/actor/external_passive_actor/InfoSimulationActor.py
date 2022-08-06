@@ -28,15 +28,15 @@ class SimulationRatioActor(ExternalPassiveActor):
         self._timestamp_func = timestamp_func
         self._begin_time = None
 
-    def start(self):
-        self._begin_time = time.time()
 
-    @preconditions('_begin_time')
     def do_action(self):
-        current_real_time = time.time()
-        total_elapsed_time = round(current_real_time - self._begin_time, 2)
-        simulation_duration = self._timestamp_func()
-        whole_speed = round(simulation_duration / total_elapsed_time, 2)
-        self._data_collector.write(f'{whole_speed}x')
+        if self._begin_time is None:
+            self._begin_time = time.time()
+        else:
+            current_real_time = time.time()
+            total_elapsed_time = round(current_real_time - self._begin_time, 2)
+            simulation_duration = self._timestamp_func()
+            whole_speed = round(simulation_duration / total_elapsed_time, 2)
+            self._data_collector.write(f'{whole_speed}x')
 
-        print(f'simulation ratio: {whole_speed}x')
+            print(f'simulation ratio: {whole_speed}x')

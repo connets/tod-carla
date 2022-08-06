@@ -10,7 +10,7 @@ from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController
 from src.actor.carla_actor.TeleCarlaActor import TeleCarlaVehicle
 from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
 from src.actor.external_active_actor.TeleOperator import TeleOperator
-from src.actor.external_passive_actor.InfoSimulationActor import PeriodicDataCollectorActor
+from src.actor.external_passive_actor.InfoSimulationActor import PeriodicDataCollectorActor, SimulationRatioActor
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils import utils
@@ -39,9 +39,6 @@ class EnvironmentHandler:
         self.external_passive_actors = set()
 
         self.carla_map = self.tele_world = None
-
-
-
 
     def build(self):
         self._create_tele_world()
@@ -158,6 +155,9 @@ class EnvironmentHandler:
                  # 'brake': lambda: round(player.get_control().brake, 5)
                  })
             self.external_passive_actors.add(actor)
+        simulation_ratio_actor = SimulationRatioActor(0.1, out_dir + 'simulation_radio.txt',
+                                                      lambda: tele_world.timestamp.elapsed_seconds)
+        self.external_passive_actors.add(simulation_ratio_actor)
 
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()

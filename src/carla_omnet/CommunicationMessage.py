@@ -22,7 +22,6 @@ class OMNeTMessage(abc.ABC):
                     if re.match(r'^\s*$', value):
                         keys_to_remove.add(key)
                     else:
-
                         item[key] = value.replace('"', '')
             for key in keys_to_remove: del item[key]
 
