@@ -1,0 +1,13 @@
+time_limit: 600s
+origin:
+  x: 30.129917
+  y: 293.450104
+  z: 0.2
+  pitch: -0.010314
+  yaw: -45.424335
+  roll: 0.000006
+destination:
+  x: 390
+  y: -78.
+  z: 0.
+
