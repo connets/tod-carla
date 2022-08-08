@@ -104,7 +104,7 @@ class EnvironmentHandler:
             vehicle.attach_sensor(collisions_sensor)
             camera_sensor = TeleCarlaCameraSensor(2.2)
             # TODO change here to attach camera to different actor
-            if 'camera' in actor_conf:
+            if self.render and 'camera' in actor_conf:
                 display_conf = actor_conf['camera']
                 self._create_display(vehicle, display_conf['width'], display_conf['height'], camera_sensor)
             vehicle.attach_sensor(camera_sensor)

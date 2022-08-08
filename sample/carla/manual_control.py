@@ -260,13 +260,16 @@ class World(object):
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
         while self.player is None:
+            print("******")
             # if not self.map.get_spawn_points():
             #     print('There are no spawn points available in your map/town.')
             #     print('Please add some Vehicle Spawn Point to your UE4 scene.')
             #     sys.exit(1)
             # spawn_points = self.map.get_spawn_points()
             # spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
-            spawn_point = carla.Transform(carla.Location(80, 2, 110), carla.Rotation(0, 0, 0))
+
+            spawn_point = carla.Transform(carla.Location(x=13.2, y=-318.7, z=0.02),
+                      carla.Rotation(pitch=0.002, yaw=127.15, roll=0.))
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.show_vehicle_telemetry = False
             self.modify_vehicle_physics(self.player)
@@ -654,7 +657,7 @@ class HUD(object):
         collision = [colhist[x + self.frame - 200] for x in range(0, 200)]
         max_col = max(1.0, max(collision))
         collision = [x / max_col for x in collision]
-        vehicles = world.world.get_actors().filter('vehicle.*')
+        vehicles = world.world.get_actors().filter('vehicle.tesla.model3')
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,
             'Client:  % 16.0f FPS' % clock.get_fps(),
@@ -1180,7 +1183,7 @@ def game_loop(args):
         client = carla.Client(args.host, args.port)
         client.set_timeout(20.0)
 
-        sim_world = client.load_world("OpenDriveMap")
+        sim_world = client.load_world("Town04")
         if args.sync:
             original_settings = sim_world.get_settings()
             settings = sim_world.get_settings()
@@ -1274,7 +1277,7 @@ def main():
         '--filter',
         metavar='PATTERN',
         default='vehicle.*',
-        help='actor filter (default: "vehicle.*")')
+        help='actor filter (default: "vehicle.tesla.model3")')
     argparser.add_argument(
         '--generation',
         metavar='G',

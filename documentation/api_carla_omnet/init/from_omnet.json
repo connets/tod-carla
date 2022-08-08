@@ -2,7 +2,7 @@
   "message_type": "INIT",
   "timestamp": 0,
   "payload": {
-    "carla_world_configuration": "world_1",
+    "carla_world_configuration": "world_4",
     "carla_timestep": 0.01,
     "seed": 11120,
     "run_id": "id_current_simulation",
@@ -10,7 +10,7 @@
       {
         "actor_id": "actor_id",
         "actor_configuration": "simple_vehicle",
-        "route": "simple_curve_world_1",
+        "route": "long_distance_world_4",
         "agents": [
           {
             "agent_configuration": "simple_agent",

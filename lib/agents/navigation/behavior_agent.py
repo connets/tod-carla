@@ -13,7 +13,7 @@ import numpy as np
 import carla
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.local_planner import RoadOption
-from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
+from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal, Custom
 
 from lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
 
@@ -60,6 +60,9 @@ class BehaviorAgent(BasicAgent):
 
         elif behavior == 'aggressive':
             self._behavior = Aggressive()
+
+        elif behavior == 'custom':
+            self._behavior = Custom()
 
         self._other_vehicles = {}  # id_actor: state
         self._other_pedestrians = {}  # id_actor: state

@@ -25,7 +25,7 @@ class GlobalRoutePlanner(object):
     This class provides a very high level route plan.
     """
 
-    def __init__(self, wmap, sampling_resolution):
+    def __init__(self, wmap, sampling_resolution, use_cache=False):
         self._sampling_resolution = sampling_resolution
         self._wmap = wmap
         self._topology = None
@@ -33,32 +33,64 @@ class GlobalRoutePlanner(object):
         self._id_map = None
         self._road_id_to_edge = None
 
-        self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
-
+        if use_cache:
+            self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
+        else:
+            self._cache_dir = None
         self._intersection_end_node = -1
         self._previous_decision = RoadOption.VOID
 
         # Build the graph
 
-    def trace_route(self, origin, destinations):
-        def repr_location(location):
-            return f'{location.x}_{location.y}_{location.z}'
-
-        route_id = ','.join((str(self._sampling_resolution), repr_location(origin), *map(repr_location, destinations)))
+    def _exists_cache(self, route_id):
         cache_file_path = self._cache_dir + route_id
-        # if
-        if self._graph is None:
-            self._build_topology()
-            self._build_graph()
-            self._find_loose_ends()
-            self._lane_change_link()
-        route = []
-        for destination in destinations:
-            route.extend(self._generate_first_time_trace_route(origin, destination))
-            origin = destination
-        route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
+        return os.path.exists(cache_file_path)
 
+    def _save_route(self, route_id, route):
+        cache_file_path = self._cache_dir + route_id
+        test_to_save = ','.join(f'{self.repr_location(wp.transform.location)}_{wp.s}_{ro.value}' for (wp, ro) in route)
+        with open(cache_file_path, 'w') as f:
+            f.write(test_to_save)
+
+    def _load_route(self, route_id):
+        cache_file_path = self._cache_dir + route_id
+        route = []
+        with open(cache_file_path, 'r') as f:
+            encoded_text = f.read()
+            for encoded_text in encoded_text.split(','):
+                *encoded_location, wp_s, road_option_value = map(float, encoded_text.split('_'))
+                wp = self._wmap.get_waypoint(carla.Location(*encoded_location))
+                wp.s = wp_s
+                route.append((wp, RoadOption(road_option_value)))
         return route
+
+    @staticmethod
+    def repr_location(location):
+        return f'{location.x}_{location.y}_{location.z}'
+
+    def trace_route(self, origin, destinations):
+
+        route_id = '-'.join((str(self._sampling_resolution), self.repr_location(origin),
+                             *map(self.repr_location, destinations)))
+        if self._cache_dir is not None and not self._exists_cache(route_id):
+            print('loading route....')
+            return self._load_route(route_id)
+        else:
+            print("calculating route....")
+            if self._graph is None:
+                self._build_topology()
+                self._build_graph()
+                self._find_loose_ends()
+                self._lane_change_link()
+            route = []
+            for destination in destinations:
+                route.extend(self._generate_first_time_trace_route(origin, destination))
+                origin = destination
+            route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
+            if self._cache_dir is not None:
+                self._save_route(route_id, route)
+
+            return route
 
     def _generate_first_time_trace_route(self, origin, destination):
         """
@@ -97,7 +129,7 @@ class GlobalRoutePlanner(object):
                     current_waypoint = waypoint
                     if len(route) - i <= 2 and waypoint.transform.location.distance(
                             destination) < self._sampling_resolution:
-                        route_trace.append((destination_waypoint, route))
+                        route_trace.append((destination_waypoint, road_option))
                         break
                     elif len(
                             route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:

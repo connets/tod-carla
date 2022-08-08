@@ -66,7 +66,7 @@ class CarlaOMNeTManager(ABC):
             try:
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
-                print(message, answer, '\n\n')
+                # print(message, answer, '\n\n')
                 self._send_data_to_omnet(answer)
             except zmq.error.Again:
                 print("Timeout happened")
