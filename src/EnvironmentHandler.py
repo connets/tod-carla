@@ -52,7 +52,10 @@ class EnvironmentHandler:
         # self._create_active_
         ...
 
-    def destroy(self):
+    def destroy(self, operator_status):
+        finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
+        with open(finished_file_path, 'w') as f:
+            f.write(operator_status.name)
         pygame.quit()
         self.tele_world.quit()
         for actor in self.carla_actors.values(): actor.quit()
@@ -157,9 +160,9 @@ class EnvironmentHandler:
                  'location_x': lambda: utils.format_number(carla_actor.get_location().x, 8),
                  'location_y': lambda: utils.format_number(carla_actor.get_location().y, 8),
                  'location_z': lambda: utils.format_number(carla_actor.get_location().z, 8),
-                 'rotation_pitch': lambda: utils.format_number(carla_actor.get_transform().pitch, 8),
-                 'rotation_yaw': lambda: utils.format_number(carla_actor.get_transform().yaw, 8),
-                 'rotation_roll': lambda: utils.format_number(carla_actor.get_transform().rol, 8)
+                 'rotation_pitch': lambda: utils.format_number(carla_actor.get_transform().rotation.pitch, 8),
+                 'rotation_yaw': lambda: utils.format_number(carla_actor.get_transform().rotation.yaw, 8),
+                 'rotation_roll': lambda: utils.format_number(carla_actor.get_transform().rotation.roll, 8)
                  # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                  # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                  # 'latitude': lambda: round(gnss_sensor.latitude, 5),

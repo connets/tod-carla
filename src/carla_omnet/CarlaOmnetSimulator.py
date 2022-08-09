@@ -138,8 +138,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def _simulation_step(self, message: SimulationStepOMNetMessage):
         self._tele_world.tick()
-        while any(not actor.done(self._tele_world.timestamp) for actor in self._carla_actors.values()):
-            ...
+
         payload = dict()
         actors_payload = []
         for actor in self._external_passive_actors:
@@ -158,9 +157,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         return UpdatedPositionCarlaMessage(payload)
 
     def _actor_status(self, message: ActorStatusOMNetMessage):
-
-
-
+        while any(not actor.done(self._tele_world.timestamp) for actor in self._carla_actors.values()):
+            ...
         actor_id = message.payload['actor_id']
         actor_status = self._carla_actors[actor_id].generate_status()
         status_id = str(next(self._id_iter))
@@ -170,8 +168,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         payload['status_id'] = status_id
         return ActorStatusCarlaMessage(payload)
 
-    def _finish_current_simulation(self):
-        self._manager.environment_handler.destroy()
+    def _finish_current_simulation(self, operator_status):
+        self._manager.environment_handler.destroy(operator_status)
         self._manager.set_message_handler_state(StartMessageHandlerState)
 
     def _compute_instruction(self, message: ComputeInstructionOMNeTMessage):
@@ -185,10 +183,10 @@ class RunningMessageHandlerState(MessageHandlerState):
         payload = dict()
         payload['actor_id'] = actor_id
 
-        simulation_finished = operator_status == TeleOperator.OperatorStatus.FINISHED
+        simulation_finished = TeleOperator.OperatorStatus.is_finished(operator_status)
         if simulation_finished:
             instruction_id = str(self._do_nothing_id)
-            self._finish_current_simulation()
+            self._finish_current_simulation(operator_status)
             # self._manager.bui
         elif instruction is None:
             instruction_id = str(self._do_nothing_id)

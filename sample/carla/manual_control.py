@@ -320,6 +320,7 @@ class World(object):
     def modify_vehicle_physics(self, actor):
         # If actor is not a vehicle, we cannot use the physics control
         try:
+            actor.set_simulate_physics(True)
             physics_control = actor.get_physics_control()
             physics_control.use_sweep_wheel_collision = True
             actor.apply_physics_control(physics_control)
