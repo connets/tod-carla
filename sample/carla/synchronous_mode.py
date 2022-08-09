@@ -7,10 +7,9 @@
 # For a copy, see <https://opensource.org/licenses/MIT>.
 
 import glob
+import math
 import os
 import sys
-
-
 
 import carla
 
@@ -44,10 +43,10 @@ class CarlaSyncMode(object):
     """
 
     def __init__(self, world, *sensors, **kwargs):
-        self.world = world
+        self.world: carla.World = world
         self.sensors = sensors
         self.frame = None
-        self.delta_seconds = 1.0 / kwargs.get('fps', 20)
+        self.delta_seconds = 1.0 / 100  # kwargs.get('fps', 20)
         self._queues = []
         self._settings = None
 
@@ -123,7 +122,7 @@ def main():
     font = get_font()
     clock = pygame.time.Clock()
 
-    client = carla.Client('localhost', 2000)
+    client = carla.Client('ubiquity', 3000)
     client.set_timeout(2.0)
 
     world = client.get_world()
@@ -139,7 +138,7 @@ def main():
             random.choice(blueprint_library.filter('vehicle.*')),
             start_pose)
         actor_list.append(vehicle)
-        vehicle.set_simulate_physics(False)
+        vehicle.set_simulate_physics(True)
 
         camera_rgb = world.spawn_actor(
             blueprint_library.find('sensor.camera.rgb'),
@@ -154,7 +153,7 @@ def main():
         actor_list.append(camera_semseg)
 
         # Create a synchronous mode context.
-        with CarlaSyncMode(world, camera_rgb, camera_semseg, fps=30) as sync_mode:
+        with CarlaSyncMode(world, camera_rgb, camera_semseg, fps=100) as sync_mode:
             while True:
                 if should_quit():
                     return
@@ -169,6 +168,9 @@ def main():
 
                 image_semseg.convert(carla.ColorConverter.CityScapesPalette)
                 fps = round(1.0 / snapshot.timestamp.delta_seconds)
+                vel = vehicle.get_velocity()
+                print(world.get_snapshot().timestamp.elapsed_seconds,
+                      (3.6 * math.sqrt(vel.x ** 2 + vel.y ** 2 + vel.z ** 2)))
 
                 # Draw the display.
                 draw_image(display, image_rgb)

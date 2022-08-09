@@ -138,6 +138,8 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def _simulation_step(self, message: SimulationStepOMNetMessage):
         self._tele_world.tick()
+        while any(not actor.done(self._tele_world.timestamp) for actor in self._carla_actors.values()):
+            ...
         payload = dict()
         actors_payload = []
         for actor in self._external_passive_actors:
@@ -157,8 +159,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def _actor_status(self, message: ActorStatusOMNetMessage):
 
-        while any(not actor.done(self._tele_world.timestamp) for actor in self._carla_actors.values()):
-            ...
+
 
         actor_id = message.payload['actor_id']
         actor_status = self._carla_actors[actor_id].generate_status()

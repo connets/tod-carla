@@ -48,7 +48,7 @@ class GlobalRoutePlanner(object):
 
     def _save_route(self, route_id, route):
         cache_file_path = self._cache_dir + route_id
-        test_to_save = ','.join(f'{self.repr_location(wp.transform.location)}_{wp.s}_{ro.value}' for (wp, ro) in route)
+        test_to_save = ','.join(f'{self.repr_location(wp.transform.location)}_{ro.value}' for (wp, ro) in route)
         with open(cache_file_path, 'w') as f:
             f.write(test_to_save)
 
@@ -58,9 +58,8 @@ class GlobalRoutePlanner(object):
         with open(cache_file_path, 'r') as f:
             encoded_text = f.read()
             for encoded_text in encoded_text.split(','):
-                *encoded_location, wp_s, road_option_value = map(float, encoded_text.split('_'))
+                *encoded_location, road_option_value = map(float, encoded_text.split('_'))
                 wp = self._wmap.get_waypoint(carla.Location(*encoded_location))
-                wp.s = wp_s
                 route.append((wp, RoadOption(road_option_value)))
         return route
 
@@ -70,9 +69,9 @@ class GlobalRoutePlanner(object):
 
     def trace_route(self, origin, destinations):
 
-        route_id = '-'.join((str(self._sampling_resolution), self.repr_location(origin),
+        route_id = ''.join((str(self._sampling_resolution), self.repr_location(origin),
                              *map(self.repr_location, destinations)))
-        if self._cache_dir is not None and not self._exists_cache(route_id):
+        if self._cache_dir is not None and self._exists_cache(route_id):
             print('loading route....')
             return self._load_route(route_id)
         else:

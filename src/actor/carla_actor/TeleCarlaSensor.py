@@ -120,7 +120,15 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
             if self._output_path is not None:
                 image.save_to_disk(f'{self._output_path}{image.frame}')
 
-
+def draw_image(surface, image, blend=False):
+    array = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
+    array = np.reshape(array, (image.height, image.width, 4))
+    array = array[:, :, :3]
+    array = array[:, :, ::-1]
+    image_surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+    if blend:
+        image_surface.set_alpha(100)
+    surface.blit(image_surface, (0, 0))
 class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
 
     def __init__(self):

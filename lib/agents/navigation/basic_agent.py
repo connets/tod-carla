@@ -171,7 +171,6 @@ class BasicAgent(object):
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
         # tmp = self._map.get_waypoint(carla.Location(**{'x': 396.28753662109375, 'y': 87.53955841064453, 'z': 0.0}))
 
-
         # print(route_trace[0][0].id, '===', tmp.id)
         # print(route_trace[0][0].s, '===', tmp.s)
         return waypoints
@@ -209,6 +208,7 @@ class BasicAgent(object):
         actor_list = self._world.get_actors()
         vehicle_list = actor_list.filter("*vehicle*")
         lights_list = actor_list.filter("*traffic_light*")
+        lights_list = []  # TODO remove this to allow traffic lights in the trip
 
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
 
@@ -322,8 +322,8 @@ class BasicAgent(object):
     def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                    lane_offset=0):
         speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
-        d_pr = speed * self.t_pr # perception-reaction distance
-        d_braking = speed ** 2 / (2 * self.u * self.g) # braking distance
+        d_pr = speed * self.t_pr  # perception-reaction distance
+        d_braking = speed ** 2 / (2 * self.u * self.g)  # braking distance
         d_total = max(d_pr + d_braking, 6)
         safe_distance_waypoints = [self._map.get_waypoint(self._last_vehicle_state.get_location(),
                                                           lane_type=carla.LaneType.Any)] + \

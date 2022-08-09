@@ -10,7 +10,7 @@
       {
         "actor_id": "actor_id",
         "actor_configuration": "simple_vehicle",
-        "route": "long_distance_world_4",
+        "route": "city_trip_world_4",
         "agents": [
           {
             "agent_configuration": "simple_agent",

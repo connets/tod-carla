@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import random
 import sys
@@ -33,7 +34,7 @@ socket.connect("tcp://localhost:5555")
 print("connected")
 
 req = read_json('init')
-req['payload']['run_id'] = str(random.randint(0, 10000))
+req['payload']['run_id'] = str(datetime.now())
 send_info(socket, req)
 message = receive_info(socket)
 timestamp = message['payload']['initial_timestamp']

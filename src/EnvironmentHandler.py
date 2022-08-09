@@ -6,6 +6,7 @@ import carla
 from numpy import random
 
 from src.FolderPath import FolderPath
+from src.TeleOutputWriter import DataCollector
 from src.TeleWorldController import BehaviorAgentTeleWorldAdapterController
 from src.actor.carla_actor.TeleCarlaActor import TeleCarlaVehicle
 from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
@@ -31,6 +32,9 @@ class EnvironmentHandler:
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
         self._carla_world_conf = self.tele_configuration.parse_world_conf(carla_world_conf_path)
         self.render = self._simulator_conf['render']
+
+        self._simulation_out_dir = self._simulator_conf['output']['result']['directory'] + self.run_id + '/'
+        os.makedirs(self._simulation_out_dir)
 
         self.clock = pygame.time.Clock()
 
@@ -125,18 +129,24 @@ class EnvironmentHandler:
                                                                      start_position.location, end_locations)
                 tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
+                anchor_points = controller.get_trajectory()
+
+                optimal_trajectory_collector = DataCollector(
+                    f"{self._simulation_out_dir}optimal_trajectory_{agent_id}.csv")
+                optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
+                for point in anchor_points:
+                    optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
                 self.external_active_actors[agent_id] = tele_operator
 
             self.carla_actors[actor_id] = vehicle
 
     def _create_passive_actors(self):
         tele_world = self.tele_world
-        out_dir = self._simulator_conf['output']['result']['directory'] + f'/{self.run_id}/'
-        os.makedirs(out_dir)
+
         for carla_actor in self.carla_actors.values():
             actor = PeriodicDataCollectorActor(
                 self._simulator_conf['output']['result']['interval'],
-                out_dir + 'sensor.csv',
+                self._simulation_out_dir + 'sensor.csv',
                 {'timestamp': lambda: utils.format_number(tele_world.timestamp.elapsed_seconds, 5),
                  'velocity_x': lambda: utils.format_number(carla_actor.get_velocity().x, 8),
                  'velocity_y': lambda: utils.format_number(carla_actor.get_velocity().y, 8),
@@ -147,6 +157,9 @@ class EnvironmentHandler:
                  'location_x': lambda: utils.format_number(carla_actor.get_location().x, 8),
                  'location_y': lambda: utils.format_number(carla_actor.get_location().y, 8),
                  'location_z': lambda: utils.format_number(carla_actor.get_location().z, 8),
+                 'rotation_pitch': lambda: utils.format_number(carla_actor.get_transform().pitch, 8),
+                 'rotation_yaw': lambda: utils.format_number(carla_actor.get_transform().yaw, 8),
+                 'rotation_roll': lambda: utils.format_number(carla_actor.get_transform().rol, 8)
                  # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                  # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                  # 'latitude': lambda: round(gnss_sensor.latitude, 5),
@@ -155,7 +168,7 @@ class EnvironmentHandler:
                  # 'brake': lambda: round(player.get_control().brake, 5)
                  })
             self.external_passive_actors.add(actor)
-        simulation_ratio_actor = SimulationRatioActor(1, out_dir + 'simulation_radio.txt',
+        simulation_ratio_actor = SimulationRatioActor(1, self._simulation_out_dir + 'simulation_radio.txt',
                                                       lambda: tele_world.timestamp.elapsed_seconds)
         self.external_passive_actors.add(simulation_ratio_actor)
 
