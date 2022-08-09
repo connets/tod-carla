@@ -26,11 +26,11 @@ _PROJECT_PATH:
 output:
   log:
     directory:
-      $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['tag']"
+      $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['tag'] + '/'"
   result:
     interval: 10ms
     directory:
-      $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['tag']"
+      $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['tag'] + '/'"
 
 
 
