@@ -14,7 +14,7 @@ carla_api_zmq:
   connection_timeout: -1
   data_transfer_timeout: -1
 
-render: True
+#render: True
 
 
 _PROJECT_PATH:
