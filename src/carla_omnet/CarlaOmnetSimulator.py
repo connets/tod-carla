@@ -9,6 +9,7 @@ from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.EnvironmentHandler import EnvironmentHandler
 from src.carla_omnet.CommunicationMessage import *
+from src.utils.decorators import preconditions
 
 
 class CarlaOmnetError(RuntimeError):
@@ -76,10 +77,26 @@ class CarlaOMNeTManager(ABC):
 class MessageHandlerState(ABC):
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         self._manager = carla_omnet_manager
+        self._carla_actors = None
+
 
     def handle_message(self, message: OMNeTMessage) -> CarlaMessage:
         raise RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
                     I don't know how to handle {message.__class__.__name__} message""")
+
+    @preconditions('_carla_actors')
+    def _generate_carla_nodes_positions(self):
+        nodes_positions = []
+        for actor_id, actor in self._carla_actors.items():
+            transorm: carla.Transform = actor.get_transform()
+            velocity: carla.Vector3D = actor.get_velocity()
+            position = dict()
+            position['actor_id'] = actor_id
+            position['position'] = [transorm.location.x, transorm.location.y, transorm.location.z]
+            position['rotation'] = [transorm.rotation.pitch, transorm.rotation.yaw, transorm.rotation.roll]
+            position['velocity'] = [velocity.x, velocity.y, velocity.z]
+            nodes_positions.append(position)
+        return nodes_positions
 
     def timeout(self):
         ...
@@ -101,11 +118,13 @@ class StartMessageHandlerState(MessageHandlerState):
             # self._manager.operators = world_builder.external_actors.copy()
             tele_world = environment_handler.tele_world
             self._manager.environment_handler = environment_handler
+            self._carla_actors = environment_handler.carla_actors
 
             self._manager.set_message_handler_state(RunningMessageHandlerState)
 
             payload = dict()
             payload['initial_timestamp'] = round(tele_world.timestamp.elapsed_seconds, 9)
+            payload['actors'] = self._generate_carla_nodes_positions()
 
             return InitCompletedCarlaMessage(payload)
         else:
@@ -140,19 +159,10 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._tele_world.tick()
 
         payload = dict()
-        actors_payload = []
         for actor in self._external_passive_actors:
             actor.tick(message.timestamp)
-        for actor_id, actor in self._carla_actors.items():
-            transorm: carla.Transform = actor.get_transform()
-            velocity: carla.Vector3D = actor.get_velocity()
-            actor_payload = dict()
-            actor_payload['actor_id'] = actor_id
-            actor_payload['position'] = [transorm.location.x, transorm.location.y, transorm.location.z]
-            actor_payload['rotation'] = [transorm.rotation.pitch, transorm.rotation.yaw, transorm.rotation.roll]
-            actor_payload['velocity'] = [velocity.x, velocity.y, velocity.z]
-            actors_payload.append(actor_payload)
-        payload['actors'] = actors_payload
+
+        payload['actors'] = self._generate_carla_nodes_positions()
 
         return UpdatedPositionCarlaMessage(payload)
 
