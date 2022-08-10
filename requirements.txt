@@ -90,6 +90,7 @@ pycparser==2.21
 pygame==2.1.2
 Pygments==2.12.0
 pyparsing==3.0.9
+pyproj==3.3.1
 pyroute2==0.6.9
 pyroute2.core==0.6.9
 pyroute2.ethtool==0.6.9
