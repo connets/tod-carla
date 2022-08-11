@@ -67,26 +67,18 @@ class GlobalRoutePlanner(object):
 
     def trace_route(self, origin, destinations):
 
-        route_id = ''.join((str(self._sampling_resolution), self.repr_location(origin),
-                            *map(self.repr_location, destinations)))
-
-        route_hash_id = hashlib.md5(route_id.encode()).hexdigest()
-        if not self._use_cache or not self._exists_cache(route_hash_id):
-            print("calculating route....")
-            if self._graph is None:
-                self._build_topology()
-                self._build_graph()
-                self._find_loose_ends()
-                self._lane_change_link()
-            route = []
-            for destination in destinations:
-                route.extend(self._generate_first_time_trace_route(origin, destination))
-                origin = destination
-            route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
-            self._save_route(route_hash_id, route)
-        else:
-            print('loading route....')
-        return self._load_route(route_hash_id)
+        print("calculating route....")
+        if self._graph is None:
+            self._build_topology()
+            self._build_graph()
+            self._find_loose_ends()
+            self._lane_change_link()
+        route = []
+        for destination in destinations:
+            route.extend(self._generate_first_time_trace_route(origin, destination))
+            origin = destination
+        route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
+        return route
 
     def _generate_first_time_trace_route(self, origin, destination):
         """
