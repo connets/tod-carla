@@ -208,7 +208,6 @@ class BasicAgent(object):
         actor_list = self._world.get_actors()
         vehicle_list = actor_list.filter("*vehicle*")
         lights_list = actor_list.filter("*traffic_light*")
-        lights_list = []  # TODO remove this to allow traffic lights in the trip
 
         vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
 

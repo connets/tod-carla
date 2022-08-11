@@ -114,7 +114,7 @@ class BehaviorAgent(BasicAgent):
         lights_list = actor_list.filter("*traffic_light*")
         affected, _ = self._affected_by_traffic_light(lights_list)
 
-        return affected
+        return False #affected
 
     def _tailgating(self, waypoint, vehicle_list):
         """

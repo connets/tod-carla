@@ -7,7 +7,7 @@
 """
 This module provides GlobalRoutePlanner implementation.
 """
-
+import hashlib
 import math
 import os
 
@@ -25,7 +25,7 @@ class GlobalRoutePlanner(object):
     This class provides a very high level route plan.
     """
 
-    def __init__(self, wmap, sampling_resolution, use_cache=False):
+    def __init__(self, wmap, sampling_resolution, use_cache=True):
         self._sampling_resolution = sampling_resolution
         self._wmap = wmap
         self._topology = None
@@ -33,10 +33,8 @@ class GlobalRoutePlanner(object):
         self._id_map = None
         self._road_id_to_edge = None
 
-        if use_cache:
-            self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
-        else:
-            self._cache_dir = None
+        self._use_cache = use_cache
+        self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
         self._intersection_end_node = -1
         self._previous_decision = RoadOption.VOID
 
@@ -70,11 +68,10 @@ class GlobalRoutePlanner(object):
     def trace_route(self, origin, destinations):
 
         route_id = ''.join((str(self._sampling_resolution), self.repr_location(origin),
-                             *map(self.repr_location, destinations)))
-        if self._cache_dir is not None and self._exists_cache(route_id):
-            print('loading route....')
-            return self._load_route(route_id)
-        else:
+                            *map(self.repr_location, destinations)))
+
+        route_hash_id = hashlib.md5(route_id.encode()).hexdigest()
+        if not self._use_cache or not self._exists_cache(route_hash_id):
             print("calculating route....")
             if self._graph is None:
                 self._build_topology()
@@ -86,10 +83,10 @@ class GlobalRoutePlanner(object):
                 route.extend(self._generate_first_time_trace_route(origin, destination))
                 origin = destination
             route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
-            if self._cache_dir is not None:
-                self._save_route(route_id, route)
-
-            return route
+            self._save_route(route_hash_id, route)
+        else:
+            print('loading route....')
+        return self._load_route(route_hash_id)
 
     def _generate_first_time_trace_route(self, origin, destination):
         """
