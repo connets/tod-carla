@@ -1,7 +1,7 @@
 {
   "message_type": "ACTOR_STATUS_UPDATE",
   "payload": {
-    "actor_id": "actor_id"
+    "actor_id": "car"
   },
   "timestamp": 0
 }

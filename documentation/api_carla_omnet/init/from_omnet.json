@@ -8,13 +8,13 @@
     "run_id": "id_current_simulation",
     "actors": [
       {
-        "actor_id": "actor_id",
+        "actor_id": "car",
         "actor_configuration": "simple_vehicle",
         "route": "city_trip_world_4",
         "agents": [
           {
             "agent_configuration": "simple_agent",
-            "agent_id": "agent_id"
+            "agent_id": "car"
           }
         ]
       }

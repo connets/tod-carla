@@ -60,7 +60,7 @@ while True:
     send_info(socket, req)
     message = receive_info(socket)
     instruction_id = message['payload']['instruction_id']
-    if message['simulation_finished']:
+    if message['simulation_status'] != 0:
         break
 
     req = read_json('apply_instruction')
