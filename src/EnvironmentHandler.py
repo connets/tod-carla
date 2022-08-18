@@ -19,6 +19,10 @@ from src.utils.Hud import HUD
 import pygame
 
 
+class CarlaTimeoutError(RuntimeError):
+    ...
+
+
 class EnvironmentHandler:
 
     def __init__(self, world_configuration):
@@ -74,10 +78,18 @@ class EnvironmentHandler:
         timeout = self._simulator_conf['carla_server']['timeout']
         world = self._carla_world_conf['world']
 
-        client: libcarla.Client = carla.Client(host, port)
-        client.set_timeout(timeout)
-        sim_world: carla.World = client.load_world(world)
+        retry_number = self._simulator_conf['carla_server']['retry_count']
+        sim_world: carla.World = None
+        while sim_world is None and retry_number > 0:
+            try:
+                client: libcarla.Client = carla.Client(host, port)
+                client.set_timeout(timeout)
+                sim_world = client.load_world(world)
+            except RuntimeError:
+                retry_number -= 1
 
+        if sim_world is None:
+            raise CarlaTimeoutError()
         settings = sim_world.get_settings()
         settings.synchronous_mode = True
         settings.fixed_delta_seconds = self.timestep

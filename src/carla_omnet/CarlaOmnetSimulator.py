@@ -7,9 +7,12 @@ import zmq
 
 from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
-from src.EnvironmentHandler import EnvironmentHandler
+from src.EnvironmentHandler import EnvironmentHandler, CarlaTimeoutError
 from src.carla_omnet.CommunicationMessage import *
+from src.carla_omnet.SimulationStatus import SimulationStatus
+from src.utils import bcolors
 from src.utils.decorators import preconditions
+import warnings
 
 
 class CarlaOmnetError(RuntimeError):
@@ -49,9 +52,11 @@ class CarlaOMNeTManager(ABC):
         json_data = json.loads(message.decode("utf-8"))
         request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
+        print(request)
         return request
 
     def _send_data_to_omnet(self, answer):
+        print(answer, '\n')
         self.socket.send(answer.to_json())
 
     def _start_server(self):
@@ -64,21 +69,26 @@ class CarlaOMNeTManager(ABC):
         self._start_server()
         self.set_message_handler_state(StartMessageHandlerState)
         while True:
+            answer = None
             try:
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
                 # print(message, answer, '\n\n')
+            # except zmq.error.Again:
+            #     print(f"{bcolors.WARNING}Warning: Exception ZMQ timeout{bcolors.ENDC}")
+            except RuntimeError as e:
+                print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
+                answer = ErrorCarlaMessage()
+                self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
+            finally:
                 self._send_data_to_omnet(answer)
-            except zmq.error.Again:
-                print("Timeout happened")
-                self._message_handler_state.timeout()
+        # self._message_handler_state.timeout()
 
 
 class MessageHandlerState(ABC):
     def __init__(self, carla_omnet_manager: CarlaOMNeTManager):
         self._manager = carla_omnet_manager
         self._carla_actors = None
-
 
     def handle_message(self, message: OMNeTMessage) -> CarlaMessage:
         raise RuntimeError(f"""I'm in the following state: {self.__class__.__name__} and 
@@ -98,8 +108,9 @@ class MessageHandlerState(ABC):
             nodes_positions.append(position)
         return nodes_positions
 
-    def timeout(self):
+    def finish_current_simulation(self, operator_status):
         ...
+    #     ...
 
 
 class StartMessageHandlerState(MessageHandlerState):
@@ -122,13 +133,12 @@ class StartMessageHandlerState(MessageHandlerState):
 
             self._manager.set_message_handler_state(RunningMessageHandlerState)
 
-            payload = dict()
             payload['initial_timestamp'] = round(tele_world.timestamp.elapsed_seconds, 9)
             payload['actors'] = self._generate_carla_nodes_positions()
 
             return InitCompletedCarlaMessage(payload)
-        else:
-            super(StartMessageHandlerState, self).handle_message(message)
+        return super().handle_message(message)
+        # return InitCompletedCarlaMessage(payload, CarlaMessage.SimulationStatus.ERROR)
 
 
 class RunningMessageHandlerState(MessageHandlerState):
@@ -178,25 +188,21 @@ class RunningMessageHandlerState(MessageHandlerState):
         payload['status_id'] = status_id
         return ActorStatusCarlaMessage(payload)
 
-    def _finish_current_simulation(self, operator_status):
-        self._manager.environment_handler.destroy(operator_status)
-        self._manager.set_message_handler_state(StartMessageHandlerState)
-
     def _compute_instruction(self, message: ComputeInstructionOMNeTMessage):
         agent_id = message.payload['agent_id']
         actor_id = message.payload['actor_id']
         status_id = message.payload['status_id']
         status = self.status.pop(status_id)
         agent = self._external_active_actors[agent_id]
-        operator_status, instruction = agent.receive_vehicle_state_info(status,
-                                                                        self._tele_world.timestamp.elapsed_seconds)
+        simulation_status, instruction = agent.receive_vehicle_state_info(status,
+                                                                          self._tele_world.timestamp.elapsed_seconds)
         payload = dict()
         payload['actor_id'] = actor_id
 
-        simulation_finished = TeleOperator.OperatorStatus.is_finished(operator_status)
+        simulation_finished = SimulationStatus.is_finished(simulation_status)
         if simulation_finished:
             instruction_id = str(self._do_nothing_id)
-            self._finish_current_simulation(operator_status)
+            self.finish_current_simulation(simulation_status)
             # self._manager.bui
         elif instruction is None:
             instruction_id = str(self._do_nothing_id)
@@ -205,7 +211,7 @@ class RunningMessageHandlerState(MessageHandlerState):
         self.instructions[instruction_id] = instruction
         payload['instruction_id'] = instruction_id
 
-        return InstructionCarlaMessage(payload, simulation_finished)
+        return InstructionCarlaMessage(payload, simulation_status)
 
     def _apply_instruction(self, message: ApplyInstructionOMNeTMessage):
         instruction_id = message.payload['instruction_id']
@@ -213,6 +219,13 @@ class RunningMessageHandlerState(MessageHandlerState):
         actor = self._carla_actors[actor_id]
         actor.apply_instruction(self.instructions.pop(instruction_id))
         return OkCarlaMessage(dict())
+
+    def finish_current_simulation(self, operator_status):
+        super(RunningMessageHandlerState, self).finish_current_simulation(operator_status)
+        self._manager.environment_handler.destroy(operator_status)
+        self._manager.set_message_handler_state(StartMessageHandlerState)
+
+    # def timeout(self):
 
     def handle_message(self, message: OMNeTMessage):
         if isinstance(message, SimulationStepOMNetMessage):
@@ -226,15 +239,12 @@ class RunningMessageHandlerState(MessageHandlerState):
         else:
             return super().handle_message(message)
 
-    def timeout(self):
-        self._finish_current_simulation()
-
 
 #  Socket to talk to server
 if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1])
     simulator_conf = simulation_conf = configuration['carla_server_configuration']
-    # print(simulator_conf)
+    print(simulator_conf)
     # configuration = TeleConfiguration(sys.argv[1])
     manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
                                 simulator_conf['carla_api_zmq']['connection_timeout'],

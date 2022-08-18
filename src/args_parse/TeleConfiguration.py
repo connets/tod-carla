@@ -41,6 +41,8 @@ class TeleConfiguration(dict):
         parser.add('--carla_server.host', metavar='H', help='IP of the host server', required=True)
         parser.add('--carla_server.port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--carla_server.timeout', metavar='T', help='Timeout of connection', required=True)
+        parser.add('--carla_server.retry_count', metavar='T',
+                   help='Number of times Carla client try to reconnect to server', required=True)
         parser.add('--render', help='Show display', default=False, action='store_true')
         parser.add('--results_output_interval', help='Interval of output results sampling', default=False,
                    action='store_true')

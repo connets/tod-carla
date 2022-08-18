@@ -2,18 +2,10 @@ import enum
 import threading
 
 from src.actor.external_active_actor.ExternalActiveActor import ExternalActiveActor
+from src.carla_omnet.SimulationStatus import SimulationStatus
 
 
 class TeleOperator(ExternalActiveActor):
-    class OperatorStatus(enum.Enum):
-        RUNNING = 0
-        FINISHED_OK = 1
-        FINISHED_ACCIDENT = 2
-        FINISHED_ERROR = 3
-
-        @classmethod
-        def is_finished(cls, status):
-            return status in (cls.FINISHED_OK, cls.FINISHED_ACCIDENT, cls.FINISHED_ERROR)
 
     def __init__(self, controller, maximum_time):
         super().__init__()
@@ -26,11 +18,11 @@ class TeleOperator(ExternalActiveActor):
         # if timestamp > self._maximum_time:
         #     self._tele_context.finish(TeleSimulator.FinishCode.TIME_LIMIT)
         if self._controller.done():
-            return TeleOperator.OperatorStatus.FINISHED_OK, None
+            return SimulationStatus.FINISHED_OK, None
         elif tele_vehicle_state.collisions:
-            return TeleOperator.OperatorStatus.FINISHED_ACCIDENT, None
+            return SimulationStatus.FINISHED_ACCIDENT, None
         # else:
-        return TeleOperator.OperatorStatus.RUNNING, self._controller.do_action(tele_vehicle_state)
+        return SimulationStatus.RUNNING, self._controller.do_action(tele_vehicle_state)
 
         # if command is not None:
         #     self.send_message(InstructionNetworkMessage(command))

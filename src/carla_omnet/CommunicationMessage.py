@@ -1,6 +1,9 @@
 import abc
+import enum
 import json
 import re
+
+from src.carla_omnet.SimulationStatus import SimulationStatus
 
 
 class OMNeTMessage(abc.ABC):
@@ -67,9 +70,10 @@ class ApplyInstructionOMNeTMessage(OMNeTMessage):
 
 
 class CarlaMessage(abc.ABC):
-    def __init__(self, payload, simulation_finished=False):
+
+    def __init__(self, payload, simulation_status=SimulationStatus.RUNNING):
         self.payload = payload
-        self.simulation_finished = simulation_finished
+        self.simulation_status = simulation_status
 
     def __repr__(self) -> str:
         return self.to_json().decode('utf-8')
@@ -98,3 +102,10 @@ class InstructionCarlaMessage(CarlaMessage):
 
 class OkCarlaMessage(CarlaMessage):
     MESSAGE_TYPE = 'OK'
+
+
+class ErrorCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'ERROR'
+
+    def __init__(self):
+        super().__init__(dict(), SimulationStatus.FINISHED_ERROR)
