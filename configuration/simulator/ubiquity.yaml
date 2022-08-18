@@ -6,7 +6,7 @@ tag: test_carla_omnet # CHANGE WITH python project version
 carla_server:
   host: ubiquity
   port: 3000
-  timeout: 8s
+  timeout: 2s
 
 carla_api_zmq:
   protocol: tcp
