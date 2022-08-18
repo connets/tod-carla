@@ -15,6 +15,7 @@ def read_json(type_request):
 
 def send_info(socket, t):
     socket.send(json.dumps(t).encode("utf-8"))
+    print("sent")
 
 
 def receive_info(socket):

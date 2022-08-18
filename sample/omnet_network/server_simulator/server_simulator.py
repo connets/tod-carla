@@ -32,7 +32,7 @@ def generate_updated_position(row):
     actor['rotation'] = [row['rotation_pitch'], row['rotation_yaw'], row['rotation_roll']]
     res['payload'] = dict()
     res['payload']['actors'] = [actor]
-    res['simulation_finished'] = False
+    res['simulation_status'] = 0
 
     # return json.dumps(res).encode("utf-8")
     return res
@@ -55,7 +55,7 @@ if __name__ == '__main__':
     send_info(socket, msg)
 
     # for _, row in data_iterators:
-    while not msg['simulation_finished']:
+    while msg['simulation_status'] == 0:
         recv_msg = socket.recv()
         json_data = json.loads(recv_msg.decode("utf-8"))
         print("recv:", json_data)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             next_position = next(data_iterators, None)
             if next_position is None:
                 msg = read_json('documentation/api_carla_omnet/simulation_step/to_omnet.json')
-                msg['simulation_finished'] = True
+                msg['simulation_status'] = 1
             else:
                 msg = generate_updated_position(next_position[1])
             msg['payload']['actors'][0]['actor_id'] = 'car'
