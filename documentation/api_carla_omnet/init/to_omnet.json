@@ -4,7 +4,7 @@
     "initial_timestamp": 0.05,
     "actors": [
       {
-        "actor_id": "actor_id",
+        "actor_id": "car",
         "position": [
           0.1,
           0.1,
