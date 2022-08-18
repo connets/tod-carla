@@ -26,7 +26,7 @@ def generate_updated_position(row):
     res = dict()
     res['message_type'] = "UPDATED_POSITIONS"
     actor = dict()
-    actor['actor_id'] = 'actor_id'
+    actor['actor_id'] = 'car'
     actor['position'] = [row['location_x'], row['location_y'], row['location_z']]
     actor['velocity'] = [row['velocity_x'], row['velocity_y'], row['velocity_z']]
     actor['rotation'] = [row['rotation_pitch'], row['rotation_yaw'], row['rotation_roll']]
