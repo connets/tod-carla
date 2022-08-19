@@ -1,7 +1,7 @@
 import argparse
 import re
 
-_re_pattern_value_unit = r"\s*(-?[\d.]+)\s*([a-zA-Z]*?[\/a-zA-Z]*)"
+_re_pattern_value_unit = r"^\s*(-?\d+(?:.\d+)?)\s*([a-zA-Z]*?[\/a-zA-Z]*)$"
 # this regex captures the following example normal(3s,1ms) with/without spaces between parenthesis and comma(s)
 # it's also able to capture the sample duration specified after the distribution e.g., normal(3s,1ms) H 2ms  with/without spaces
 

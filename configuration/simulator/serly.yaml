@@ -4,7 +4,7 @@ IMPORT:
 tag: test_carla_omnet # CHANGE WITH python project version
 
 carla_server:
-  host: serly #ubiquity
+  host: "172.16.1.219"
   port: 2000
   timeout: 15s
   retry_count: 4

@@ -209,6 +209,7 @@ class EnvironmentHandler:
     def _create_route(self, route_conf=None):
         if route_conf is not None:
             route_conf = self.tele_configuration.parse_route_conf(route_conf)
+
             start_transform = Transform(
                 Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
                 Rotation(pitch=route_conf['origin']['pitch'], yaw=route_conf['origin']['yaw'],

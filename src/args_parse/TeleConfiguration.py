@@ -67,8 +67,9 @@ class TeleConfiguration(dict):
         with open(file_path, 'r') as stream:
             config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
 
-            return parser_utils.parse_unit_measurement(config_vars_complete)
-
+            tmp =  parser_utils.parse_unit_measurement(config_vars_complete)
+            print(tmp)
+            return tmp
     def parse_actor_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ACTOR + configuration_name + '.yaml'
         return self._parse_yaml_file(file_path)
@@ -83,6 +84,7 @@ class TeleConfiguration(dict):
 
     def parse_route_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ROUTE + configuration_name + '.yaml'
+
         return self._parse_yaml_file(file_path)
 
 
