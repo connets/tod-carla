@@ -242,6 +242,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1])
     simulator_conf = simulation_conf = configuration['carla_server_configuration']
+    print(simulation_conf)
     # configuration = TeleConfiguration(sys.argv[1])
     manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
                                 simulator_conf['carla_api_zmq']['connection_timeout'],
