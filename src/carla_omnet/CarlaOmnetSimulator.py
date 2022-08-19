@@ -52,36 +52,34 @@ class CarlaOMNeTManager(ABC):
         json_data = json.loads(message.decode("utf-8"))
         request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
-        print(request)
+        # print(request)
         return request
 
     def _send_data_to_omnet(self, answer):
-        print(answer, '\n')
+        # print(answer, '\n')
         self.socket.send(answer.to_json())
 
     def _start_server(self):
         context = zmq.Context()
         self.socket = context.socket(zmq.REP)
+        self.socket.setsockopt(zmq.CONFLATE, 1)
         self.socket.bind(f"{self._protocol}://*:{self._port}")
         print("server running")
 
     def start_simulation(self):
         self._start_server()
         self.set_message_handler_state(StartMessageHandlerState)
-        while True:
-            answer = None
-            try:
+        try:
+            while True:
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
+                self._send_data_to_omnet(answer)
                 # print(message, answer, '\n\n')
             # except zmq.error.Again:
             #     print(f"{bcolors.WARNING}Warning: Exception ZMQ timeout{bcolors.ENDC}")
-            except RuntimeError as e:
-                print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
-                answer = ErrorCarlaMessage()
-                self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
-            finally:
-                self._send_data_to_omnet(answer)
+        except Exception as e:
+            print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
+            self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
         # self._message_handler_state.timeout()
 
 
@@ -222,7 +220,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def finish_current_simulation(self, operator_status):
         super(RunningMessageHandlerState, self).finish_current_simulation(operator_status)
-        self._manager.environment_handler.destroy(operator_status)
+        self._manager.environment_handler.finish(operator_status)
         self._manager.set_message_handler_state(StartMessageHandlerState)
 
     # def timeout(self):
@@ -244,7 +242,6 @@ class RunningMessageHandlerState(MessageHandlerState):
 if __name__ == '__main__':
     configuration = TeleConfiguration(sys.argv[1])
     simulator_conf = simulation_conf = configuration['carla_server_configuration']
-    print(simulator_conf)
     # configuration = TeleConfiguration(sys.argv[1])
     manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
                                 simulator_conf['carla_api_zmq']['connection_timeout'],

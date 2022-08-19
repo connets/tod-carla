@@ -56,21 +56,22 @@ class EnvironmentHandler:
         # self._create_active_
         ...
 
-    def destroy(self, operator_status):
+    def finish(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
         with open(finished_file_path, 'w') as f:
             f.write(operator_status.name)
         pygame.quit()
-        self.tele_world.quit()
-        for actor in self.carla_actors.values(): actor.quit()
-        for actor in self.external_active_actors.values(): actor.quit()
-        settings = self.sim_world.get_settings()
-        settings.synchronous_mode = False
-        settings.fixed_delta_seconds = None
-        self.sim_world.apply_settings(settings)
-        traffic_manager = self.client.get_trafficmanager()
-        traffic_manager.set_synchronous_mode(False)
-        self.client.reload_world(False)  # reload map keeping the world settings
+        if self.tele_world.is_alive():
+            self.tele_world.quit()
+            for actor in self.carla_actors.values(): actor.quit()
+            for actor in self.external_active_actors.values(): actor.quit()
+            settings = self.sim_world.get_settings()
+            settings.synchronous_mode = False
+            settings.fixed_delta_seconds = None
+            self.sim_world.apply_settings(settings)
+            traffic_manager = self.client.get_trafficmanager()
+            traffic_manager.set_synchronous_mode(False)
+            self.client.reload_world(False)  # reload map keeping the world settings
 
     def _create_tele_world(self):
         host = self._simulator_conf['carla_server']['host']
