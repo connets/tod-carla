@@ -4,9 +4,9 @@ IMPORT:
 tag: test_carla_omnet # CHANGE WITH python project version
 
 carla_server:
-  host: "172.16.1.219"
+  host: 172.16.1.219
   port: 2000
-  timeout: 15s
+  timeout: 60s
   retry_count: 4
 
 carla_api_zmq:

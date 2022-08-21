@@ -86,7 +86,7 @@ class EnvironmentHandler:
                 client: libcarla.Client = carla.Client(host, port)
                 client.set_timeout(timeout)
                 sim_world = client.load_world(world)
-            except RuntimeError:
+            except RuntimeError as e:
                 retry_number -= 1
 
         if sim_world is None:

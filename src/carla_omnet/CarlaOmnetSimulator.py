@@ -52,11 +52,11 @@ class CarlaOMNeTManager(ABC):
         json_data = json.loads(message.decode("utf-8"))
         request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
-        # print(request)
+        print(request)
         return request
 
     def _send_data_to_omnet(self, answer):
-        # print(answer, '\n')
+        print(answer, '\n')
         self.socket.send(answer.to_json())
 
     def _start_server(self):
