@@ -52,11 +52,9 @@ class CarlaOMNeTManager(ABC):
         json_data = json.loads(message.decode("utf-8"))
         request = OMNeTMessage.from_json(json_data)
         self.timestamp = request.timestamp
-        print(request)
         return request
 
     def _send_data_to_omnet(self, answer):
-        print(answer, '\n')
         self.socket.send(answer.to_json())
 
     def _start_server(self):
@@ -238,13 +236,3 @@ class RunningMessageHandlerState(MessageHandlerState):
             return super().handle_message(message)
 
 
-#  Socket to talk to server
-if __name__ == '__main__':
-    configuration = TeleConfiguration(sys.argv[1])
-    simulator_conf = simulation_conf = configuration['carla_server_configuration']
-    print(simulation_conf)
-    # configuration = TeleConfiguration(sys.argv[1])
-    manager = CarlaOMNeTManager(simulator_conf['carla_api_zmq']['protocol'], simulator_conf['carla_api_zmq']['port'],
-                                simulator_conf['carla_api_zmq']['connection_timeout'],
-                                simulator_conf['carla_api_zmq']['data_transfer_timeout'])
-    manager.start_simulation()
