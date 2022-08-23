@@ -9,4 +9,4 @@ WORKDIR /tod_simulator
 
 #CMD /bin/bash 
 #CMD ["/bin/bash", "-c", "echo yaaa > /ueue/errr.txt"]
-CMD python -m src.carla_omnet.CarlaOmnetSimulator $simulator_configuration_file_path
+CMD python -m src.main $simulator_configuration_file_path
