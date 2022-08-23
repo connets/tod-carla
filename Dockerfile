@@ -1,8 +1,9 @@
 FROM python:3.8.13-bullseye
-RUN pip install --upgrade pip==22.*
+RUN apt-get update \
+    && pip install --upgrade pip==22.* \
+    && apt-get install -y --no-install-recommends ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tod_simulator/
-RUN pip install -r /tod_simulator/requirements.txt
-RUN apt-get update ; apt-get install ffmpeg libsm6 libxext6  -y
+RUN pip install --no-cache-dir -r /tod_simulator/requirements.txt
 COPY . /tod_simulator
 WORKDIR /tod_simulator
 
