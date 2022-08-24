@@ -6,7 +6,7 @@ tag: test_carla_omnet # CHANGE WITH python project version
 carla_server:
   host: carla_simulator
   port: 2000
-  timeout: 4s
+  timeout: 20s
   retry_count: 4
 
 carla_api_zmq:

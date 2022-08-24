@@ -4,8 +4,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg libsm6 libxext6 && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /tod_simulator/
 RUN pip install --no-cache-dir -r /tod_simulator/requirements.txt
-COPY . /tod_simulator
-WORKDIR /tod_simulator
+COPY . /app/tod_simulator
+WORKDIR /app/tod_simulator
 
 #CMD /bin/bash 
 #CMD ["/bin/bash", "-c", "echo yaaa > /ueue/errr.txt"]
