@@ -17,7 +17,7 @@ class TeleOperator(ExternalActiveActor):
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
 
         if timestamp > self._maximum_time:
-            return SimulationStatus.FINISHED_ERROR, None
+            return SimulationStatus.FINISHED_TIME_LIMIT, None
         if self._controller.done():
             return SimulationStatus.FINISHED_OK, None
         elif tele_vehicle_state.collisions:
