@@ -15,8 +15,9 @@ class TeleOperator(ExternalActiveActor):
 
     # TODO update only if the latest vehicle has less ts
     def receive_vehicle_state_info(self, tele_vehicle_state, timestamp):
-        # if timestamp > self._maximum_time:
-        #     self._tele_context.finish(TeleSimulator.FinishCode.TIME_LIMIT)
+
+        if timestamp > self._maximum_time:
+            return SimulationStatus.FINISHED_ERROR, None
         if self._controller.done():
             return SimulationStatus.FINISHED_OK, None
         elif tele_vehicle_state.collisions:

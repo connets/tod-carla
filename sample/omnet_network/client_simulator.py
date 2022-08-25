@@ -31,7 +31,7 @@ delay = 0  # TODO implements this feature
 
 context = zmq.Context()
 socket = context.socket(zmq.REQ)
-socket.connect("tcp://serly:5555")
+socket.connect("tcp://localhost:5555")
 print("connected")
 
 req = read_json('init')
