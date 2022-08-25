@@ -32,7 +32,7 @@ class EnvironmentHandler:
         self.timestep = world_configuration['carla_timestep']
         self._actors_settings = world_configuration['actors']
         self.run_id = world_configuration["run_id"]
-        self.sim_time_limit = (world_configuration["sim_time_limit"] if world_configuration["sim_time_limit"] > 0 else math.inf) - 10
+        self.sim_time_limit = world_configuration["sim_time_limit"]
 
         self.tele_configuration = TeleConfiguration.instance
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
@@ -114,8 +114,9 @@ class EnvironmentHandler:
         for actor_setting in self._actors_settings:
             actor_id = actor_setting['actor_id']
             actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
-            start_position, end_locations, _ = self._create_route(actor_setting.get('route'))
+            start_position, end_locations, time_limit = self._create_route(actor_setting.get('route'))
 
+            time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
             vehicle_attrs = actor_setting.get('attrs')
             vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
                                        actor_conf['model'],
@@ -145,7 +146,7 @@ class EnvironmentHandler:
                 controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
                                                                      agent_conf['sampling_resolution'],
                                                                      start_position.location, end_locations)
-                tele_operator = TeleOperator(controller, self.sim_time_limit)
+                tele_operator = TeleOperator(controller, time_limit)
                 controller.add_player_in_world(vehicle)
                 anchor_points = controller.get_trajectory()
 
