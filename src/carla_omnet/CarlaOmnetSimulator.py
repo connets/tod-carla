@@ -203,7 +203,7 @@ class RunningMessageHandlerState(MessageHandlerState):
         elif instruction is None:
             instruction_id = str(self._do_nothing_id)
         else:
-            instruction_id = str(next(self._id_iter))
+            instruction_id = status_id
         self.instructions[instruction_id] = instruction
         payload['instruction_id'] = instruction_id
 
