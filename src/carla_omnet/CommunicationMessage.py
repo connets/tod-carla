@@ -73,7 +73,7 @@ class CarlaMessage(abc.ABC):
 
     def __init__(self, payload, simulation_status=SimulationStatus.RUNNING):
         self.payload = payload
-        self.simulation_status = simulation_status
+        self.simulation_status = simulation_status.value
 
     def __repr__(self) -> str:
         return self.to_json().decode('utf-8')

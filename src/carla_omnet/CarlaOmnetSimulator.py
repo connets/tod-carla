@@ -227,7 +227,7 @@ class RunningMessageHandlerState(MessageHandlerState):
         if message.timestamp > self._sim_time_limit:
             self.finish_current_simulation(SimulationStatus.FINISHED_TIME_LIMIT)
             return TimeLimitCarlaMessage()
-        if isinstance(message, SimulationStepOMNetMessage):
+        elif isinstance(message, SimulationStepOMNetMessage):
             return self._simulation_step(message)
         elif isinstance(message, ActorStatusOMNetMessage):
             return self._actor_status(message)
