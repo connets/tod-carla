@@ -116,7 +116,8 @@ class EnvironmentHandler:
             actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
             start_position, end_locations, time_limit = self._create_route(actor_setting.get('route'))
 
-            time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
+            # TODO change here to allows multiple routes for different agents
+            self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
             vehicle_attrs = actor_setting.get('attrs')
             vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
                                        actor_conf['model'],
@@ -146,7 +147,7 @@ class EnvironmentHandler:
                 controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
                                                                      agent_conf['sampling_resolution'],
                                                                      start_position.location, end_locations)
-                tele_operator = TeleOperator(controller, time_limit)
+                tele_operator = TeleOperator(controller)
                 controller.add_player_in_world(vehicle)
                 anchor_points = controller.get_trajectory()
 

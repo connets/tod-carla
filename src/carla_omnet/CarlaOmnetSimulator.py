@@ -152,7 +152,7 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._carla_actors = environment_handler.carla_actors
         self._external_active_actors = environment_handler.external_active_actors
         self._external_passive_actors = environment_handler.external_passive_actors
-
+        self._sim_time_limit = environment_handler.sim_time_limit
         # self._collector = DataCollector("tmp/" + 'results.csv')
         # self._collector.write('timestamp', 'velocity_x', 'velocity_y', 'velocity_z', 'acceleration_x', 'acceleration_y',
         #                       'acceleration_z', 'location_x', 'location_y', 'location_z')
@@ -224,6 +224,9 @@ class RunningMessageHandlerState(MessageHandlerState):
     # def timeout(self):
 
     def handle_message(self, message: OMNeTMessage):
+        if message.timestamp > self._sim_time_limit:
+            self.finish_current_simulation(SimulationStatus.FINISHED_TIME_LIMIT)
+            return TimeLimitCarlaMessage()
         if isinstance(message, SimulationStepOMNetMessage):
             return self._simulation_step(message)
         elif isinstance(message, ActorStatusOMNetMessage):

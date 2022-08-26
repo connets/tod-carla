@@ -104,8 +104,8 @@ class OkCarlaMessage(CarlaMessage):
     MESSAGE_TYPE = 'OK'
 
 
-class ErrorCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'ERROR'
+class TimeLimitCarlaMessage(CarlaMessage):
+    MESSAGE_TYPE = 'TIME_LIMIT_REACH'
 
     def __init__(self):
-        super().__init__(dict(), SimulationStatus.FINISHED_ERROR)
+        super().__init__(dict(), SimulationStatus.FINISHED_TIME_LIMIT)
