@@ -3,7 +3,7 @@ import enum
 
 # (simulation_status, car_status)
 class SimulationStatus(enum.Enum):
-    RUNNING = 0,
+    RUNNING = 0
     FINISHED_OK = 1
     FINISHED_ACCIDENT = 2
     FINISHED_TIME_LIMIT = 3
