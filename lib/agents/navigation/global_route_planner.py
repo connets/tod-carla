@@ -7,8 +7,10 @@
 """
 This module provides GlobalRoutePlanner implementation.
 """
-
+import hashlib
 import math
+import os
+
 import numpy as np
 import networkx as nx
 
@@ -23,7 +25,7 @@ class GlobalRoutePlanner(object):
     This class provides a very high level route plan.
     """
 
-    def __init__(self, wmap, sampling_resolution):
+    def __init__(self, wmap, sampling_resolution, use_cache=True):
         self._sampling_resolution = sampling_resolution
         self._wmap = wmap
         self._topology = None
@@ -31,16 +33,54 @@ class GlobalRoutePlanner(object):
         self._id_map = None
         self._road_id_to_edge = None
 
+        self._use_cache = use_cache
+        self._cache_dir = f'{os.path.dirname(os.path.realpath(__file__))}/cache/'
         self._intersection_end_node = -1
         self._previous_decision = RoadOption.VOID
 
         # Build the graph
-        self._build_topology()
-        self._build_graph()
-        self._find_loose_ends()
-        self._lane_change_link()
 
-    def trace_route(self, origin, destination):
+    def _exists_cache(self, route_id):
+        cache_file_path = self._cache_dir + route_id
+        return os.path.exists(cache_file_path)
+
+    def _save_route(self, route_id, route):
+        cache_file_path = self._cache_dir + route_id
+        test_to_save = ','.join(f'{self.repr_location(wp.transform.location)}_{ro.value}' for (wp, ro) in route)
+        with open(cache_file_path, 'w') as f:
+            f.write(test_to_save)
+
+    def _load_route(self, route_id):
+        cache_file_path = self._cache_dir + route_id
+        route = []
+        with open(cache_file_path, 'r') as f:
+            encoded_text = f.read()
+            for encoded_text in encoded_text.split(','):
+                *encoded_location, road_option_value = map(float, encoded_text.split('_'))
+                wp = self._wmap.get_waypoint(carla.Location(*encoded_location))
+                route.append((wp, RoadOption(road_option_value)))
+        return route
+
+    @staticmethod
+    def repr_location(location):
+        return f'{location.x}_{location.y}_{location.z}'
+
+    def trace_route(self, origin, destinations):
+
+        print("calculating route....")
+        if self._graph is None:
+            self._build_topology()
+            self._build_graph()
+            self._find_loose_ends()
+            self._lane_change_link()
+        route = []
+        for destination in destinations:
+            route.extend(self._generate_first_time_trace_route(origin, destination))
+            origin = destination
+        route = joint_safe_area(route, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
+        return route
+
+    def _generate_first_time_trace_route(self, origin, destination):
         """
         This method returns list of (carla.Waypoint, RoadOption)
         from origin to destination
@@ -77,7 +117,7 @@ class GlobalRoutePlanner(object):
                     current_waypoint = waypoint
                     if len(route) - i <= 2 and waypoint.transform.location.distance(
                             destination) < self._sampling_resolution:
-                        route_trace.append((destination_waypoint, route))
+                        route_trace.append((destination_waypoint, road_option))
                         break
                     elif len(
                             route) - i <= 2 and current_waypoint.road_id == destination_waypoint.road_id and current_waypoint.section_id == destination_waypoint.section_id and current_waypoint.lane_id == destination_waypoint.lane_id:
@@ -86,7 +126,6 @@ class GlobalRoutePlanner(object):
                             break
                     route_trace.append((current_waypoint, road_option))
 
-        route_trace = joint_safe_area(route_trace, 30 / 3.6, 1 / 3.6, 1)  # TODO change parameter
         return route_trace
 
     def _build_topology(self):

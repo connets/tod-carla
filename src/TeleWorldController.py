@@ -1,39 +1,3 @@
-"""
-Welcome to CARLA manual control.
-
-Use ARROWS or WASD keys for control.
-
-    W            : throttle
-    S            : brake
-    A/D          : steer left/right
-    Q            : toggle reverse
-    Space        : hand-brake
-    P            : toggle autopilot
-    M            : toggle manual transmission
-    ,/.          : gear up/down
-    CTRL + W     : toggle constant velocity mode at 60 km/h
-
-    Z/X          : toggle right/left blinker
-
-    TAB          : change sensor position
-    ` or N       : next sensor
-    [1-9]        : change to sensor [1-9]
-    G            : toggle radar visualization
-    C            : change weather (Shift+C reverse)
-    Backspace    : change vehicle
-
-    V            : Select next map layer (Shift+V reverse)
-    B            : Load current selected map layer (Shift+B to unload)
-
-    R            : toggle recording images to disk
-
-    CTRL + R     : toggle recording of simulation (replacing any previous)
-    CTRL + P     : start replaying last recorded simulation
-    CTRL + +     : increments the start time of the replay by 1 second (+SHIFT = 10 seconds)
-    CTRL + -     : decrements the start time of the replay by 1 second (+SHIFT = 10 seconds)
-
-    ESC          : quit
-"""
 from abc import ABC, abstractmethod
 
 import carla
@@ -104,12 +68,12 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
-    def __init__(self, behavior, sampling_resolution, start_location, destination_location):
+    def __init__(self, behavior, sampling_resolution, start_location, destination_locations):
         super().__init__()
         self._behavior = behavior
         self._sampling_resolution = sampling_resolution
         self._start_location = start_location
-        self._destination_location = destination_location
+        self._destination_locations = destination_locations
         self._player = None
         self.carla_agent = None
         self._waypoints = None
@@ -118,8 +82,8 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         self._player = player
         self.carla_agent = BehaviorAgent(player.model, self._sampling_resolution, behavior=self._behavior)
 
-        self._waypoints = self.carla_agent.set_destination(self._destination_location,
-                                                           start_location=self._start_location)
+        self._waypoints = self.carla_agent.set_destinations(*self._destination_locations,
+                                                            start_location=self._start_location)
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))

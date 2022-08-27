@@ -13,7 +13,7 @@ import numpy as np
 import carla
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.local_planner import RoadOption
-from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal
+from lib.agents.navigation.behavior_types import Cautious, Aggressive, Normal, Custom
 
 from lib.agents.tools.misc import get_speed, positive, is_within_distance, compute_distance
 
@@ -60,6 +60,9 @@ class BehaviorAgent(BasicAgent):
 
         elif behavior == 'aggressive':
             self._behavior = Aggressive()
+
+        elif behavior == 'custom':
+            self._behavior = Custom()
 
         self._other_vehicles = {}  # id_actor: state
         self._other_pedestrians = {}  # id_actor: state
@@ -111,7 +114,7 @@ class BehaviorAgent(BasicAgent):
         lights_list = actor_list.filter("*traffic_light*")
         affected, _ = self._affected_by_traffic_light(lights_list)
 
-        return affected
+        return False #affected
 
     def _tailgating(self, waypoint, vehicle_list):
         """
@@ -139,8 +142,8 @@ class BehaviorAgent(BasicAgent):
                     print("Tailgating, moving to the right!")
                     end_waypoint = self._local_planner.target_waypoint
                     self._behavior.tailgate_counter = 200
-                    self.set_destination(end_waypoint.transform.location,
-                                         right_wpt.transform.location)
+                    self.set_destinations(end_waypoint.transform.location,
+                                          start_location=right_wpt.transform.location)
             elif left_turn == carla.LaneChange.Left and waypoint.lane_id * left_wpt.lane_id > 0 and left_wpt.lane_type == carla.LaneType.Driving:
                 new_vehicle_state, _, _ = self._vehicle_obstacle_detected(vehicle_list, max(
                     self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, lane_offset=-1)
@@ -148,8 +151,8 @@ class BehaviorAgent(BasicAgent):
                     print("Tailgating, moving to the left!")
                     end_waypoint = self._local_planner.target_waypoint
                     self._behavior.tailgate_counter = 200
-                    self.set_destination(end_waypoint.transform.location,
-                                         left_wpt.transform.location)
+                    self.set_destinations(end_waypoint.transform.location,
+                                          start_location=left_wpt.transform.location)
 
     def _update_other_actors(self, other_actors):
         ...

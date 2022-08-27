@@ -92,6 +92,13 @@ class TeleWorld:
     def quit(self):
         self._tick_callbacks.clear()
 
+    def is_alive(self):
+        try:
+            self.get_snapshot()
+            return True
+        except Exception as _:
+            return False
+
     @property
     def timestamp(self):
         """ TODO

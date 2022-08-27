@@ -1,8 +1,8 @@
 {
   "message_type": "ACTOR_STATUS",
   "payload": {
-    "actor_id": "actor_id",
+    "actor_id": "car",
     "status_id": "status_id"
   },
-  "simulation_finished": false
+  "simulation_status": 0
 }

@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import random
 import sys
@@ -14,6 +15,7 @@ def read_json(type_request):
 
 def send_info(socket, t):
     socket.send(json.dumps(t).encode("utf-8"))
+    print("sent")
 
 
 def receive_info(socket):
@@ -33,7 +35,7 @@ socket.connect("tcp://localhost:5555")
 print("connected")
 
 req = read_json('init')
-req['payload']['run_id'] = str(random.randint(0, 10000))
+req['payload']['run_id'] = str(datetime.now())
 send_info(socket, req)
 message = receive_info(socket)
 timestamp = message['payload']['initial_timestamp']
@@ -58,7 +60,7 @@ while True:
     send_info(socket, req)
     message = receive_info(socket)
     instruction_id = message['payload']['instruction_id']
-    if message['simulation_finished']:
+    if message['simulation_status'] != 0:
         break
 
     req = read_json('apply_instruction')

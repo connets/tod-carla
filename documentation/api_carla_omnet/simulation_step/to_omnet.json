@@ -3,7 +3,7 @@
   "payload": {
     "actors": [
       {
-        "actor_id": "actor_id",
+        "actor_id": "car",
         "position": [
           0.1,
           0.1,
@@ -22,5 +22,5 @@
       }
     ]
   },
-  "simulation_finished": true
+  "simulation_status": 0
 }

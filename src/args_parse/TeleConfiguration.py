@@ -41,6 +41,8 @@ class TeleConfiguration(dict):
         parser.add('--carla_server.host', metavar='H', help='IP of the host server', required=True)
         parser.add('--carla_server.port', metavar='P', type=int, help='TCP port to listen to', required=True)
         parser.add('--carla_server.timeout', metavar='T', help='Timeout of connection', required=True)
+        parser.add('--carla_server.retry_count', metavar='T',
+                   help='Number of times Carla client try to reconnect to server', required=True)
         parser.add('--render', help='Show display', default=False, action='store_true')
         parser.add('--results_output_interval', help='Interval of output results sampling', default=False,
                    action='store_true')
@@ -65,8 +67,8 @@ class TeleConfiguration(dict):
         with open(file_path, 'r') as stream:
             config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
 
-            return parser_utils.parse_unit_measurement(config_vars_complete)
-
+            tmp =  parser_utils.parse_unit_measurement(config_vars_complete)
+            return tmp
     def parse_actor_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ACTOR + configuration_name + '.yaml'
         return self._parse_yaml_file(file_path)
@@ -81,6 +83,7 @@ class TeleConfiguration(dict):
 
     def parse_route_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ROUTE + configuration_name + '.yaml'
+
         return self._parse_yaml_file(file_path)
 
 

@@ -1,13 +1,13 @@
-time_limit: 600s
+time_limit: 300s
 origin:
-  x: 30.129917
-  y: 293.450104
-  z: 0.2
-  pitch: -0.010314
-  yaw: -45.424335
-  roll: 0.000006
-destination:
-  x: 390
-  y: -78.
-  z: 0.
+  x: 13.2,
+  y: -318.7
+  z: 0.02
+  pitch: 0.002
+  yaw: 127.15
+  roll: 0.
+destinations: [
+  { x: -47.4,  y: -221.3, z: 0.05 },
+  { x: 400, y: 50., z: 0. }
+]
 

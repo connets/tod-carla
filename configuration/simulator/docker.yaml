@@ -4,10 +4,10 @@ IMPORT:
 tag: test_carla_omnet # CHANGE WITH python project version
 
 carla_server:
-  host: ubiquity
-  port: 3000
-  timeout: 80s
-  retry_count: 1
+  host: carla_simulator
+  port: 2000
+  timeout: 20s
+  retry_count: 4
 
 carla_api_zmq:
   protocol: tcp
