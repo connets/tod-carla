@@ -78,6 +78,8 @@ class CarlaOMNeTManager(ABC):
         except Exception as e:
             print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
             self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
+        finally:
+            self.environment_handler.close()
         # self._message_handler_state.timeout()
 
 
@@ -218,7 +220,7 @@ class RunningMessageHandlerState(MessageHandlerState):
 
     def finish_current_simulation(self, operator_status):
         super(RunningMessageHandlerState, self).finish_current_simulation(operator_status)
-        self._manager.environment_handler.finish(operator_status)
+        self._manager.environment_handler.finish_simulation(operator_status)
         self._manager.set_message_handler_state(StartMessageHandlerState)
 
     # def timeout(self):
@@ -237,5 +239,3 @@ class RunningMessageHandlerState(MessageHandlerState):
             return self._apply_instruction(message)
         else:
             return super().handle_message(message)
-
-

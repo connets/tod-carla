@@ -2,6 +2,7 @@ import math
 import os
 import sys
 
+import zerorpc
 from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
@@ -37,6 +38,11 @@ class EnvironmentHandler:
         self.tele_configuration = TeleConfiguration.instance
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
         self._carla_world_conf = self.tele_configuration.parse_world_conf(carla_world_conf_path)
+
+        self._carla_handler = zerorpc.Client()
+        self._carla_handler.connect(
+            f"tcp://{self._carla_world_conf['host']}:{self._carla_world_conf['carla_handler_port']}")
+
         self.render = self._simulator_conf['render']
 
         self._simulation_out_dir = self._simulator_conf['output']['result']['directory'] + self.run_id + '/'
@@ -58,7 +64,7 @@ class EnvironmentHandler:
         # self._create_active_
         ...
 
-    def finish(self, operator_status):
+    def finish_simulation(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
         with open(finished_file_path, 'w') as f:
             f.write(operator_status.name)
@@ -75,9 +81,15 @@ class EnvironmentHandler:
             traffic_manager.set_synchronous_mode(False)
             self.client.reload_world(False)  # reload map keeping the world settings
 
+    def close(self):
+        self._carla_handler.close_simulator()
+
     def _create_tele_world(self):
+
+        while not self._carla_handler.reload_simulator():
+            ...
         host = self._simulator_conf['carla_server']['host']
-        port = self._simulator_conf['carla_server']['port']
+        port = self._simulator_conf['carla_server']['carla_simulator_port']
         timeout = self._simulator_conf['carla_server']['timeout']
         world = self._carla_world_conf['world']
 

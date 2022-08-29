@@ -22,6 +22,6 @@ except ImportError:
 
 import carla
 
-client = carla.Client("ubiquity", 3000)
-client.set_timeout(6.0)
+client = carla.Client("172.16.1.219", 2000)
+client.set_timeout(50.0)
 traffic_manager = client.get_trafficmanager()
