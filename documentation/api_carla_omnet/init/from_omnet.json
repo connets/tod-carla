@@ -3,6 +3,7 @@
   "timestamp": 0,
   "payload": {
     "carla_world_configuration": "world_4",
+    "sim_time_limit": 400,
     "carla_timestep": 0.01,
     "seed": 11120,
     "run_id": "id_current_simulation",

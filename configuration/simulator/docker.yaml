@@ -5,7 +5,8 @@ tag: test_carla_omnet # CHANGE WITH python project version
 
 carla_server:
   host: carla_simulator
-  port: 2000
+  carla_simulator_port: 2000
+  carla_handler_port: 5000
   timeout: 20s
   retry_count: 4
 

@@ -39,7 +39,10 @@ class TeleConfiguration(dict):
         parser.add('--tag', metavar='H', help='Tag of current simulation', required=True)
 
         parser.add('--carla_server.host', metavar='H', help='IP of the host server', required=True)
-        parser.add('--carla_server.port', metavar='P', type=int, help='TCP port to listen to', required=True)
+        parser.add('--carla_server.carla_handler_port', metavar='P', type=int,
+                   help='TCP port to listen to Carla Handler', required=True)
+        parser.add('--carla_server.carla_simulator_port', metavar='P', type=int,
+                   help='TCP port to listen to Carla simulator', required=True)
         parser.add('--carla_server.timeout', metavar='T', help='Timeout of connection', required=True)
         parser.add('--carla_server.retry_count', metavar='T',
                    help='Number of times Carla client try to reconnect to server', required=True)
@@ -67,8 +70,9 @@ class TeleConfiguration(dict):
         with open(file_path, 'r') as stream:
             config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
 
-            tmp =  parser_utils.parse_unit_measurement(config_vars_complete)
+            tmp = parser_utils.parse_unit_measurement(config_vars_complete)
             return tmp
+
     def parse_actor_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ACTOR + configuration_name + '.yaml'
         return self._parse_yaml_file(file_path)
