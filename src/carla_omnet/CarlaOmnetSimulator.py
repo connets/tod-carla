@@ -79,7 +79,8 @@ class CarlaOMNeTManager(ABC):
             print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
             self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
         finally:
-            self.environment_handler.close()
+            if self.environment_handler is not None:
+                self.environment_handler.close()
         # self._message_handler_state.timeout()
 
 

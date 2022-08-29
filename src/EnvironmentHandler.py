@@ -2,7 +2,6 @@ import math
 import os
 import sys
 
-import zerorpc
 from carla import libcarla, Transform, Location, Rotation
 import carla
 from numpy import random
@@ -19,6 +18,7 @@ from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils import utils
 from src.utils.Hud import HUD
 import pygame
+import zerorpc
 
 
 class CarlaTimeoutError(RuntimeError):
@@ -41,7 +41,7 @@ class EnvironmentHandler:
 
         self._carla_handler = zerorpc.Client()
         self._carla_handler.connect(
-            f"tcp://{self._carla_world_conf['host']}:{self._carla_world_conf['carla_handler_port']}")
+            f"tcp://{self._simulator_conf['carla_server']['host']}:{self._simulator_conf['carla_server']['carla_handler_port']}")
 
         self.render = self._simulator_conf['render']
 
