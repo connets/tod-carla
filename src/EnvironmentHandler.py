@@ -80,9 +80,11 @@ class EnvironmentHandler:
             traffic_manager = self.client.get_trafficmanager()
             traffic_manager.set_synchronous_mode(False)
             self.client.reload_world(False)  # reload map keeping the world settings
+            self.client = None
 
     def close(self):
         self._carla_handler.close_simulator()
+        self._carla_handler.close()
 
     def _create_tele_world(self):
 
@@ -100,6 +102,7 @@ class EnvironmentHandler:
                 client: libcarla.Client = carla.Client(host, port)
                 client.set_timeout(timeout)
                 sim_world = client.load_world(world)
+
             except RuntimeError as e:
                 retry_number -= 1
 

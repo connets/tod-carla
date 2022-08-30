@@ -64,11 +64,14 @@ class CarlaOMNeTManager(ABC):
         self.socket.bind(f"{self._protocol}://*:{self._port}")
         print("server running")
 
+    # NOTE: It's not possibile to launch different simulations with different instances of carla_simulator,
+    # I've tried to relaunch every times a different instance of carla-simulator to avoid crashes,
+    # but a tcp connection remains always active  (https://github.com/carla-simulator/carla/issues/3212)
     def start_simulation(self):
         self._start_server()
         self.set_message_handler_state(StartMessageHandlerState)
         try:
-            while True:
+            while not isinstance(self._message_handler_state, FinishMessageHandlerState):
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
                 self._send_data_to_omnet(answer)
@@ -80,6 +83,7 @@ class CarlaOMNeTManager(ABC):
             self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
         finally:
             if self.environment_handler is not None:
+                self.socket.close()
                 self.environment_handler.close()
         # self._message_handler_state.timeout()
 
@@ -222,7 +226,7 @@ class RunningMessageHandlerState(MessageHandlerState):
     def finish_current_simulation(self, operator_status):
         super(RunningMessageHandlerState, self).finish_current_simulation(operator_status)
         self._manager.environment_handler.finish_simulation(operator_status)
-        self._manager.set_message_handler_state(StartMessageHandlerState)
+        self._manager.set_message_handler_state(FinishMessageHandlerState)
 
     # def timeout(self):
 
@@ -240,3 +244,7 @@ class RunningMessageHandlerState(MessageHandlerState):
             return self._apply_instruction(message)
         else:
             return super().handle_message(message)
+
+
+class FinishMessageHandlerState(MessageHandlerState):
+    ...
