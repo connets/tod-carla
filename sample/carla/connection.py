@@ -2,7 +2,7 @@ import zerorpc
 import carla
 import logging
 
-host = '172.16.1.219'
+host = '172.16.1.249'
 counts = 10
 i = 1
 retry = 4
@@ -28,3 +28,4 @@ while i <= 10:
     i += 1
     
     
+

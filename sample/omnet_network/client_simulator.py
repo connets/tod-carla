@@ -14,14 +14,15 @@ def read_json(type_request):
 
 
 def send_info(socket, t):
+    print("Send: ", json.dumps(t).encode("utf-8"))
     socket.send(json.dumps(t).encode("utf-8"))
-    print("sent")
 
 
 def receive_info(socket):
     message = socket.recv()
-    print(message.decode("utf-8"))
+    print("Received: ", message.decode("utf-8"))
     json_data = json.loads(message.decode("utf-8"))
+    if json_data['simulation_status'] != 0: sys.exit(0)
     return json_data
 
 
@@ -39,11 +40,13 @@ req['payload']['run_id'] = str(datetime.now())
 send_info(socket, req)
 message = receive_info(socket)
 timestamp = message['payload']['initial_timestamp']
+limit_sim_time = 15
 
 while True:
     for _ in np.arange(0, refresh_status, simulation_step):
         timestamp += simulation_step
         req = read_json('simulation_step')
+
         req['timestamp'] = timestamp
         send_info(socket, req)
         message = receive_info(socket)
@@ -53,11 +56,13 @@ while True:
     send_info(socket, req)
     message = receive_info(socket)
     status_id = message['payload']['status_id']
-
+    simulation_status = 0 if limit_sim_time > timestamp else 1
     req = read_json('compute_instruction')
     req['payload']['status_id'] = status_id
     req['timestamp'] = timestamp
     send_info(socket, req)
+    if simulation_status != 0:
+        break
     message = receive_info(socket)
     instruction_id = message['payload']['instruction_id']
     if message['simulation_status'] != 0:
@@ -65,7 +70,7 @@ while True:
 
     req = read_json('apply_instruction')
     req['payload']['instruction_id'] = instruction_id
-    req['timestamp'] = timestamp
+    req['timestamp'] =  timestamp
     send_info(socket, req)
     message = receive_info(socket)
 
