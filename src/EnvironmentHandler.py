@@ -154,7 +154,7 @@ class EnvironmentHandler:
 
             actor_conf = self.tele_configuration.parse_conf(file_path)
 
-            route_conf = self.tele_configuration.parse_route_conf(
+            route_conf = self.tele_configuration.parse_conf(
                 FolderPath.CONFIGURATION_ROUTE + actor_setting['route'] + '.yaml') if 'route' in actor_setting else None
             start_position, end_locations, time_limit = self._create_route(route_conf)
 
