@@ -1,5 +1,6 @@
 import math
 import os
+import shutil
 import sys
 
 from carla import libcarla, Transform, Location, Rotation
@@ -28,16 +29,19 @@ class CarlaTimeoutError(RuntimeError):
 class EnvironmentHandler:
 
     def __init__(self, world_configuration):
+        self.tele_configuration = TeleConfiguration.instance
+        self.tele_configuration.parse('INIT', world_configuration)
+
         self.seed = world_configuration['seed']
-        carla_world_conf_path = world_configuration['carla_world_configuration']
         self.timestep = world_configuration['carla_timestep']
         self._actors_settings = world_configuration['actors']
         self.run_id = world_configuration["run_id"]
         self.sim_time_limit = world_configuration["sim_time_limit"]
 
-        self.tele_configuration = TeleConfiguration.instance
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
-        self._carla_world_conf = self.tele_configuration.parse_world_conf(carla_world_conf_path)
+
+        carla_world_path = FolderPath.CONFIGURATION_WORLD + world_configuration['carla_world_configuration'] + '.yaml'
+        self._carla_world_conf = self.tele_configuration.parse_conf(carla_world_path)
 
         self._carla_handler = zerorpc.Client()
         self._carla_handler.connect(
@@ -46,7 +50,11 @@ class EnvironmentHandler:
         self.render = self._simulator_conf['render']
 
         self._simulation_out_dir = self._simulator_conf['output']['result']['directory'] + self.run_id + '/'
+        if os.path.exists(self._simulation_out_dir):
+            shutil.rmtree(self._simulation_out_dir)
         os.makedirs(self._simulation_out_dir)
+
+        self.tele_configuration.save_config(self._simulation_out_dir + 'configuration.yaml')
 
         self.clock = pygame.time.Clock()
 
@@ -128,8 +136,13 @@ class EnvironmentHandler:
     def _create_active_actors(self):
         for actor_setting in self._actors_settings:
             actor_id = actor_setting['actor_id']
-            actor_conf = self.tele_configuration.parse_actor_conf(actor_setting['actor_configuration'])
-            start_position, end_locations, time_limit = self._create_route(actor_setting.get('route'))
+            file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['actor_configuration'] + '.yaml'
+
+            actor_conf = self.tele_configuration.parse_conf(file_path)
+
+            route_conf = self.tele_configuration.parse_route_conf(
+                FolderPath.CONFIGURATION_ROUTE + actor_setting['route'] + '.yaml') if 'route' in actor_setting else None
+            start_position, end_locations, time_limit = self._create_route(route_conf)
 
             # TODO change here to allows multiple routes for different agents
             self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
@@ -156,7 +169,9 @@ class EnvironmentHandler:
             if 'agents' in actor_setting and actor_setting['agents']:
                 agent_settings = actor_setting['agents'][0]
                 agent_id = agent_settings['agent_id']
-                agent_conf = self.tele_configuration.parse_agent_conf(agent_settings['agent_configuration'])
+
+                agent_conf_path = FolderPath.CONFIGURATION_AGENT + agent_settings['agent_configuration'] + '.yaml'
+                agent_conf = self.tele_configuration.parse_conf(agent_conf_path)
 
                 # TODO change here to allow different agents
                 controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
@@ -227,7 +242,6 @@ class EnvironmentHandler:
 
     def _create_route(self, route_conf=None):
         if route_conf is not None:
-            route_conf = self.tele_configuration.parse_route_conf(route_conf)
 
             start_transform = Transform(
                 Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
