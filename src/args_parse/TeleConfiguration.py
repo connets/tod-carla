@@ -30,7 +30,6 @@ class TeleConfiguration(dict):
         # if readable:
         #     server_config = self['carla_server_configuration_readable']
         # else:
-        print(self)
         with open(simulation_file_out_path, 'w') as outfile:
             yaml.dump(dict(self), outfile, default_flow_style=False)
 

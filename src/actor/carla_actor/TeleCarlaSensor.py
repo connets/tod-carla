@@ -248,7 +248,6 @@ class TeleCarlaGnssSensor(TeleCarlaSensor):
         self._parent = parent_actor
         world = self._parent.get_world()
         bp = world.get_blueprint_library().find('sensor.other.gnss')
-        print(type(world), type(parent_actor))
         self.sensor = world.spawn_actor(bp, carla.Transform(carla.Location(x=1.0, z=2.8)), attach_to=self._parent.model)
         # We need to pass the lambda a weak reference to self to avoid circular
         # reference.
@@ -259,7 +258,6 @@ class TeleCarlaGnssSensor(TeleCarlaSensor):
         self.sensor.stop()
 
     def destroy(self):
-        print("*********" * 5)
         self.sensor.destroy()
         self.sensor = None
         self.index = None

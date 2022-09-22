@@ -93,7 +93,6 @@ class ConfigurationParser:
 
         res = {**res, **config_private_vars}
         for key in config_keys_to_exec:
-            print(key)
             code = res[key]
             code = code.replace('self', 'res')
             res[key] = eval(code)

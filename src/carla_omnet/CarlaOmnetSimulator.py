@@ -174,7 +174,6 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._tele_world.tick()
 
         payload = dict()
-        print(message.timestamp)
         rounded_timestamp = round(message.timestamp, 6)
         for actor in self._external_passive_actors:
             actor.tick(rounded_timestamp)
