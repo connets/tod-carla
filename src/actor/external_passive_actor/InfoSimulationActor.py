@@ -13,6 +13,7 @@ class PeriodicDataCollectorActor(ExternalPassiveActor):
         self._items = items
         self._data_collector.write(*(key for key in self._items.keys()))
 
+
     def do_action(self):
         # @tele_event('writing_out', log=False)
         current_rows = [func() for func in self._items.values()]

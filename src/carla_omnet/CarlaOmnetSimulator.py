@@ -172,10 +172,13 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._tele_world.tick()
 
         payload = dict()
+        print(message.timestamp)
+        rounded_timestamp = round(message.timestamp, 6)
         for actor in self._external_passive_actors:
-            actor.tick(message.timestamp)
+            actor.tick(rounded_timestamp)
 
         payload['actors'] = self._generate_carla_nodes_positions()
+        #print(','.join(*payload['actors'][0]['position']), ','.join(*payload['actors'][0]['rotation']))
 
         return UpdatedPositionCarlaMessage(payload)
 
