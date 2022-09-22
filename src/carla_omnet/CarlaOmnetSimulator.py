@@ -1,5 +1,6 @@
 import itertools
 import sys
+import traceback
 from abc import ABC
 
 import carla
@@ -79,6 +80,7 @@ class CarlaOMNeTManager(ABC):
             # except zmq.error.Again:
             #     print(f"{bcolors.WARNING}Warning: Exception ZMQ timeout{bcolors.ENDC}")
         except Exception as e:
+            print(traceback.format_exc())
             print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
             self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
         finally:
