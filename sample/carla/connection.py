@@ -29,5 +29,5 @@ import logging
     
 
 client = carla.Client("ubiquity", 3000)
-client.set_timeout(15.0)
+client.set_timeout(6.0)
 traffic_manager = client.get_trafficmanager()
