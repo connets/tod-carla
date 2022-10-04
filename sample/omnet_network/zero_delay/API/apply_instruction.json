@@ -1,0 +1,8 @@
+{
+  "message_type": "APPLY_INSTRUCTION",
+  "payload": {
+    "actor_id": "car",
+    "instruction_id": "instruction_id"
+  },
+  "timestamp": "timestamp"
+}
