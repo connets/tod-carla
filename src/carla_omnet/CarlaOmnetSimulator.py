@@ -224,7 +224,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         instruction_id = message.payload['instruction_id']
         actor_id = message.payload['actor_id']
         actor = self._carla_actors[actor_id]
-        actor.apply_instruction(self.instructions.pop(instruction_id))
+        if instruction_id != str(self._do_nothing_id):
+            actor.apply_instruction(self.instructions.pop(instruction_id))
         return OkCarlaMessage(dict())
 
     def finish_current_simulation(self, operator_status):
