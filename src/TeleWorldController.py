@@ -8,6 +8,7 @@ from pygame.locals import KMOD_CTRL, KMOD_SHIFT, K_0, K_9, K_BACKQUOTE, K_BACKSP
 
 from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.behavior_agent import BehaviorAgent
+from src.communication.TeleVehicleControl import TeleVehicleControl
 from src.utils.decorators import preconditions
 
 
@@ -96,8 +97,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         control = None
         if self.carla_agent.last_vehicle_state is None or self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds:
             self.carla_agent.update_vehicle_state(vehicle_state)
-
-            control = self.carla_agent.run_step(True)
+            control = TeleVehicleControl(self._player.get_world().get_snapshot().timestamp, self.carla_agent.run_step(True))
         return control
 
     @preconditions('carla_agent')

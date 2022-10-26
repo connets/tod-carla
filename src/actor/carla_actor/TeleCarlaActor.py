@@ -7,6 +7,7 @@ import carla
 from carla import ActorBlueprint, VehicleControl
 
 from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCameraSensor, TeleCarlaLidarSensor
+from src.communication.TeleVehicleControl import TeleVehicleControl
 from src.communication.TeleVehicleState import TeleVehicleState
 import lib.camera_visibility.carla_vehicle_annotator as cva
 
@@ -46,6 +47,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._show_vehicle_telemetry = False
         self._modify_vehicle_physics = modify_vehicle_physics
         self.sensors = set()
+        self._last_control = None
 
     def get_speed_limit(self):
         return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit() / 3.6
@@ -127,8 +129,10 @@ class TeleCarlaVehicle(TeleCarlaActor):
             sensor.attach_to_actor(tele_world, self)
 
     @preconditions('_tele_world')
-    def apply_instruction(self, command):
-        self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, command))
+    def apply_instruction(self, tele_vehicle_control: TeleVehicleControl):
+        if self._last_control is None or self._last_control.timestamp.elapsed_seconds < tele_vehicle_control.timestamp.elapsed_seconds:
+            self._last_control = tele_vehicle_control
+            self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, tele_vehicle_control.vehicle_control))
 
     def quit(self):
         for sensor in self.sensors:
@@ -137,7 +141,6 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     def done(self, timestamp):
         return all(sensor.done(timestamp) for sensor in self.sensors)
-
 
 
 class TeleCarlaPedestrian(TeleCarlaActor):
