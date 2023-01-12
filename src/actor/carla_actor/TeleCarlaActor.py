@@ -31,6 +31,9 @@ class TeleCarlaActor(abc.ABC):
     def __getattr__(self, *args):
         return self.model.__getattribute__(*args)
 
+    def tick(self, timestamp):
+        ...
+
 
 class TeleCarlaVehicle(TeleCarlaActor):
     def __init__(self, speed_limit, actor_filter='vehicle.tesla.model3', attrs=None, start_transform=None,
@@ -132,7 +135,11 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def apply_instruction(self, tele_vehicle_control: TeleVehicleControl):
         if self._last_control is None or self._last_control.timestamp.elapsed_seconds < tele_vehicle_control.timestamp.elapsed_seconds:
             self._last_control = tele_vehicle_control
-            self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, tele_vehicle_control.vehicle_control))
+
+    def tick(self, timestamp):
+        if self._last_control is not None:
+            self._tele_world.apply_sync_command(
+                carla.command.ApplyVehicleControl(self.id, self._last_control.vehicle_control))
 
     def quit(self):
         for sensor in self.sensors:

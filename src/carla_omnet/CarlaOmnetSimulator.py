@@ -171,6 +171,8 @@ class RunningMessageHandlerState(MessageHandlerState):
         # self.apply_instruction_msg_id = 1
 
     def _simulation_step(self, message: SimulationStepOMNetMessage):
+        for actor in self._carla_actors:
+            actor.tick()
         self._tele_world.tick()
 
         payload = dict()
