@@ -191,7 +191,7 @@ class EnvironmentHandler:
                 # TODO change here to allow different agents
                 controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
                                                                      agent_conf['sampling_resolution'],
-                                                                     start_position.location, end_locations)
+                                                                     start_position.location, end_locations, opt_dict={'dt': self.timestep})
                 tele_operator = TeleOperator(controller)
                 controller.add_player_in_world(vehicle)
                 anchor_points = controller.get_trajectory()

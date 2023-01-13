@@ -69,19 +69,20 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
-    def __init__(self, behavior, sampling_resolution, start_location, destination_locations):
+    def __init__(self, behavior, sampling_resolution, start_location, destination_locations, opt_dict={}):
         super().__init__()
         self._behavior = behavior
         self._sampling_resolution = sampling_resolution
         self._start_location = start_location
         self._destination_locations = destination_locations
+        self._opt_dict = opt_dict
         self._player = None
         self.carla_agent = None
         self._waypoints = None
 
     def add_player_in_world(self, player):
         self._player = player
-        self.carla_agent = BehaviorAgent(player.model, self._sampling_resolution, behavior=self._behavior)
+        self.carla_agent = BehaviorAgent(player.model, self._sampling_resolution, behavior=self._behavior, opt_dict=self._opt_dict)
 
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations,
                                                             start_location=self._start_location)
