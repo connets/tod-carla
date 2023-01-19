@@ -1,0 +1,3 @@
+<header revMajor="1" revMinor="4" name="" version="1" date="2019-02-18T13:36:12" north="1199.8564425746579" south="904.3956066195719" east="1200.2020674599407" west="904.1649814224874">
+    <geoReference><![CDATA[+proj=tmerc +lat_0=45.48753307132787 +lon_0=9.277162562149893 +x_0=0 +y_0=0 +k_0=1.0 +ellps=GRS80 +units=m +no_defs]]></geoReference>
+    </header>

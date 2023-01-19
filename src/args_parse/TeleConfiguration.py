@@ -16,22 +16,22 @@ class TeleConfiguration(dict):
         super().__init__()
         if carla_simulation_config_path is not None:
             self['carla_server_configuration_path'] = carla_simulation_config_path
-            self._parse()
+            self['carla_server_configuration_readable'] = self._parse_carla_server_args(
+                self['carla_server_configuration_path'])
+            self['carla_server_configuration'] = parser_utils.parse_unit_measurement(
+                self['carla_server_configuration_readable'])
 
-    def _parse(self):
-        self['carla_server_configuration_readable'] = self._parse_carla_server_args(
-            self['carla_server_configuration_path'])
-        self['carla_server_configuration'] = parser_utils.parse_unit_measurement(
-            self['carla_server_configuration_readable'])
+            self.a = 'a'
 
-    def save_config(self, simulation_file_out_path, scenario_file_out_path, readable=True):
-        if readable:
-            server_config = self['carla_server_configuration_readable']
-        else:
-            server_config = self['carla_server_configuration']
+    def parse(self, key, config):
+        self[key] = parser_utils.parse_unit_measurement(config)
 
+    def save_config(self, simulation_file_out_path, readable=True):
+        # if readable:
+        #     server_config = self['carla_server_configuration_readable']
+        # else:
         with open(simulation_file_out_path, 'w') as outfile:
-            yaml.dump(server_config, outfile, default_flow_style=False)
+            yaml.dump(dict(self), outfile, default_flow_style=False)
 
     @staticmethod
     def _parse_carla_server_args(configuration_path, args=None):
@@ -39,7 +39,10 @@ class TeleConfiguration(dict):
         parser.add('--tag', metavar='H', help='Tag of current simulation', required=True)
 
         parser.add('--carla_server.host', metavar='H', help='IP of the host server', required=True)
-        parser.add('--carla_server.port', metavar='P', type=int, help='TCP port to listen to', required=True)
+        parser.add('--carla_server.carla_handler_port', metavar='P', type=int,
+                   help='TCP port to listen to Carla Handler', required=True)
+        parser.add('--carla_server.carla_simulator_port', metavar='P', type=int,
+                   help='TCP port to listen to Carla simulator', required=True)
         parser.add('--carla_server.timeout', metavar='T', help='Timeout of connection', required=True)
         parser.add('--carla_server.retry_count', metavar='T',
                    help='Number of times Carla client try to reconnect to server', required=True)
@@ -66,20 +69,12 @@ class TeleConfiguration(dict):
     def _parse_yaml_file(file_path):
         with open(file_path, 'r') as stream:
             config_vars_complete = yaml.load(stream, Loader=yaml.FullLoader)
+            return parser_utils.parse_unit_measurement(config_vars_complete)
 
-            tmp =  parser_utils.parse_unit_measurement(config_vars_complete)
-            return tmp
-    def parse_actor_conf(self, configuration_name):
-        file_path = FolderPath.CONFIGURATION_ACTOR + configuration_name + '.yaml'
-        return self._parse_yaml_file(file_path)
+    @classmethod
+    def parse_conf(cls, file_path):
+        return cls._parse_yaml_file(file_path)
 
-    def parse_world_conf(self, configuration_name):
-        file_path = FolderPath.CONFIGURATION_WORLD + configuration_name + '.yaml'
-        return self._parse_yaml_file(file_path)
-
-    def parse_agent_conf(self, configuration_name):
-        file_path = FolderPath.CONFIGURATION_AGENT + configuration_name + '.yaml'
-        return self._parse_yaml_file(file_path)
 
     def parse_route_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ROUTE + configuration_name + '.yaml'

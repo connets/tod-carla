@@ -1,2 +1,7 @@
 Dockerfile
 configuration
+documentation
+sample
+tests
+.git
+.gitignore

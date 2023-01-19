@@ -1,5 +1,6 @@
 import itertools
 import sys
+import traceback
 from abc import ABC
 
 import carla
@@ -64,11 +65,14 @@ class CarlaOMNeTManager(ABC):
         self.socket.bind(f"{self._protocol}://*:{self._port}")
         print("server running")
 
+    # NOTE: It's not possibile to launch different simulations with different instances of carla_simulator,
+    # I've tried to relaunch every times a different instance of carla-simulator to avoid crashes,
+    # but a tcp connection remains always active  (https://github.com/carla-simulator/carla/issues/3212)
     def start_simulation(self):
         self._start_server()
         self.set_message_handler_state(StartMessageHandlerState)
         try:
-            while True:
+            while not isinstance(self._message_handler_state, FinishMessageHandlerState):
                 message = self._receive_data_from_omnet()
                 answer = self._message_handler_state.handle_message(message)
                 self._send_data_to_omnet(answer)
@@ -76,8 +80,13 @@ class CarlaOMNeTManager(ABC):
             # except zmq.error.Again:
             #     print(f"{bcolors.WARNING}Warning: Exception ZMQ timeout{bcolors.ENDC}")
         except Exception as e:
+            print(traceback.format_exc())
             print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
             self._message_handler_state.finish_current_simulation(SimulationStatus.FINISHED_ERROR)
+        finally:
+            if self.environment_handler is not None:
+                self.socket.close()
+                self.environment_handler.close()
         # self._message_handler_state.timeout()
 
 
@@ -165,10 +174,12 @@ class RunningMessageHandlerState(MessageHandlerState):
         self._tele_world.tick()
 
         payload = dict()
+        rounded_timestamp = round(message.timestamp, 6)
         for actor in self._external_passive_actors:
-            actor.tick(message.timestamp)
+            actor.tick(rounded_timestamp)
 
         payload['actors'] = self._generate_carla_nodes_positions()
+        #print(','.join(*payload['actors'][0]['position']), ','.join(*payload['actors'][0]['rotation']))
 
         return UpdatedPositionCarlaMessage(payload)
 
@@ -213,13 +224,14 @@ class RunningMessageHandlerState(MessageHandlerState):
         instruction_id = message.payload['instruction_id']
         actor_id = message.payload['actor_id']
         actor = self._carla_actors[actor_id]
-        actor.apply_instruction(self.instructions.pop(instruction_id))
+        if instruction_id != str(self._do_nothing_id):
+            actor.apply_instruction(self.instructions.pop(instruction_id))
         return OkCarlaMessage(dict())
 
     def finish_current_simulation(self, operator_status):
         super(RunningMessageHandlerState, self).finish_current_simulation(operator_status)
-        self._manager.environment_handler.finish(operator_status)
-        self._manager.set_message_handler_state(StartMessageHandlerState)
+        self._manager.environment_handler.finish_simulation(operator_status)
+        self._manager.set_message_handler_state(FinishMessageHandlerState)
 
     # def timeout(self):
 
@@ -239,3 +251,5 @@ class RunningMessageHandlerState(MessageHandlerState):
             return super().handle_message(message)
 
 
+class FinishMessageHandlerState(MessageHandlerState):
+    ...

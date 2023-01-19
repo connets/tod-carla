@@ -5,9 +5,10 @@ tag: test_carla_omnet # CHANGE WITH python project version
 
 carla_server:
   host: ubiquity
-  port: 3000
-  timeout: 80s
-  retry_count: 1
+  carla_simulator_port: 3000
+  carla_handler_port: 4242
+  timeout: 20s
+  retry_count: 4
 
 carla_api_zmq:
   protocol: tcp
