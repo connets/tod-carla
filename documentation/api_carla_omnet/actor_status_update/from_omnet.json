@@ -1,7 +1,8 @@
 {
-  "message_type": "ACTOR_STATUS_UPDATE",
-  "payload": {
+  "message_type": "GENERIC_MESSAGE",
+  "timestamp": 0,
+  "user_defined_message": {
+    "user_message_type": "ACTOR_STATUS_UPDATE",
     "actor_id": "car"
-  },
-  "timestamp": 0
+  }
 }

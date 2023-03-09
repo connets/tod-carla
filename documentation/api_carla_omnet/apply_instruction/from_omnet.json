@@ -1,8 +1,9 @@
 {
-  "message_type": "APPLY_INSTRUCTION",
-  "payload": {
+  "message_type": "GENERIC_MESSAGE",
+  "timestamp": 0,
+  "user_defined_message": {
+    "user_message_type": "APPLY_INSTRUCTION",
     "actor_id": "car",
     "instruction_id": "instruction_id"
-  },
-  "timestamp": "timestamp"
+  }
 }

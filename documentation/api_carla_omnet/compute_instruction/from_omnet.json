@@ -1,9 +1,10 @@
 {
-  "message_type": "COMPUTE_INSTRUCTION",
-  "payload": {
+  "message_type": "GENERIC_MESSAGE",
+  "timestamp": 0,
+  "user_defined_message": {
+    "user_message_type": "COMPUTE_INSTRUCTION",
     "actor_id": "car",
     "agent_id": "car",
     "status_id": "status_id"
-  },
-  "timestamp": "timestamp"
+  }
 }

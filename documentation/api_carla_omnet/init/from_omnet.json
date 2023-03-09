@@ -1,16 +1,12 @@
 {
   "message_type": "INIT",
   "timestamp": 0,
-  "payload": {
-    "carla_world_configuration": "world_1",
-    "sim_time_limit": 12,
-    "carla_timestep": 0.01,
-    "seed": 11120,
-    "run_id": "id_current_simulation",
-    "actors": [
-      {
-        "actor_id": "car",
-        "actor_configuration": "simple_vehicle",
+  "moving_actors": [
+    {
+      "actor_id": "car_0",
+      "actor_type": "car",
+      "actor_configuration": {
+        "configuration_id": "simple_vehicle",
         "route": "simple_curve_world_1",
         "agents": [
           {
@@ -19,6 +15,15 @@
           }
         ]
       }
-    ]
+    }
+  ],
+  "carla_configuration": {
+    "seed": 11120,
+    "carla_timestep": 0.01
+  },
+  "user_defined": {
+    "carla_world_configuration": "world_1",
+    "sim_time_limit": 12,
+    "run_id": "id_current_simulation"
   }
 }
