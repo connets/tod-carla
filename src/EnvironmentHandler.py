@@ -43,19 +43,22 @@ class EnvironmentHandler:
             # you might want to specify some extra behavior here.
             self.log.flush()
 
-    def __init__(self, world_configuration):
+    def __init__(self, carla_configuration, custom_parameters, run_id):
         self.tele_configuration = TeleConfiguration.instance
-        self.tele_configuration.parse('INIT', world_configuration)
+        self.tele_configuration.parse('carla_configuration', carla_configuration)
+        self.tele_configuration.parse('custom_init_parameters', custom_parameters)
+        self.tele_configuration['actors'] = []
 
-        self.seed = world_configuration['seed']
-        self.timestep = world_configuration['carla_timestep']
-        self._actors_settings = world_configuration['actors']
-        self.run_id = world_configuration["run_id"]
-        self.sim_time_limit = world_configuration["sim_time_limit"]
+        self.seed = carla_configuration['seed']
+        self.timestep = carla_configuration['carla_timestep']
+        # self._actors_settings = carla_configuration['actors']
+        self.sim_time_limit = carla_configuration["sim_time_limit"]
+
+        self.run_id = run_id
 
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
 
-        carla_world_path = FolderPath.CONFIGURATION_WORLD + world_configuration['carla_world_configuration'] + '.yaml'
+        carla_world_path = FolderPath.CONFIGURATION_WORLD + carla_configuration['carla_world_configuration'] + '.yaml'
         self._carla_world_conf = self.tele_configuration.parse_conf(carla_world_path)
 
         self._carla_handler = zerorpc.Client()
@@ -69,7 +72,6 @@ class EnvironmentHandler:
             shutil.rmtree(self._simulation_out_dir)
         os.makedirs(self._simulation_out_dir)
         sys.stdout = sys.stderr = self.Logger(self._simulation_out_dir + 'log.txt')
-        self.tele_configuration.save_config(self._simulation_out_dir + 'configuration.yaml')
 
         self.clock = pygame.time.Clock()
 
@@ -81,11 +83,12 @@ class EnvironmentHandler:
 
     def build(self):
         self._create_tele_world()
-        self._create_active_actors()
+        # self._create_active_
+
+    def world_init_completed(self):
+        self.tele_configuration.save_config(self._simulation_out_dir + 'configuration.yaml')
         if 'output' in self._simulator_conf:
             self._create_passive_actors()
-        # self._create_active_
-        ...
 
     def finish_simulation(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
@@ -148,62 +151,63 @@ class EnvironmentHandler:
         self.carla_map = self.sim_world.get_map()
         self.tele_world = TeleWorld(client, self.clock)
 
-    def _create_active_actors(self):
-        for actor_setting in self._actors_settings:
-            actor_id = actor_setting['actor_id']
-            file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['actor_configuration'] + '.yaml'
+    def create_active_actors(self, actor_id, actor_type, actor_setting):
+        self.tele_configuration.parse('actors', actor_setting)
+        file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['actor_configuration'] + '.yaml'
 
-            actor_conf = self.tele_configuration.parse_conf(file_path)
+        actor_conf = self.tele_configuration.parse_conf(file_path)
 
-            route_conf = self.tele_configuration.parse_conf(
-                FolderPath.CONFIGURATION_ROUTE + actor_setting['route'] + '.yaml') if 'route' in actor_setting else None
-            start_position, end_locations, time_limit = self._create_route(route_conf)
+        route_conf = self.tele_configuration.parse_conf(
+            FolderPath.CONFIGURATION_ROUTE + actor_setting['route'] + '.yaml') if 'route' in actor_setting else None
+        start_position, end_locations, time_limit = self._create_route(route_conf)
 
-            # TODO change here to allows multiple routes for different agents
-            self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
-            vehicle_attrs = actor_setting.get('attrs')
-            vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
-                                       actor_conf['model'],
-                                       vehicle_attrs,
-                                       start_transform=start_position,
-                                       modify_vehicle_physics=True)
-            collisions_sensor = TeleCarlaCollisionSensor()
-            vehicle.attach_sensor(collisions_sensor)
-            camera_sensor = TeleCarlaCameraSensor(2.2)
-            # TODO change here to attach camera to different actor
-            if self.render and 'camera' in actor_conf:
-                display_conf = actor_conf['camera']
-                self._create_display(vehicle, display_conf['width'], display_conf['height'], camera_sensor)
-            vehicle.attach_sensor(camera_sensor)
+        # TODO change here to allows multiple routes for different agents
+        self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
+        vehicle_attrs = actor_setting.get('attrs')
+        vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
+                                   actor_conf['model'],
+                                   vehicle_attrs,
+                                   start_transform=start_position,
+                                   modify_vehicle_physics=True)
+        collisions_sensor = TeleCarlaCollisionSensor()
+        vehicle.attach_sensor(collisions_sensor)
+        camera_sensor = TeleCarlaCameraSensor(2.2)
+        # TODO change here to attach camera to different actor
+        if self.render and 'camera' in actor_conf:
+            display_conf = actor_conf['camera']
+            self._create_display(vehicle, display_conf['width'], display_conf['height'], camera_sensor)
+        vehicle.attach_sensor(camera_sensor)
 
-            lidar_sensor = TeleCarlaLidarSensor()
-            vehicle.attach_sensor(lidar_sensor)
-            vehicle.spawn_in_the_world(self.tele_world)
+        lidar_sensor = TeleCarlaLidarSensor()
+        vehicle.attach_sensor(lidar_sensor)
+        vehicle.spawn_in_the_world(self.tele_world)
 
-            # TODO handle the situation in which one vehicle has multiple agents
-            if 'agents' in actor_setting and actor_setting['agents']:
-                agent_settings = actor_setting['agents'][0]
-                agent_id = agent_settings['agent_id']
+        # TODO handle the situation in which one vehicle has multiple agents
+        if 'agents' in actor_setting and actor_setting['agents']:
+            agent_settings = actor_setting['agents'][0]
+            agent_id = agent_settings['agent_id']
 
-                agent_conf_path = FolderPath.CONFIGURATION_AGENT + agent_settings['agent_configuration'] + '.yaml'
-                agent_conf = self.tele_configuration.parse_conf(agent_conf_path)
+            agent_conf_path = FolderPath.CONFIGURATION_AGENT + agent_settings['agent_configuration'] + '.yaml'
+            agent_conf = self.tele_configuration.parse_conf(agent_conf_path)
 
-                # TODO change here to allow different agents
-                controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
-                                                                     agent_conf['sampling_resolution'],
-                                                                     start_position.location, end_locations, opt_dict={'dt': self.timestep})
-                tele_operator = TeleOperator(controller)
-                controller.add_player_in_world(vehicle)
-                anchor_points = controller.get_trajectory()
+            # TODO change here to allow different agents
+            controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
+                                                                 agent_conf['sampling_resolution'],
+                                                                 start_position.location, end_locations,
+                                                                 opt_dict={'dt': self.timestep})
+            tele_operator = TeleOperator(controller)
+            controller.add_player_in_world(vehicle)
+            anchor_points = controller.get_trajectory()
 
-                optimal_trajectory_collector = DataCollector(
-                    f"{self._simulation_out_dir}optimal_trajectory_{agent_id}.csv")
-                optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
-                for point in anchor_points:
-                    optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
-                self.external_active_actors[agent_id] = tele_operator
+            optimal_trajectory_collector = DataCollector(
+                f"{self._simulation_out_dir}optimal_trajectory_{agent_id}.csv")
+            optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
+            for point in anchor_points:
+                optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
+            self.external_active_actors[agent_id] = tele_operator
 
-            self.carla_actors[actor_id] = vehicle
+        self.carla_actors[actor_id] = vehicle
+        return vehicle
 
     def _create_passive_actors(self):
         tele_world = self.tele_world

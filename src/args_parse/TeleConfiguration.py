@@ -21,10 +21,11 @@ class TeleConfiguration(dict):
             self['carla_server_configuration'] = parser_utils.parse_unit_measurement(
                 self['carla_server_configuration_readable'])
 
-            self.a = 'a'
-
     def parse(self, key, config):
-        self[key] = parser_utils.parse_unit_measurement(config)
+        if key in self and isinstance(self[key], list):
+            self[key].append(parser_utils.parse_unit_measurement(config))
+        else:
+            self[key] = parser_utils.parse_unit_measurement(config)
 
     def save_config(self, simulation_file_out_path, readable=True):
         # if readable:
@@ -74,7 +75,6 @@ class TeleConfiguration(dict):
     @classmethod
     def parse_conf(cls, file_path):
         return cls._parse_yaml_file(file_path)
-
 
     def parse_route_conf(self, configuration_name):
         file_path = FolderPath.CONFIGURATION_ROUTE + configuration_name + '.yaml'

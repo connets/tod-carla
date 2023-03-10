@@ -6,11 +6,39 @@ import re
 from src.carla_omnet.SimulationStatus import SimulationStatus
 
 
-class OMNeTMessage(abc.ABC):
+class CarlanetppMessage(abc.ABC):
 
-    def __init__(self, timestamp, payload):
-        self.timestamp = round(timestamp, 6)
-        self.payload = payload
+    def __repr__(self) -> str:
+        return self.to_json()
+
+    def to_json(self):
+        res = self.__dict__.copy()
+        res['message_type'] = self.__class__.MESSAGE_TYPE
+        return json.dumps(res)
+
+
+class InitCarlanetppMessage(CarlanetppMessage):
+    MESSAGE_TYPE = "INIT"
+
+    def __init__(self, user_defined, carla_configuration, run_id):
+        self.user_defined = user_defined
+        self.carla_configuration = carla_configuration
+        self.run_id = run_id
+
+
+class SimulationStepCarlanetppMessage(CarlanetppMessage):
+    MESSAGE_TYPE = 'SIMULATION_STEP'
+
+    def __init__(self, omnet_timestamp):
+        self.omnet_timestamp = omnet_timestamp
+
+
+class CommonCarlanetppMessage(CarlanetppMessage):
+    MESSAGE_TYPE = 'COMMON_MESSAGE'
+
+    def __init__(self, timestamp, user_defined_message):
+        self.omnet_timestamp = timestamp
+        self.user_defined_message = user_defined_message
 
     @classmethod
     def from_json(cls, j):
@@ -29,83 +57,25 @@ class OMNeTMessage(abc.ABC):
             for key in keys_to_remove: del item[key]
 
         classes = cls.__subclasses__()
-        msg_type = j['message_type']
-        del j['message_type']
+        msg_type = j['user_message_type']
+        del j['user_message_type']
         for msg_cls in classes:
             if msg_cls.MESSAGE_TYPE == msg_type:
                 instance = msg_cls(**j)
-                payload = instance.payload
-                clean_objects(payload)
+                user_defined = instance.user_defined
+                clean_objects(user_defined)
                 return instance
 
         raise RuntimeError(f"Message type {msg_type} not recognized")
 
-    def __repr__(self) -> str:
-        return self.to_json()
 
-    def to_json(self):
-        res = self.__dict__.copy()
-        res['message_type'] = self.__class__.MESSAGE_TYPE
-        return json.dumps(res)
+class ActorStatusOMNetMessage(CommonCarlanetppMessage):
+    USER_MESSAGE_TYPE = 'ACTOR_STATUS_UPDATE'
 
 
-class InitOMNeTMessage(OMNeTMessage):
-    MESSAGE_TYPE = "INIT"
+class ComputeInstructionCarlanetppMessage(CommonCarlanetppMessage):
+    USER_MESSAGE_TYPE = 'COMPUTE_INSTRUCTION'
 
 
-class SimulationStepOMNetMessage(OMNeTMessage):
-    MESSAGE_TYPE = 'SIMULATION_STEP'
-
-
-class ActorStatusOMNetMessage(OMNeTMessage):
-    MESSAGE_TYPE = 'ACTOR_STATUS_UPDATE'
-
-
-class ComputeInstructionOMNeTMessage(OMNeTMessage):
-    MESSAGE_TYPE = 'COMPUTE_INSTRUCTION'
-
-
-class ApplyInstructionOMNeTMessage(OMNeTMessage):
-    MESSAGE_TYPE = 'APPLY_INSTRUCTION'
-
-
-class CarlaMessage(abc.ABC):
-
-    def __init__(self, payload, simulation_status=SimulationStatus.RUNNING):
-        self.payload = payload
-        self.simulation_status = simulation_status.value
-
-    def __repr__(self) -> str:
-        return self.to_json().decode('utf-8')
-
-    def to_json(self):
-        res = self.__dict__.copy()
-        res['message_type'] = self.__class__.MESSAGE_TYPE
-        return json.dumps(res).encode('utf-8')
-
-
-class InitCompletedCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'INIT_COMPLETED'
-
-
-class UpdatedPositionCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'UPDATED_POSITIONS'
-
-
-class ActorStatusCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'ACTOR_STATUS'
-
-
-class InstructionCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'INSTRUCTION'
-
-
-class OkCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'OK'
-
-
-class TimeLimitCarlaMessage(CarlaMessage):
-    MESSAGE_TYPE = 'TIME_LIMIT_REACH'
-
-    def __init__(self):
-        super().__init__(dict(), SimulationStatus.FINISHED_TIME_LIMIT)
+class ApplyInstructionCarlanetppMessage(CommonCarlanetppMessage):
+    USER_MESSAGE_TYPE = 'APPLY_INSTRUCTION'
