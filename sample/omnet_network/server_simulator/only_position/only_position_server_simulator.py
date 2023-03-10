@@ -17,26 +17,22 @@ def send_info(socket, t):
 def generate_init_completed(first_row):
     res = dict()
     res['message_type'] = "INIT_COMPLETED"
-    res['payload'] = dict()
-    res['payload']['initial_timestamp'] = first_row['timestamp']
+    res['initial_timestamp'] = first_row['timestamp']
+    res['actor_positions'] = dict()
     # return json.dumps(res).encode("utf-8")
     return res
 
 
 def generate_updated_position(row):
-    res = dict()
-    res['message_type'] = "UPDATED_POSITIONS"
+
     actor = dict()
     actor['actor_id'] = 'car'
+    actor['is_net_active'] = True
     actor['position'] = [row['location_x'], row['location_y'], row['location_z']]
     actor['velocity'] = [row['velocity_x'], row['velocity_y'], row['velocity_z']]
     actor['rotation'] = [row['rotation_pitch'], row['rotation_yaw'], row['rotation_roll']]
-    res['payload'] = dict()
-    res['payload']['actors'] = [actor]
-    res['simulation_status'] = 0
 
-    # return json.dumps(res).encode("utf-8")
-    return res
+    return actor
 
 
 if __name__ == '__main__':
@@ -51,9 +47,10 @@ if __name__ == '__main__':
     json_data = json.loads(recv_msg.decode("utf-8"))
     print("recv:", json_data)
     msg = read_json('documentation/api_carla_omnet/init/to_omnet.json')
+
     actor_status = generate_updated_position(next(data_iterators)[1])
-    msg['payload']['actors'][0]['position'] = actor_status['payload']['actors'][0]['position']
-    msg['payload']['actors'][0]['rotation'] = actor_status['payload']['actors'][0]['rotation']
+    msg['actor_positions'][0]['position'] = actor_status['position']
+    msg['actor_positions'][0]['rotation'] = actor_status['rotation']
 
     print(msg)
     print("\n\n")
@@ -64,23 +61,28 @@ if __name__ == '__main__':
         recv_msg = socket.recv()
         json_data = json.loads(recv_msg.decode("utf-8"))
         print("recv:", json_data)
-        if json_data['message_type'] == 'COMPUTE_INSTRUCTION':
-            msg = read_json('documentation/api_carla_omnet/compute_instruction/to_omnet.json')
-        elif json_data['message_type'] == 'APPLY_INSTRUCTION':
-            msg = read_json('documentation/api_carla_omnet/apply_instruction/to_omnet.json')
-        elif json_data['message_type'] == 'ACTOR_STATUS_UPDATE':
-            msg = read_json('documentation/api_carla_omnet/actor_status_update/to_omnet.json')
+        if json_data['message_type'] == 'GENERIC_MESSAGE':
+            if json_data['user_defined']['user_message_type'] == 'COMPUTE_INSTRUCTION':
+                msg = read_json('documentation/api_carla_omnet/compute_instruction/to_omnet.json')
+            elif json_data['user_defined']['user_message_type'] == 'APPLY_INSTRUCTION':
+                msg = read_json('documentation/api_carla_omnet/apply_instruction/to_omnet.json')
+            elif json_data['user_defined']['user_message_type'] == 'ACTOR_STATUS_UPDATE':
+                msg = read_json('documentation/api_carla_omnet/actor_status_update/to_omnet.json')
+            else:
+                raise Exception("general message not recognized: " + json_data['user_defined']['user_message_type'])
         elif json_data['message_type'] == 'SIMULATION_STEP':
+            msg = read_json('documentation/api_carla_omnet/simulation_step/to_omnet.json')
+            msg['actor_positions'] = []
+
             next_position = next(data_iterators, None)
             if next_position is None:
-                msg = read_json('documentation/api_carla_omnet/simulation_step/to_omnet.json')
                 msg['simulation_status'] = 1
             else:
-                msg = generate_updated_position(next_position[1])
-            msg['payload']['actors'][0]['actor_id'] = 'car'
+                msg['actor_positions'].append(generate_updated_position(next_position[1]))
+                msg['actor_positions'][0]['actor_id'] = 'car'
 
         else:
-            raise Exception("Message not recognized")
+            raise Exception("Message not recognized: " + json_data['message_type'])
         print(msg)
         print("\n\n")
         send_info(socket, msg)

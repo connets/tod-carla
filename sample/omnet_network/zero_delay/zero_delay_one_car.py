@@ -23,20 +23,20 @@ if __name__ == '__main__':
 
 
     def read_json(type_request):
-        with open(f'API/{type_request}.json') as f:
+        with open(f'documentation/api_carla_omnet/{type_request}/from_omnet.json') as f:
             return json.load(f)
 
 
     init_configuration_json = read_json('init')
 
-    payload = init_configuration_json['payload']
-    interested_actor = payload['actors'][0]
-    interested_agent = interested_actor['agents'][0]
+    carla_configuration = init_configuration_json['carla_configuration']
+    interested_actor = init_configuration_json['moving_actors'][0]
+    interested_agent = interested_actor['actor_configuration']['agents'][0]
     actor_id = interested_actor['actor_id']
     agent_id = interested_agent['agent_id']
 
     if len(sys.argv) >= 2:
-        payload['seed'] = int(sys.argv[1])
+        carla_configuration['seed'] = int(sys.argv[1])
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     send_info(socket, init_configuration_json)
     message = receive_info(socket)
-    timestamp = message['payload']['initial_timestamp']
+    timestamp = message['initial_timestamp']
     limit_sim_time = 15
 
     while True:
@@ -63,20 +63,20 @@ if __name__ == '__main__':
 
         message = receive_info(socket)
         if message['simulation_status'] != 0: break
-        status_id = message['payload']['status_id']
+        status_id = message['user_defined']['status_id']
 
         req = read_json('compute_instruction')
-        req['payload']['status_id'] = status_id
+        req['user_defined']['status_id'] = status_id
         req['timestamp'] = timestamp
         send_info(socket, req)
 
         message = receive_info(socket)
         if message['simulation_status'] != 0:
             break
-        instruction_id = message['payload']['instruction_id']
+        instruction_id = message['user_defined']['instruction_id']
 
         req = read_json('apply_instruction')
-        req['payload']['instruction_id'] = instruction_id
+        req['user_defined']['instruction_id'] = instruction_id
         req['timestamp'] = timestamp
         send_info(socket, req)
         message = receive_info(socket)
