@@ -4,7 +4,6 @@ import threading
 from pycarlanet import SimulatorStatus
 
 from src.actor.external_active_actor.ExternalActiveActor import ExternalActiveActor
-from src.carla_omnet.SimulationStatus import SimulationStatus
 
 
 class TeleOperator(ExternalActiveActor):

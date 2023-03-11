@@ -1,7 +1,9 @@
 import enum
+from deprecation import deprecated
 
 
 # (simulation_status, car_status)
+@deprecated
 class SimulationStatus(enum.Enum):
     RUNNING = 0
     FINISHED_OK = 1
@@ -12,5 +14,3 @@ class SimulationStatus(enum.Enum):
     @classmethod
     def is_finished(cls, status):
         return status in (cls.FINISHED_OK, cls.FINISHED_ACCIDENT, cls.FINISHED_TIME_LIMIT, cls.FINISHED_ERROR)
-
-

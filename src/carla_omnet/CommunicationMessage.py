@@ -3,8 +3,6 @@ import enum
 import json
 import re
 
-from src.carla_omnet.SimulationStatus import SimulationStatus
-
 
 class CarlanetppMessage(abc.ABC):
 

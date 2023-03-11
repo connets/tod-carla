@@ -11,7 +11,6 @@ from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.EnvironmentHandler import EnvironmentHandler, CarlaTimeoutError
 from src.carla_omnet.CommunicationMessage import *
-from src.carla_omnet.SimulationStatus import SimulationStatus
 from src.utils import bcolors
 from src.utils.decorators import preconditions
 import warnings
@@ -135,7 +134,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
         status = self.status.pop(status_id)
         agent = self._external_active_actors[agent_id]
         simulator_status, instruction = agent.receive_vehicle_state_info(status,
-                                                                          self._tele_world.timestamp.elapsed_seconds)
+                                                                         self._tele_world.timestamp.elapsed_seconds)
         res = dict()
         res['user_message_type'] = 'INSTRUCTION'
         res['actor_id'] = actor_id
@@ -165,8 +164,11 @@ class CarlaOMNeTManager(CarlanetEventListener):
 
         return res, SimulatorStatus.RUNNING
 
-    def simulation_finished(self):
-        super().simulation_finished()
+    def simulation_finished(self, simulator_status):
+        self.environment_handler.finish_simulation(simulator_status)
 
-    def simulation_error(self, exception):
-        super().simulation_error(exception)
+    def simulation_error(self, e):
+        self.environment_handler.close()
+        print(traceback.format_exc())
+        print(f"{bcolors.WARNING}Warning: Exception {e.__class__.__name__} {e} {bcolors.ENDC}")
+        self.environment_handler.finish_simulation(SimulatorStatus.FINISHED_ERROR)
