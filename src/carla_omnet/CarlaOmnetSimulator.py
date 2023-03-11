@@ -1,19 +1,10 @@
 import itertools
-import sys
 import traceback
-from abc import ABC
-from enum import Enum
 
-import carla
 import zmq
 from pycarlanet import CarlanetManager, CarlanetEventListener, SimulatorStatus, CarlanetActor
-from src.actor.external_active_actor.TeleOperator import TeleOperator
-from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.EnvironmentHandler import EnvironmentHandler, CarlaTimeoutError
-from src.carla_omnet.CommunicationMessage import *
 from src.utils import bcolors
-from src.utils.decorators import preconditions
-import warnings
 
 
 class CarlaOmnetError(RuntimeError):
@@ -41,9 +32,8 @@ class CarlaOMNeTManager(CarlanetEventListener):
         self._carla_actors = None
         self._protocol = protocol
         self._port = port
-        self._carlanet_manager = CarlanetManager(port, self)
-        # self.connection_timeout = connection_timeout
-        # self.data_transfer_timeout = data_transfer_timeout
+        self._carlanet_manager = CarlanetManager(port, self, socket_options={zmq.RCVTIMEO: connection_timeout,
+                                                                             zmq.SNDTIMEO: connection_timeout})
         self.environment_handler: EnvironmentHandler = None
         self.timestamp = 0
         self._do_nothing_id = -1
@@ -141,7 +131,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
 
         if simulator_status != SimulatorStatus.RUNNING:
             instruction_id = str(self._do_nothing_id)
-            self.environment_handler.finish_simulation(simulator_status)
+            #self.environment_handler.finish_simulation(simulator_status)
             # self._manager.bui
         elif instruction is None:
             instruction_id = str(self._do_nothing_id)

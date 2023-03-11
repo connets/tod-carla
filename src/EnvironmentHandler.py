@@ -53,12 +53,11 @@ class EnvironmentHandler:
         self.timestep = carla_configuration['carla_timestep']
         # self._actors_settings = carla_configuration['actors']
         self.sim_time_limit = carla_configuration["sim_time_limit"]
-
         self.run_id = run_id
 
         self._simulator_conf = self.tele_configuration['carla_server_configuration']
 
-        carla_world_path = FolderPath.CONFIGURATION_WORLD + carla_configuration['carla_world_configuration'] + '.yaml'
+        carla_world_path = FolderPath.CONFIGURATION_WORLD + custom_parameters['carla_world_configuration'] + '.yaml'
         self._carla_world_conf = self.tele_configuration.parse_conf(carla_world_path)
 
         self._carla_handler = zerorpc.Client()

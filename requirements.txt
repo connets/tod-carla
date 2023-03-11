@@ -103,7 +103,7 @@ pytest==7.1.2
 python-dateutil==2.8.2
 pytz==2022.1
 PyYAML==6.0
-pyzmq==23.2.0
+pyzmq~=23.2.1
 requests==2.28.1
 scikit-learn==1.1.1
 scipy==1.8.1
@@ -137,3 +137,4 @@ widgetsnbextension==3.6.1
 zipp==3.8.0
 zmq==0.0.0
 zerorpc~=0.6.3
+pycarlanet~=0.8.9a0
