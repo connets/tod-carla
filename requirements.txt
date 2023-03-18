@@ -137,4 +137,4 @@ widgetsnbextension==3.6.1
 zipp==3.8.0
 zmq==0.0.0
 zerorpc~=0.6.3
-pycarlanet~=0.8.9a0
+pycarlanet~=0.8.17a0

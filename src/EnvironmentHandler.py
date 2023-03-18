@@ -43,8 +43,26 @@ class EnvironmentHandler:
             # you might want to specify some extra behavior here.
             self.log.flush()
 
-    def __init__(self, carla_configuration, custom_parameters, run_id):
+    def __init__(self):
         self.tele_configuration = TeleConfiguration.instance
+        self._simulator_conf = self.tele_configuration['carla_server_configuration']
+
+        self._carla_handler = zerorpc.Client()
+        self._carla_handler.connect(
+            f"tcp://{self._simulator_conf['carla_server']['host']}:{self._simulator_conf['carla_server']['carla_handler_port']}")
+
+
+        self.carla_actors = dict()
+        self.external_active_actors = dict()
+        self.external_passive_actors = set()
+
+        self.carla_map = self.tele_world = None
+
+    def launch_carla_server(self):
+        while not self._carla_handler.reload_simulator():
+            ...
+
+    def add_carla_scenario_config(self, carla_configuration, custom_parameters, run_id):
         self.tele_configuration.parse('carla_configuration', carla_configuration)
         self.tele_configuration.parse('custom_init_parameters', custom_parameters)
         self.tele_configuration['actors'] = []
@@ -55,14 +73,9 @@ class EnvironmentHandler:
         self.sim_time_limit = carla_configuration["sim_time_limit"]
         self.run_id = run_id
 
-        self._simulator_conf = self.tele_configuration['carla_server_configuration']
 
         carla_world_path = FolderPath.CONFIGURATION_WORLD + custom_parameters['carla_world_configuration'] + '.yaml'
         self._carla_world_conf = self.tele_configuration.parse_conf(carla_world_path)
-
-        self._carla_handler = zerorpc.Client()
-        self._carla_handler.connect(
-            f"tcp://{self._simulator_conf['carla_server']['host']}:{self._simulator_conf['carla_server']['carla_handler_port']}")
 
         self.render = self._simulator_conf['render']
 
@@ -74,15 +87,7 @@ class EnvironmentHandler:
 
         self.clock = pygame.time.Clock()
 
-        self.carla_actors = dict()
-        self.external_active_actors = dict()
-        self.external_passive_actors = set()
 
-        self.carla_map = self.tele_world = None
-
-    def build(self):
-        self._create_tele_world()
-        # self._create_active_
 
     def world_init_completed(self):
         self.tele_configuration.save_config(self._simulation_out_dir + 'configuration.yaml')
@@ -111,10 +116,9 @@ class EnvironmentHandler:
         self._carla_handler.close_simulator()
         self._carla_handler.close()
 
-    def _create_tele_world(self):
 
-        while not self._carla_handler.reload_simulator():
-            ...
+
+    def build_world(self):
         host = self._simulator_conf['carla_server']['host']
         port = self._simulator_conf['carla_server']['carla_simulator_port']
         timeout = self._simulator_conf['carla_server']['timeout']
@@ -152,7 +156,7 @@ class EnvironmentHandler:
 
     def create_active_actors(self, actor_id, actor_type, actor_setting):
         self.tele_configuration.parse('actors', actor_setting)
-        file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['actor_configuration'] + '.yaml'
+        file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['configuration_id'] + '.yaml'
 
         actor_conf = self.tele_configuration.parse_conf(file_path)
 
@@ -181,29 +185,26 @@ class EnvironmentHandler:
         vehicle.attach_sensor(lidar_sensor)
         vehicle.spawn_in_the_world(self.tele_world)
 
-        # TODO handle the situation in which one vehicle has multiple agents
-        if 'agents' in actor_setting and actor_setting['agents']:
-            agent_settings = actor_setting['agents'][0]
-            agent_id = agent_settings['agent_id']
+        agent_id = actor_setting['agent_id']
 
-            agent_conf_path = FolderPath.CONFIGURATION_AGENT + agent_settings['agent_configuration'] + '.yaml'
-            agent_conf = self.tele_configuration.parse_conf(agent_conf_path)
+        agent_conf_path = FolderPath.CONFIGURATION_AGENT + actor_setting['agent_configuration'] + '.yaml'
+        agent_conf = self.tele_configuration.parse_conf(agent_conf_path)
 
-            # TODO change here to allow different agents
-            controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
-                                                                 agent_conf['sampling_resolution'],
-                                                                 start_position.location, end_locations,
-                                                                 opt_dict={'dt': self.timestep})
-            tele_operator = TeleOperator(controller)
-            controller.add_player_in_world(vehicle)
-            anchor_points = controller.get_trajectory()
+        # TODO change here to allow different agents
+        controller = BehaviorAgentTeleWorldAdapterController(agent_conf['behavior'],
+                                                             agent_conf['sampling_resolution'],
+                                                             start_position.location, end_locations,
+                                                             opt_dict={'dt': self.timestep})
+        tele_operator = TeleOperator(controller)
+        controller.add_player_in_world(vehicle)
+        anchor_points = controller.get_trajectory()
 
-            optimal_trajectory_collector = DataCollector(
-                f"{self._simulation_out_dir}optimal_trajectory_{agent_id}.csv")
-            optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
-            for point in anchor_points:
-                optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
-            self.external_active_actors[agent_id] = tele_operator
+        optimal_trajectory_collector = DataCollector(
+            f"{self._simulation_out_dir}optimal_trajectory_{agent_id}.csv")
+        optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
+        for point in anchor_points:
+            optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
+        self.external_active_actors[agent_id] = tele_operator
 
         self.carla_actors[actor_id] = vehicle
         return vehicle

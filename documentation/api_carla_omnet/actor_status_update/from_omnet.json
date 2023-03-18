@@ -3,6 +3,6 @@
   "timestamp": 0,
   "user_defined": {
     "user_message_type": "ACTOR_STATUS_UPDATE",
-    "actor_id": "car"
+    "actor_id": "car_id"
   }
 }

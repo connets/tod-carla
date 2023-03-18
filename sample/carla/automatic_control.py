@@ -815,12 +815,12 @@ def main():
     argparser.add_argument(
         '--host',
         metavar='H',
-        default='ubiquity',
+        default='10.8.3.1',
         help='IP of the host server (default: 127.0.0.1)')
     argparser.add_argument(
         '-p', '--port',
         metavar='P',
-        default=3000,
+        default=2000,
         type=int,
         help='TCP port to listen to (default: 2000)')
     argparser.add_argument(

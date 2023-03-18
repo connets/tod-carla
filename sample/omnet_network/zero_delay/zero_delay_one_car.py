@@ -29,14 +29,6 @@ if __name__ == '__main__':
 
     init_configuration_json = read_json('init')
 
-    carla_configuration = init_configuration_json['carla_configuration']
-    interested_actor = init_configuration_json['moving_actors'][0]
-    interested_agent = interested_actor['actor_configuration']['agents'][0]
-    actor_id = interested_actor['actor_id']
-    agent_id = interested_agent['agent_id']
-
-    if len(sys.argv) >= 2:
-        carla_configuration['seed'] = int(sys.argv[1])
     context = zmq.Context()
     socket = context.socket(zmq.REQ)
     socket.connect("tcp://localhost:5555")
