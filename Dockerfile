@@ -9,5 +9,5 @@ WORKDIR /app/tod-carla
 
 #CMD /bin/bash 
 #CMD ["/bin/bash", "-c", "echo yaaa > /ueue/errr.txt"]
-CMD while true; do python -m src.main $simulator_configuration_file_path; done
+CMD while true; do python -m src.main $SIMULATOR_CONFIGURATION_FILE_PATH $TOD_CARLA_ARGS; done
 #CMD python -m sample.omnet_network.server_simulator.server_simulator
