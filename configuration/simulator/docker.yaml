@@ -7,7 +7,7 @@ carla_server:
   host: carla-simulator
   carla_simulator_port: 2000
   carla_handler_port: 4242
-  timeout: 10s
+  timeout: 40s
   retry_count: 4
 
 carla_api_zmq:
