@@ -18,7 +18,7 @@ class TeleOperator(ExternalActiveActor):
         if self._controller.done():
             return SimulatorStatus.FINISHED_OK, None
         elif tele_vehicle_state.collisions:
-            return SimulatorStatus.FINISHED_ERROR, None
+            return SimulatorStatus.FINISHED_ACCIDENT, None
         # else:
         return SimulatorStatus.RUNNING, self._controller.do_action(tele_vehicle_state)
 
