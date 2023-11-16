@@ -1,0 +1,41 @@
+IMPORT:
+  $cmd$: "import os;from datetime import datetime"
+
+tag: test_carla_omnet # CHANGE WITH python project version
+
+carla_server:
+  host: localhost
+  carla_simulator_port: 2000
+  carla_handler_port: 4242
+  timeout: 30s
+  retry_count: 3
+
+carla_api_zmq:
+  protocol: tcp
+  port: 5555
+  connection_timeout: 20
+  data_transfer_timeout: 20
+
+render: True
+
+
+_PROJECT_PATH:
+  $cmd$: "''.join(map(lambda x: x + '/', os.path.abspath(__file__).split('/')[:-3]))"
+
+#_CURRENT_SIMULATION_DIRECTORY_PATH:
+#  $cmd$: "self['network.backhaul.uplink_extra_delay'] + '_' + datetime.now().strftime('%Y-%m-%d_%H:%M:%S')"
+
+output:
+  log:
+    directory:
+      $cmd$: "self['_PROJECT_PATH'] + 'log/' + self['tag'] + '/'"
+  result:
+    interval: 10ms
+    directory:
+      $cmd$: "self['_PROJECT_PATH'] + 'out/' + self['tag'] + '/'"
+
+
+
+
+
+
