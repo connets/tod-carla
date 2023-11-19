@@ -114,6 +114,8 @@ class CarlaOMNeTManager(CarlanetEventListener):
             return self._compute_instruction(user_defined_message)
         elif user_message_type == 'APPLY_INSTRUCTION':
             return self._apply_instruction(user_defined_message)
+        elif user_message_type == 'FINISH_SIMULATION':
+            return SimulatorStatus.FINISHED_OK, dict() # TODO Maybe add a new finish code for this specific case?
         return SimulatorStatus.FINISHED_ERROR, dict()
 
     def _actor_status(self, user_defined_message):
