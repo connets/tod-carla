@@ -9,27 +9,3 @@ origin:
 destinations: [
   { x: 334.530853, y: -169.023895, z: 1.100745 }
 ]
-spectator:
-  x: 95.937172
-  y: -179.581635
-  z: 7.923661
-  pitch: -27.447748
-  yaw: 144.823822
-  roll: 0.000157
-obstacles:
-    - filter: vehicle.volkswagen.t2
-      spawn:
-        x: 89.062157
-        y: -170.053680
-        z: 0.203898
-        pitch: 0
-        yaw: 0
-        roll: 0
-    - filter: walker.pedestrian.0002
-      spawn:
-        x: 95.062157
-        y: -170.053680
-        z: 0.203898
-        pitch: 0
-        yaw: 180
-        roll: 0

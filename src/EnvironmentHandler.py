@@ -151,6 +151,21 @@ class EnvironmentHandler:
         client.reload_world(False)  # reload map keeping the world settings
         sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
+        if 'obstacles' in self._carla_world_conf:
+            for obstacle in self._carla_world_conf['obstacles']:
+                blueprint: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(obstacle['filter']))
+                transform = carla.Transform(Location(x=obstacle['spawn']['x'], y=obstacle['spawn']['y'], z=obstacle['spawn']['z']), Rotation(pitch=obstacle['spawn']['pitch'], yaw=obstacle['spawn']['yaw'], roll=obstacle['spawn']['roll']))
+                actor: carla.Actor = sim_world.spawn_actor(blueprint, transform)
+                self.obstacle_actors.add(actor)
+
+        if 'spectator' in self._carla_world_conf:
+            spectator_conf = self._carla_world_conf['spectator']
+            # Retrieve the spectator object
+            spectator = sim_world.get_spectator()
+            # Get the location and rotation of the spectator from conf
+            transform = carla.Transform(Location(x=spectator_conf['x'], y=spectator_conf['y'], z=spectator_conf['z']), Rotation(pitch=spectator_conf['pitch'], yaw=spectator_conf['yaw'], roll=spectator_conf['roll']))
+            spectator.set_transform(transform)
+
         sim_world.tick()
         self.client, self.sim_world = client, sim_world
         self.carla_map = self.sim_world.get_map()
@@ -275,20 +290,6 @@ class EnvironmentHandler:
 
             time_limit = route_conf['time_limit']
 
-            sim_world = self.sim_world
-            for obstacle in route_conf['obstacles']:
-                blueprint: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(obstacle['filter']))
-                transform = carla.Transform(Location(x=obstacle['spawn']['x'], y=obstacle['spawn']['y'], z=obstacle['spawn']['z']), Rotation(pitch=obstacle['spawn']['pitch'], yaw=obstacle['spawn']['yaw'], roll=obstacle['spawn']['roll']))
-                actor: carla.Actor = sim_world.spawn_actor(blueprint, transform)
-                self.obstacle_actors.add(actor)
-
-            if 'spectator' in route_conf:
-                spectator_conf = route_conf['spectator']
-                # Retrieve the spectator object
-                spectator = sim_world.get_spectator()
-                # Get the location and rotation of the spectator from conf
-                transform = carla.Transform(Location(x=spectator_conf['x'], y=spectator_conf['y'], z=spectator_conf['z']), Rotation(pitch=spectator_conf['pitch'], yaw=spectator_conf['yaw'], roll=spectator_conf['roll']))
-                spectator.set_transform(transform)
 
         else:
             carla_map = self.tele_world.carla_map
