@@ -149,6 +149,18 @@ class EnvironmentHandler:
         client.reload_world(False)  # reload map keeping the world settings
         sim_world.set_weather(carla.WeatherParameters.ClearSunset)
 
+        car_bp = sim_world.get_blueprint_library().filter('vehicle.volkswagen.t2')[0]
+
+        transform = carla.Transform(carla.Location(x=89.062157, y=-170.053680, z=0.203898), carla.Rotation(yaw=0))
+        sim_world.spawn_actor(car_bp, transform)
+
+        # Retrieve the spectator object
+        spectator = sim_world.get_spectator()
+
+        # Get the location and rotation of the spectator through its transform
+        transform = carla.Transform(carla.Location(x=95.937172, y=-179.581635, z=7.923661), carla.Rotation(pitch=-27.447748, yaw=144.823822, roll=0.000157))
+        spectator.set_transform(transform)
+
         sim_world.tick()
         self.client, self.sim_world = client, sim_world
         self.carla_map = self.sim_world.get_map()
