@@ -165,7 +165,6 @@ class EnvironmentHandler:
         route_conf = self.tele_configuration.parse_conf(
             FolderPath.CONFIGURATION_ROUTE + actor_setting['route'] + '.yaml') if 'route' in actor_setting else None
         start_position, end_locations, time_limit = self._create_route(route_conf)
-        self._create_obstacles_and_set_spectator(route_conf)
 
         # TODO change here to allows multiple routes for different agents
         self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
@@ -264,17 +263,25 @@ class EnvironmentHandler:
 
     def _create_route(self, route_conf=None):
         if route_conf is not None:
-
+            #mandatory part
+            origin = route_conf.pop('origin')
+            destinations = route_conf.pop('destinations')
             start_transform = Transform(
-                Location(x=route_conf['origin']['x'], y=route_conf['origin']['y'], z=route_conf['origin']['z']),
-                Rotation(pitch=route_conf['origin']['pitch'], yaw=route_conf['origin']['yaw'],
-                         roll=route_conf['origin']['roll']))
+                Location(x=origin['x'], y=origin['y'], z=origin['z']),
+                Rotation(pitch=origin['pitch'], yaw=origin['yaw'],
+                         roll=origin['roll']))
             destination_locations = []
-            for destination in route_conf['destinations']:
+            for destination in destinations:
                 destination_locations.append(Location(x=destination['x'], y=destination['y'],
                                                       z=destination['z']))
 
-            time_limit = route_conf['time_limit']
+            time_limit = route_conf.pop('time_limit')
+
+            #optional part
+            for key in route_conf:
+                name = f'_route_handle_{key}'
+                if hasattr(self, name):
+                    getattr(self, name)(route_conf[key])
         else:
             carla_map = self.tele_world.carla_map
             spawn_points = carla_map.get_spawn_points()
@@ -283,19 +290,18 @@ class EnvironmentHandler:
             time_limit = sys.maxsize
         return start_transform, destination_locations, time_limit
     
-    def _create_obstacles_and_set_spectator(self, route_conf=None):
+    def _route_handle_obstacles(self, obstacles):
         sim_world = self.sim_world
-        if 'obstacles' in route_conf:
-            for obstacle in route_conf['obstacles']:
-                blueprint: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(obstacle['filter']))
-                transform = carla.Transform(Location(x=obstacle['spawn']['x'], y=obstacle['spawn']['y'], z=obstacle['spawn']['z']), Rotation(pitch=obstacle['spawn']['pitch'], yaw=obstacle['spawn']['yaw'], roll=obstacle['spawn']['roll']))
-                actor: carla.Actor = sim_world.spawn_actor(blueprint, transform)
-                self.obstacle_actors.add(actor)
-
-        if 'spectator' in route_conf:
-            spectator_conf = route_conf['spectator']
-            # Retrieve the spectator object
-            spectator = sim_world.get_spectator()
-            # Get the location and rotation of the spectator from conf
-            transform = carla.Transform(Location(x=spectator_conf['x'], y=spectator_conf['y'], z=spectator_conf['z']), Rotation(pitch=spectator_conf['pitch'], yaw=spectator_conf['yaw'], roll=spectator_conf['roll']))
-            spectator.set_transform(transform)
+        for obstacle in obstacles:
+            blueprint: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(obstacle['filter']))
+            transform = carla.Transform(Location(x=obstacle['spawn']['x'], y=obstacle['spawn']['y'], z=obstacle['spawn']['z']), Rotation(pitch=obstacle['spawn']['pitch'], yaw=obstacle['spawn']['yaw'], roll=obstacle['spawn']['roll']))
+            actor: carla.Actor = sim_world.spawn_actor(blueprint, transform)
+            self.obstacle_actors.add(actor)
+    
+    def _route_handle_spectator(self, spectator_coords):
+        sim_world = self.sim_world
+        # Retrieve the spectator object
+        spectator = sim_world.get_spectator()
+        # Get the location and rotation of the spectator from conf
+        transform = carla.Transform(Location(x=spectator_coords['x'], y=spectator_coords['y'], z=spectator_coords['z']), Rotation(pitch=spectator_coords['pitch'], yaw=spectator_coords['yaw'], roll=spectator_coords['roll']))
+        spectator.set_transform(transform)
