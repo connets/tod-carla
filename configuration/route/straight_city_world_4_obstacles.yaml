@@ -25,11 +25,11 @@ obstacles:
       pitch: 0
       yaw: 0
       roll: 0
-  - filter: walker.pedestrian.0002
-    spawn:
-      x: 95.062157
-      y: -170.053680
-      z: 0.203898
-      pitch: 0
-      yaw: 180
-      roll: 0
+#  - filter: walker.pedestrian.0002
+#    spawn:
+#      x: 95.062157
+#      y: -170.053680
+#      z: 0.203898
+#      pitch: 0
+#      yaw: 180
+#      roll: 0
