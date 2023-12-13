@@ -230,13 +230,15 @@ class EnvironmentHandler:
                  'location_z': lambda: utils.format_number(carla_actor.get_location().z, 8),
                  'rotation_pitch': lambda: utils.format_number(carla_actor.get_transform().rotation.pitch, 8),
                  'rotation_yaw': lambda: utils.format_number(carla_actor.get_transform().rotation.yaw, 8),
-                 'rotation_roll': lambda: utils.format_number(carla_actor.get_transform().rotation.roll, 8)
+                 'rotation_roll': lambda: utils.format_number(carla_actor.get_transform().rotation.roll, 8),
                  # 'altitude': lambda: round(gnss_sensor.altitude, 5),
                  # 'longitude': lambda: round(gnss_sensor.longitude, 5),
                  # 'latitude': lambda: round(gnss_sensor.latitude, 5),
-                 # 'throttle': lambda: round(player.get_control().throttle, 5),
-                 # 'steer': lambda: round(player.get_control().steer, 5),
-                 # 'brake': lambda: round(player.get_control().brake, 5)
+                 'throttle': lambda: utils.format_number(carla_actor.get_control().throttle, 5),
+                 'steer': lambda: utils.format_number(carla_actor.get_control().steer, 5),
+                 'brake': lambda: utils.format_number(carla_actor.get_control().brake, 5),
+                 #'visible_vehicles': lambda: len(carla_actor.generate_status().visible_vehicles)
+                 'visible_vehicles': lambda: carla_actor.get_number_visible_vehicles()
                  })
             self.external_passive_actors.add(actor)
         simulation_ratio_actor = SimulationRatioActor(1, self._simulation_out_dir + 'simulation_ratio.txt',
