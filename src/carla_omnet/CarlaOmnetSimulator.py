@@ -33,7 +33,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
         self._carla_actors = None
         self._protocol = protocol
         self._port = port
-        self._carlanet_manager = CarlanetManager(port, self)  # , socket_options={zmq.RCVTIMEO: connection_timeout*1000,
+        self._carlanet_manager = CarlanetManager(port, self)#, log_messages=True)  # , socket_options={zmq.RCVTIMEO: connection_timeout*1000,
         # zmq.SNDTIMEO: connection_timeout*1000})
         self.environment_handler: EnvironmentHandler = EnvironmentHandler()
         self.timestamp = 0
