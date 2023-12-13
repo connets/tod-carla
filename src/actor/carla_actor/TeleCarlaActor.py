@@ -69,6 +69,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
                 vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image, max_dist=100, min_detect=5) ######################
                 visible_vehicles = vehicles_res['vehicles']
             self._number_visible_vehicles = len(visible_vehicles)
+            #TODO
             print(self._number_visible_vehicles, end=' ')
             pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
             if pedestrian_raw:
@@ -79,7 +80,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     def get_sensor_by_class(self, cls):
         return next(iter([s for s in self.sensors if isinstance(s, cls)]), None)
     
-    #quick n dirty way of getting this without having to call generate_status and its side effects
+    #TODO quick n dirty way of getting this without having to call generate_status and its side effects
     def get_number_visible_vehicles(self):
         return self._number_visible_vehicles
 
@@ -138,6 +139,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     @preconditions('_tele_world')
     def apply_instruction(self, tele_vehicle_control: TeleVehicleControl):
+        #TODO
         print(tele_vehicle_control.vehicle_control)
         if self._last_control is None or self._last_control.timestamp.elapsed_seconds < tele_vehicle_control.timestamp.elapsed_seconds:
             self._last_control = tele_vehicle_control
