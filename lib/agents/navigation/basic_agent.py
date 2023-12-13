@@ -318,7 +318,7 @@ class BasicAgent(object):
 
         return (False, None)
 
-    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+    def _vehicle_obstacle_detected_old(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                    lane_offset=0):
         speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
         d_pr = speed * self.t_pr  # perception-reaction distance
@@ -328,7 +328,7 @@ class BasicAgent(object):
                                                           lane_type=carla.LaneType.Any)] + \
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
                                       int(d_total / self._sampling_resolution))]
-
+        #print(safe_distance_waypoints, vehicle_list)
         for path_wpt, vehicle in itertools.product(safe_distance_waypoints, vehicle_list):
             vehicle_transform = vehicle.get_transform()
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
@@ -338,7 +338,7 @@ class BasicAgent(object):
                 return True, vehicle, distance
         return False, None, -1
 
-    def _vehicle_obstacle_detected_old(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                        lane_offset=0):
         """
         Method to check if there is a vehicle in front of the agent blocking its path.
