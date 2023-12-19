@@ -298,6 +298,9 @@ class EnvironmentHandler:
             blueprint: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(obstacle['filter']))
             transform = carla.Transform(Location(x=obstacle['spawn']['x'], y=obstacle['spawn']['y'], z=obstacle['spawn']['z']), Rotation(pitch=obstacle['spawn']['pitch'], yaw=obstacle['spawn']['yaw'], roll=obstacle['spawn']['roll']))
             actor: carla.Actor = sim_world.spawn_actor(blueprint, transform)
+            if 'autopilot' in obstacle:
+                actor.set_autopilot(obstacle['autopilot'])
+            
             self.obstacle_actors.add(actor)
     
     def _route_handle_spectator(self, spectator_coords):
