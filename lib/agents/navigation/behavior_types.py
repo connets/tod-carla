@@ -26,15 +26,27 @@ class Normal(object):
     tailgate_counter = 0
 
 
+# class Custom(object):
+#     """Class for Custom agent."""
+#     max_speed = 90
+#     speed_lim_dist = 1
+#     speed_decrease = 40
+#     safety_time = 5
+#     min_proximity_threshold = 50
+#     braking_distance = 50
+#     tailgate_counter = 0
+
+
 class Custom(object):
     """Class for Custom agent."""
     max_speed = 90
     speed_lim_dist = 1
-    speed_decrease = 40
-    safety_time = 5
-    min_proximity_threshold = 50
-    braking_distance = 50
+    speed_decrease = 20
+    safety_time = 3
+    min_proximity_threshold = 20
+    braking_distance = 10
     tailgate_counter = 0
+
 
 
 class Aggressive(object):

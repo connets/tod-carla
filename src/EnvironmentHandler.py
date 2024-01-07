@@ -55,7 +55,7 @@ class EnvironmentHandler:
         self.carla_actors = dict()
         self.external_active_actors = dict()
         self.external_passive_actors = set()
-        self.obstacle_actors = set()
+        self.obstacle_actors = list()
 
         self.carla_map = self.tele_world = None
 
@@ -238,7 +238,8 @@ class EnvironmentHandler:
                  'steer': lambda: utils.format_number(carla_actor.get_control().steer, 5),
                  'brake': lambda: utils.format_number(carla_actor.get_control().brake, 5),
                  #'visible_vehicles': lambda: len(carla_actor.generate_status().visible_vehicles)
-                 'visible_vehicles': lambda: carla_actor.get_number_visible_vehicles()
+                 'visible_vehicles': lambda: carla_actor.get_number_visible_vehicles(),
+                 'obstacle_distance': lambda: utils.format_number(carla_actor.get_location().distance(self.obstacle_actors[0].get_location()), 3)
                  })
             self.external_passive_actors.add(actor)
         simulation_ratio_actor = SimulationRatioActor(1, self._simulation_out_dir + 'simulation_ratio.txt',
@@ -301,7 +302,8 @@ class EnvironmentHandler:
             if 'autopilot' in obstacle:
                 actor.set_autopilot(obstacle['autopilot'])
             
-            self.obstacle_actors.add(actor)
+            self.obstacle_actors.append(actor)
+            print(actor)
     
     def _route_handle_spectator(self, spectator_coords):
         sim_world = self.sim_world

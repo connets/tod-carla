@@ -152,7 +152,7 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
         #lidar_bp.set_attribute('upper_fov', '40')
         #lidar_bp.set_attribute('lower_fov', '-40')
         lidar_bp.set_attribute('range', '200')
-        lidar_bp.set_attribute('rotation_frequency', '20') # 100
+        lidar_bp.set_attribute('rotation_frequency', '100') # 100
         lidar_transform = carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
                                           carla.Rotation(pitch=8.0))
         self.sensor = self.parent_actor.get_world().spawn_actor(lidar_bp, lidar_transform,
