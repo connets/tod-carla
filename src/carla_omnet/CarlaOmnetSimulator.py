@@ -98,6 +98,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
         rounded_timestamp = round(timestamp, 6)
         for actor in self._external_passive_actors:
             actor.tick(rounded_timestamp)
+        self.environment_handler.tick()
 
         # print(','.join(*payload['actors'][0]['position']), ','.join(*payload['actors'][0]['rotation']))
         return SimulatorStatus.RUNNING

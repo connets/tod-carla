@@ -56,6 +56,13 @@ class EnvironmentHandler:
         self.external_active_actors = dict()
         self.external_passive_actors = set()
         self.obstacle_actors = list()
+        self.sudden_obstacle = {
+            'main_actor_id': None,
+            'max_spawn_distance': None,
+            'spawned': False,
+            'blueprint': None,
+            'transform': None
+        }
 
         self.carla_map = self.tele_world = None
 
@@ -94,6 +101,9 @@ class EnvironmentHandler:
         self.tele_configuration.save_config(self._simulation_out_dir + 'configuration.yaml')
         if 'output' in self._simulator_conf:
             self._create_passive_actors()
+
+    def tick(self):
+        self.sudden_obstacle_tick()
 
     def finish_simulation(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
@@ -239,7 +249,7 @@ class EnvironmentHandler:
                  'brake': lambda: utils.format_number(carla_actor.get_control().brake, 5),
                  #'visible_vehicles': lambda: len(carla_actor.generate_status().visible_vehicles)
                  'visible_vehicles': lambda: carla_actor.get_number_visible_vehicles(),
-                 'obstacle_distance': lambda: utils.format_number(carla_actor.get_location().distance(self.obstacle_actors[0].get_location()), 3)
+                 'obstacle_distance': lambda: utils.format_number(carla_actor.get_location().distance(self.obstacle_actors[0].get_location()), 3) if len(self.obstacle_actors) > 0 else ''
                  })
             self.external_passive_actors.add(actor)
         simulation_ratio_actor = SimulationRatioActor(1, self._simulation_out_dir + 'simulation_ratio.txt',
@@ -303,8 +313,26 @@ class EnvironmentHandler:
                 actor.set_autopilot(obstacle['autopilot'])
             
             self.obstacle_actors.append(actor)
-            print(actor)
-    
+            #print(actor)
+
+    #adds sudden obstacle to self config
+    def _route_handle_sudden_obstacle(self, sudden_obstacle):
+        sim_world = self.sim_world
+
+        self.sudden_obstacle['blueprint']: carla.ActorBlueprint = random.choice(sim_world.get_blueprint_library().filter(sudden_obstacle['filter']))
+        self.sudden_obstacle['transform'] = carla.Transform(Location(x=sudden_obstacle['spawn']['x'], y=sudden_obstacle['spawn']['y'], z=sudden_obstacle['spawn']['z']), Rotation(pitch=sudden_obstacle['spawn']['pitch'], yaw=sudden_obstacle['spawn']['yaw'], roll=sudden_obstacle['spawn']['roll']))
+        self.sudden_obstacle['main_actor_id'] = sudden_obstacle['main_actor_id']
+        self.sudden_obstacle['max_spawn_distance'] = sudden_obstacle['max_spawn_distance']
+        
+    # Spawns sudden obstacle if main actor's location is close enough to spawn point
+    def sudden_obstacle_tick(self):
+        if self.sudden_obstacle['spawned'] == False and self.carla_actors[self.sudden_obstacle['main_actor_id']].get_location().distance(self.sudden_obstacle['transform'].location) < self.sudden_obstacle['max_spawn_distance']:
+            actor: carla.Actor = self.sim_world.spawn_actor(self.sudden_obstacle['blueprint'], self.sudden_obstacle['transform'])
+        
+            self.obstacle_actors.append(actor)
+            self.sudden_obstacle['spawned'] = True
+            #print(actor)
+
     def _route_handle_spectator(self, spectator_coords):
         sim_world = self.sim_world
         # Retrieve the spectator object
