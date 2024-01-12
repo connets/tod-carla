@@ -107,6 +107,7 @@ class EnvironmentHandler:
     def tick(self):
         self.sudden_obstacle_tick()
 
+        #TODO move to own class
         #self.moving_background.append({'agent': tele_operator, 'actor': vehicle})
         for bg in self.moving_background:
             state = bg['actor'].generate_status()
@@ -123,7 +124,7 @@ class EnvironmentHandler:
             for actor in self.carla_actors.values(): actor.quit()
             for actor in self.external_active_actors.values(): actor.quit()
             for actor in self.obstacle_actors: actor.destroy()
-            for bg in self.moving_background: bg['agent'].quit(); bg['actor'].quit()
+            for bg in self.moving_background: bg['agent'].quit(); bg['actor'].quit() #TODO
             settings = self.sim_world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None
@@ -176,7 +177,7 @@ class EnvironmentHandler:
         self.tele_world = TeleWorld(client, self.clock)
 
     def create_active_actors(self, actor_id, actor_type, actor_setting):
-        print(actor_setting)
+        #print(actor_setting)
         self.tele_configuration.parse('actors', actor_setting)
         file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['configuration_id'] + '.yaml'
 
