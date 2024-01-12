@@ -79,6 +79,7 @@ class EnvironmentHandler:
         self.timestep = carla_configuration['carla_timestep']
         # self._actors_settings = carla_configuration['actors']
         self.sim_time_limit = carla_configuration["sim_time_limit"]
+        self.sim_time_limit = self.sim_time_limit - 10
         self.run_id = run_id
 
 
@@ -177,7 +178,8 @@ class EnvironmentHandler:
         start_position, end_locations, time_limit = self._create_route(route_conf)
 
         # TODO change here to allows multiple routes for different agents
-        self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
+        #self.sim_time_limit = self.sim_time_limit - 10 if self.sim_time_limit > 0 else time_limit
+        
         vehicle_attrs = actor_setting.get('attrs')
         vehicle = TeleCarlaVehicle(actor_conf['speed_limit'],
                                    actor_conf['model'],
