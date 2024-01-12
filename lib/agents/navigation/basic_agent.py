@@ -74,8 +74,8 @@ class BasicAgent(object):
         self._base_vehicle_threshold = 5.0  # meters
         self._max_brake = 0.75
 
-        import pprint
-        pprint.pprint(opt_dict)
+        #import pprint
+        #pprint.pprint(opt_dict)
         # Change parameters according to the dictionary
         opt_dict['target_speed'] = target_speed
         if 'ignore_traffic_lights' in opt_dict:
