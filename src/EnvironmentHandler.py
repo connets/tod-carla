@@ -63,6 +63,7 @@ class EnvironmentHandler:
             'blueprint': None,
             'transform': None
         }
+        self.moving_background = list()
 
         self.carla_map = self.tele_world = None
 
@@ -106,6 +107,12 @@ class EnvironmentHandler:
     def tick(self):
         self.sudden_obstacle_tick()
 
+        #self.moving_background.append({'agent': tele_operator, 'actor': vehicle})
+        for bg in self.moving_background:
+            state = bg['actor'].generate_status()
+            sim_status, instruction = bg['agent'].receive_vehicle_state_info(state, self.tele_world.timestamp)
+            bg['actor'].apply_instruction(instruction)
+
     def finish_simulation(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
         with open(finished_file_path, 'w') as f:
@@ -116,6 +123,7 @@ class EnvironmentHandler:
             for actor in self.carla_actors.values(): actor.quit()
             for actor in self.external_active_actors.values(): actor.quit()
             for actor in self.obstacle_actors: actor.destroy()
+            for bg in self.moving_background: bg['agent'].quit(); bg['actor'].quit()
             settings = self.sim_world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None
@@ -168,6 +176,7 @@ class EnvironmentHandler:
         self.tele_world = TeleWorld(client, self.clock)
 
     def create_active_actors(self, actor_id, actor_type, actor_setting):
+        print(actor_setting)
         self.tele_configuration.parse('actors', actor_setting)
         file_path = FolderPath.CONFIGURATION_ACTOR + actor_setting['configuration_id'] + '.yaml'
 
@@ -218,18 +227,25 @@ class EnvironmentHandler:
         optimal_trajectory_collector.write('location_x', 'location_y', 'location_z')
         for point in anchor_points:
             optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
-        self.external_active_actors[agent_id] = tele_operator
 
-        self.carla_actors[actor_id] = vehicle
+        if actor_conf['mode'] == 'active':
+            self.external_active_actors[agent_id] = tele_operator
+            self.carla_actors[actor_id] = vehicle
+        elif actor_conf['mode'] == 'passive':
+            self.moving_background.append({'agent': tele_operator, 'actor': vehicle})
+        else:
+            raise RuntimeError()
+
+        
         return vehicle
 
     def _create_passive_actors(self):
         tele_world = self.tele_world
 
-        for carla_actor in self.carla_actors.values():
+        for actor_id, carla_actor in self.carla_actors.items():
             actor = PeriodicDataCollectorActor(
                 self._simulator_conf['output']['result']['interval'],
-                self._simulation_out_dir + 'sensor.csv',
+                self._simulation_out_dir + 'sensor_' + actor_id + '.csv',
                 {'timestamp': lambda: utils.format_number(tele_world.timestamp.elapsed_seconds, 5),
                  'velocity_x': lambda: utils.format_number(carla_actor.get_velocity().x, 8),
                  'velocity_y': lambda: utils.format_number(carla_actor.get_velocity().y, 8),
