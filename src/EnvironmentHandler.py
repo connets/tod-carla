@@ -14,6 +14,7 @@ from src.actor.carla_actor.TeleCarlaActor import TeleCarlaVehicle
 from src.actor.carla_actor.TeleCarlaSensor import TeleCarlaCollisionSensor, TeleCarlaLidarSensor, TeleCarlaCameraSensor
 from src.actor.external_active_actor.TeleOperator import TeleOperator
 from src.actor.external_passive_actor.InfoSimulationActor import PeriodicDataCollectorActor, SimulationRatioActor
+from src.actor.external_passive_actor.MovingBackgroundVehicle import MovingBackgroundVehicle
 from src.args_parse.TeleConfiguration import TeleConfiguration
 from src.carla_bridge.TeleWorld import TeleWorld
 from src.utils import utils
@@ -63,7 +64,6 @@ class EnvironmentHandler:
             'blueprint': None,
             'transform': None
         }
-        self.moving_background = list()
 
         self.carla_map = self.tele_world = None
 
@@ -109,10 +109,6 @@ class EnvironmentHandler:
 
         #TODO move to own class
         #self.moving_background.append({'agent': tele_operator, 'actor': vehicle})
-        for bg in self.moving_background:
-            state = bg['actor'].generate_status()
-            sim_status, instruction = bg['agent'].receive_vehicle_state_info(state, self.tele_world.timestamp)
-            bg['actor'].apply_instruction(instruction)
 
     def finish_simulation(self, operator_status):
         finished_file_path = self._simulation_out_dir + 'FINISH_STATUS.txt'
@@ -123,8 +119,8 @@ class EnvironmentHandler:
             self.tele_world.quit()
             for actor in self.carla_actors.values(): actor.quit()
             for actor in self.external_active_actors.values(): actor.quit()
+            for actor in self.external_passive_actors: actor.quit()
             for actor in self.obstacle_actors: actor.destroy()
-            for bg in self.moving_background: bg['agent'].quit(); bg['actor'].quit() #TODO
             settings = self.sim_world.get_settings()
             settings.synchronous_mode = False
             settings.fixed_delta_seconds = None
@@ -219,7 +215,6 @@ class EnvironmentHandler:
                                                              agent_conf['sampling_resolution'],
                                                              start_position.location, end_locations)
         
-        tele_operator = TeleOperator(controller)
         controller.add_player_in_world(vehicle)
         anchor_points = controller.get_trajectory()
 
@@ -230,10 +225,11 @@ class EnvironmentHandler:
             optimal_trajectory_collector.write(point['x'], point['y'], point['z'])
 
         if actor_conf['mode'] == 'active':
+            tele_operator = TeleOperator(controller)
             self.external_active_actors[agent_id] = tele_operator
             self.carla_actors[actor_id] = vehicle
         elif actor_conf['mode'] == 'passive':
-            self.moving_background.append({'agent': tele_operator, 'actor': vehicle})
+            self.external_passive_actors.add(MovingBackgroundVehicle(self.timestep, controller, vehicle))
         else:
             raise RuntimeError()
 
