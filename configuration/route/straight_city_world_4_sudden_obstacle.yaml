@@ -7,23 +7,25 @@ origin:
   yaw: 0
   roll: 0.
 destinations: [
-  { x: 334.530853, y: -169.023895, z: 1.100745 }
+  { x: 204.909958, y: -293.558289, z: 1.5},
+  { x: 232.524643, y: -364.066071, z: 1.5},
+  { x: 289.980988, y: -172.533783, z: 1.5}
 ]
 spectator:
-  x: 95.937172
-  y: -179.581635
-  z: 7.923661
-  pitch: -27.447748
-  yaw: 144.823822
-  roll: 0.000157
-sudden_obstacle:
-  filter: vehicle.volkswagen.t2
-  main_actor_id: car
-  max_spawn_distance: 10
-  spawn:
-    x: 89.062157
-    y: -170.053680
-    z: 0.203898
-    pitch: 0
-    yaw: 0
-    roll: 0
+  x: 226.846741
+  y: -214.034958
+  z: 204.832672
+  pitch: -88.924431
+  yaw: -89.372307
+  roll: 0.0
+# sudden_obstacle:
+#   filter: vehicle.volkswagen.t2
+#   main_actor_id: car
+#   max_spawn_distance: 10
+#   spawn:
+#     x: 89.062157
+#     y: -170.053680
+#     z: 0.203898
+#     pitch: 0
+#     yaw: 0
+#     roll: 0
