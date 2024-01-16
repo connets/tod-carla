@@ -341,7 +341,8 @@ class EnvironmentHandler:
         
     # Spawns sudden obstacle if main actor's location is close enough to spawn point
     def sudden_obstacle_tick(self):
-        if self.sudden_obstacle['spawned'] == False and self.carla_actors[self.sudden_obstacle['main_actor_id']].get_location().distance(self.sudden_obstacle['transform'].location) < self.sudden_obstacle['max_spawn_distance']:
+        #TODO move to own class without relying on a dict
+        if self.sudden_obstacle['spawned'] == False and self.sudden_obstacle['main_actor_id'] is not None and self.carla_actors[self.sudden_obstacle['main_actor_id']].get_location().distance(self.sudden_obstacle['transform'].location) < self.sudden_obstacle['max_spawn_distance']:
             actor: carla.Actor = self.sim_world.spawn_actor(self.sudden_obstacle['blueprint'], self.sudden_obstacle['transform'])
         
             self.obstacle_actors.append(actor)
