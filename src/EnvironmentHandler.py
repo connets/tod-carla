@@ -229,7 +229,7 @@ class EnvironmentHandler:
             self.external_active_actors[agent_id] = tele_operator
             self.carla_actors[actor_id] = vehicle
         elif actor_conf['mode'] == 'passive':
-            self.external_passive_actors.add(MovingBackgroundVehicle(self.timestep, controller, vehicle))
+            self.external_passive_actors.add(MovingBackgroundVehicle(0.1, controller, vehicle))
         else:
             raise RuntimeError()
 
