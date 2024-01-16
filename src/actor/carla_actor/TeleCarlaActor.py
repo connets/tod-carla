@@ -70,7 +70,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
                 visible_vehicles = vehicles_res['vehicles']
             self._number_visible_vehicles = len(visible_vehicles)
             #TODO
-            print(self._number_visible_vehicles, end=' ')
+            #print(self._number_visible_vehicles, end=' ')
             pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
             if pedestrian_raw:
                 pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
@@ -140,7 +140,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
     @preconditions('_tele_world')
     def apply_instruction(self, tele_vehicle_control: TeleVehicleControl):
         #TODO
-        print(tele_vehicle_control.vehicle_control)
+        #print(tele_vehicle_control.vehicle_control)
         if self._last_control is None or self._last_control.timestamp.elapsed_seconds < tele_vehicle_control.timestamp.elapsed_seconds:
             self._last_control = tele_vehicle_control
             self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, tele_vehicle_control.vehicle_control))

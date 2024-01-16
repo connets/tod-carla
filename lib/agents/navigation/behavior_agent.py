@@ -243,7 +243,7 @@ class BehaviorAgent(BasicAgent):
         ttc = distance / delta_v if delta_v != 0 else distance / np.nextafter(0., 1.)
         
         #TODO
-        print(f'delta_v:{delta_v} vehicle_speed:{vehicle_speed} self_speed:{self._speed}')
+        #print(f'delta_v:{delta_v} vehicle_speed:{vehicle_speed} self_speed:{self._speed}')
 
         # Under safety time distance, slow down.
         if self._behavior.safety_time > ttc > 0.0:
@@ -315,7 +315,7 @@ class BehaviorAgent(BasicAgent):
                 vehicle.bounding_box.extent.y, vehicle.bounding_box.extent.x) - max(
                 self._vehicle_extent.y, self._vehicle_extent.x)
             #TODO
-            print(f'distance: {distance}')
+            #print(f'distance: {distance}')
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
                 return self.emergency_stop()

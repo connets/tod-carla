@@ -158,7 +158,7 @@ class LocalPlanner(object):
             print("WARNING: The max speed is currently set to follow the speed limits. "
                   "Use 'follow_speed_limits' to deactivate this")
         self._target_speed = speed
-        print('Target speed:', self._target_speed)
+        #print('Target speed:', self._target_speed)
 
     def follow_speed_limits(self, value=True):
         """

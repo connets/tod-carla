@@ -330,14 +330,14 @@ class BasicAgent(object):
                                                           lane_type=carla.LaneType.Any)] + \
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
                                       int(d_total / self._sampling_resolution))]
-        print('SAFE DISTANCE WPTS', len(safe_distance_waypoints), 'VEHICLE LIST', len(vehicle_list))
+        #print('SAFE DISTANCE WPTS', len(safe_distance_waypoints), 'VEHICLE LIST', len(vehicle_list))
         for path_wpt, vehicle in itertools.product(safe_distance_waypoints, vehicle_list):
             vehicle_transform = vehicle.get_transform()
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
-            print(f'vehicle_wpt.road_id: {vehicle_wpt.road_id}, path_wpt.road_id{path_wpt.road_id}')
+            #print(f'vehicle_wpt.road_id: {vehicle_wpt.road_id}, path_wpt.road_id{path_wpt.road_id}')
             #if vehicle_wpt.road_id != path_wpt.road_id: continue
             distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
-            print('DISTANCE:', distance)
+            #print('DISTANCE:', distance)
             if distance <= max_distance:
                 return True, vehicle, distance
         return False, None, -1
