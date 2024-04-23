@@ -1,7 +1,14 @@
 IMPORT:
   $cmd$: "import os;from datetime import datetime"
 
+#tag: straight_obstacle_city_tests
+#tag: city_obstacle_old_detection
 tag: test_carla_omnet # CHANGE WITH python project version
+# tag: city_sudden_obstacle_movingbg
+# tag: original_city_trip
+# tag: hwy_sudden_obstacle_44m
+#tag: city_sudden_obstacle_20240220
+
 
 carla_server:
   host: localhost
