@@ -1,0 +1,28 @@
+time_limit: 10s
+origin:
+  x: -47
+  y: 373.5
+  z: 1
+  pitch: 0.002
+  yaw: -50
+  roll: 0
+destinations: [
+  { x: 15.34, y: -38.43, z: 1.855404 }
+]
+spectator:
+  x: -36.901142
+  y: 46.579769
+  z: 46.975449
+  pitch: -39.986324
+  yaw: 43.717537
+  roll: 0.000028
+obstacles:
+  - filter: vehicle.volkswagen.t2
+    autopilot: True
+    spawn:
+      x: 16.2
+      y: 226.86
+      z: 1.5
+      pitch: 0
+      yaw: -90
+      roll: 0

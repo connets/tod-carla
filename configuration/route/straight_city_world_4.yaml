@@ -1,0 +1,11 @@
+time_limit: 10s
+origin:
+  x: 35.937168
+  y: -170.443924
+  z: 1.02
+  pitch: 0.002
+  yaw: 0
+  roll: 0.
+destinations: [
+  { x: 334.530853, y: -169.023895, z: 1.100745 }
+]

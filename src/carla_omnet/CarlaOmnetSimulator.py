@@ -33,7 +33,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
         self._carla_actors = None
         self._protocol = protocol
         self._port = port
-        self._carlanet_manager = CarlanetManager(port, self)  # , socket_options={zmq.RCVTIMEO: connection_timeout*1000,
+        self._carlanet_manager = CarlanetManager(port, self)#, log_messages=True)  # , socket_options={zmq.RCVTIMEO: connection_timeout*1000,
         # zmq.SNDTIMEO: connection_timeout*1000})
         self.environment_handler: EnvironmentHandler = EnvironmentHandler()
         self.timestamp = 0
@@ -98,6 +98,7 @@ class CarlaOMNeTManager(CarlanetEventListener):
         rounded_timestamp = round(timestamp, 6)
         for actor in self._external_passive_actors:
             actor.tick(rounded_timestamp)
+        self.environment_handler.tick()
 
         # print(','.join(*payload['actors'][0]['position']), ','.join(*payload['actors'][0]['rotation']))
         return SimulatorStatus.RUNNING
@@ -114,6 +115,8 @@ class CarlaOMNeTManager(CarlanetEventListener):
             return self._compute_instruction(user_defined_message)
         elif user_message_type == 'APPLY_INSTRUCTION':
             return self._apply_instruction(user_defined_message)
+        elif user_message_type == 'FINISH_SIMULATION':
+            return SimulatorStatus.FINISHED_OK, dict() # TODO Maybe add a new finish code for this specific case?
         return SimulatorStatus.FINISHED_ERROR, dict()
 
     def _actor_status(self, user_defined_message):

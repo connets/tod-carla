@@ -40,4 +40,4 @@ class SimulationRatioActor(ExternalPassiveActor):
             whole_speed = round(simulation_duration / total_elapsed_time, 2)
             self._data_collector.write(f'{whole_speed}x')
 
-            print(f'simulation ratio: {whole_speed}x')
+            print(f'simulation ratio: {whole_speed}x, elapsed sim time: {round(simulation_duration, 0)}s')

@@ -83,7 +83,7 @@ class LocalPlanner(object):
         self._sampling_radius = 2.0
         
         self._max_throt = 0.75
-        self._max_brake = 0.3
+        self._max_brake = 0.75
         self._max_steer = 0.8
         self._offset = 0
         self._base_min_distance = 0.5
@@ -158,6 +158,7 @@ class LocalPlanner(object):
             print("WARNING: The max speed is currently set to follow the speed limits. "
                   "Use 'follow_speed_limits' to deactivate this")
         self._target_speed = speed
+        #print('Target speed:', self._target_speed)
 
     def follow_speed_limits(self, value=True):
         """

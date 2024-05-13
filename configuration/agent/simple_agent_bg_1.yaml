@@ -1,0 +1,3 @@
+behavior: custom
+sampling_resolution: 50cm
+time_limit: 50s

@@ -6,7 +6,7 @@ attrs:
 speed_limit: auto
 model: vehicle.tesla.model3
 
-mode: active
+mode: passive
 
 # camera:
 #   width: 1280

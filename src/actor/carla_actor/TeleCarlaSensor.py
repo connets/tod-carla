@@ -147,12 +147,12 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
         bp_library = parent_actor.get_world().get_blueprint_library()
         lidar_bp = bp_library.find('sensor.lidar.ray_cast_semantic')
         # lidar_bp.set_attribute('sensor_tick', '1.0')
-        lidar_bp.set_attribute('channels', '64')
+        lidar_bp.set_attribute('channels', '128')
         lidar_bp.set_attribute('points_per_second', '1120000')
-        lidar_bp.set_attribute('upper_fov', '40')
-        lidar_bp.set_attribute('lower_fov', '-40')
-        lidar_bp.set_attribute('range', '100')
-        lidar_bp.set_attribute('rotation_frequency', '20')
+        #lidar_bp.set_attribute('upper_fov', '40')
+        #lidar_bp.set_attribute('lower_fov', '-40')
+        lidar_bp.set_attribute('range', '200')
+        lidar_bp.set_attribute('rotation_frequency', '100') # 100
         lidar_transform = carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
                                           carla.Rotation(pitch=8.0))
         self.sensor = self.parent_actor.get_world().spawn_actor(lidar_bp, lidar_transform,

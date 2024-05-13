@@ -48,6 +48,7 @@ class TeleCarlaVehicle(TeleCarlaActor):
         self._modify_vehicle_physics = modify_vehicle_physics
         self.sensors = set()
         self._last_control = None
+        self._number_visible_vehicles = 0
 
     def get_speed_limit(self):
         return self._speed_limit if self._speed_limit is not None else self.model.get_speed_limit() / 3.6
@@ -58,14 +59,18 @@ class TeleCarlaVehicle(TeleCarlaActor):
         lidar_image = lidar_sensor.image if lidar_sensor is not None else None
         visible_vehicles, visible_pedestrians = [], []
         snapshot = self._tele_world.get_snapshot()
+        #print(snapshot.timestamp)#, end=' ')
         if lidar_image and camera_sensor:
             vehicles_raw = [v for v in self._tele_world.sim_world.get_actors().filter('vehicle.*') if
                             v.id != self.id]
             # does it need snap_processing filter?
             # vehicles = cva.snap_processing(vehicles_raw, snap)
             if vehicles_raw:
-                vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image)
+                vehicles_res, _ = cva.auto_annotate_lidar(vehicles_raw, camera_sensor.sensor, lidar_image, max_dist=100, min_detect=5) ######################
                 visible_vehicles = vehicles_res['vehicles']
+            self._number_visible_vehicles = len(visible_vehicles)
+            #TODO
+            #print(self._number_visible_vehicles, end=' ')
             pedestrian_raw = self._tele_world.sim_world.get_actors().filter('*walker.pedestrian*')
             if pedestrian_raw:
                 pedestrians_res, _ = cva.auto_annotate_lidar(pedestrian_raw, camera_sensor.sensor, lidar_image)
@@ -74,6 +79,10 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     def get_sensor_by_class(self, cls):
         return next(iter([s for s in self.sensors if isinstance(s, cls)]), None)
+    
+    #TODO quick n dirty way of getting this without having to call generate_status and its side effects
+    def get_number_visible_vehicles(self):
+        return self._number_visible_vehicles
 
     def attach_sensor(self, tele_carla_sensor):
         self.sensors.add(tele_carla_sensor)
@@ -130,6 +139,8 @@ class TeleCarlaVehicle(TeleCarlaActor):
 
     @preconditions('_tele_world')
     def apply_instruction(self, tele_vehicle_control: TeleVehicleControl):
+        #TODO
+        #print(tele_vehicle_control.vehicle_control)
         if self._last_control is None or self._last_control.timestamp.elapsed_seconds < tele_vehicle_control.timestamp.elapsed_seconds:
             self._last_control = tele_vehicle_control
             self._tele_world.apply_sync_command(carla.command.ApplyVehicleControl(self.id, tele_vehicle_control.vehicle_control))

@@ -1,0 +1,28 @@
+time_limit: 10s
+origin:
+  x: -47
+  y: 373.5
+  z: 1
+  pitch: 0.002
+  yaw: -50
+  roll: 0
+destinations: [
+  { x: 14.928572, y: 50.404743, z: 0.855404 }
+]
+spectator:
+  x: -36.901142
+  y: 46.579769
+  z: 46.975449
+  pitch: -39.986324
+  yaw: 43.717537
+  roll: 0.000028
+obstacles:
+  # Facing wrong way
+  - filter: vehicle.volkswagen.t2
+    spawn:
+      x: 15.62
+      y: 62.77
+      z: 1.5
+      pitch: 0
+      yaw: -90
+      roll: 0

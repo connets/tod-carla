@@ -137,4 +137,4 @@ widgetsnbextension==3.6.1
 zipp==3.8.0
 zmq==0.0.0
 zerorpc~=0.6.3
-pycarlanet~=0.8.19a0
+pycarlanet @ git+https://github.com/busolind/pycarlanet.git
