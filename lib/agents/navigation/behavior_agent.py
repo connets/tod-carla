@@ -8,7 +8,6 @@
 waypoints and avoiding other vehicles. The agent also responds to traffic lights,
 traffic signs, and has different possible configurations. """
 
-import random
 import numpy as np
 import carla
 from lib.agents.navigation.basic_agent import BasicAgent
@@ -73,20 +72,22 @@ class BehaviorAgent(BasicAgent):
 
     def update_vehicle_state(self, vehicle_state):
         super().update_vehicle_state(vehicle_state)
+
+        #print(f"agent vehicle_state received:\nvehicles: {[v.id for v in vehicle_state.visible_vehicles]}\npedestrian: {[v.id for v in vehicle_state.visible_pedestrians]}\n")
+        if len(vehicle_state.visible_pedestrians) > 0:
+            print("debug")
         for visible_vehicle in vehicle_state.visible_vehicles:
             if visible_vehicle.id not in self._other_vehicles:
                 self._other_vehicles[visible_vehicle.id] = visible_vehicle
-            elif visible_vehicle.timestamp.elapsed_seconds >= self._other_vehicles[
-                visible_vehicle.id].timestamp.elapsed_seconds:
+            elif visible_vehicle.timestamp.elapsed_seconds >= self._other_vehicles[visible_vehicle.id].timestamp.elapsed_seconds:
                 self._other_vehicles[visible_vehicle.id].update_state(visible_vehicle)
 
         for visible_pedestrian in vehicle_state.visible_pedestrians:
             if visible_pedestrian.id not in self._other_pedestrians:
                 self._other_pedestrians[visible_pedestrian.id] = visible_pedestrian
-            elif visible_pedestrian.timestamp.elapsed_seconds >= self._other_pedestrians[
-                visible_pedestrian.id].timestamp.elapsed_seconds:
+            elif visible_pedestrian.timestamp.elapsed_seconds >= self._other_pedestrians[visible_pedestrian.id].timestamp.elapsed_seconds:
                 self._other_pedestrians[visible_pedestrian.id].update_state(visible_pedestrian)
-
+    
     def _update_information(self):
         """
         This method updates the information regarding the ego
@@ -101,7 +102,7 @@ class BehaviorAgent(BasicAgent):
 
         self._look_ahead_steps = max(0,int((self._speed_limit) / 10))
 
-        print(f"self._look_ahead_steps {self._look_ahead_steps}")
+        #print(f"self._look_ahead_steps {self._look_ahead_steps}")
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
@@ -170,6 +171,7 @@ class BehaviorAgent(BasicAgent):
             :return vehicle: nearby vehicle
             :return distance: distance to nearby vehicle
         """
+        if self._ignore_vehicles: return (False, None, -1)
 
         vehicle_list = self._other_vehicles.values()
 
@@ -226,6 +228,8 @@ class BehaviorAgent(BasicAgent):
         # else:
         walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
             self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=60)
+
+        if self._ignore_pedestrian: return (False, None, -1)
 
         return walker_state, walker, distance
 
@@ -292,7 +296,7 @@ class BehaviorAgent(BasicAgent):
         if self.traffic_light_manager():
             return self.emergency_stop()
 
-        # 2.1: Pedestrian avoidance behaviors
+        # 2.1: Pedestrian avoidance behaviors (use visible pedestrains getted from the state)
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
         if walker_state:
             # Distance is computed from the center of the two cars,
@@ -305,6 +309,7 @@ class BehaviorAgent(BasicAgent):
                 return self.emergency_stop()
 
         # 2.2: Car following behaviors
+        
         vehicle_state, vehicle, distance = self.collision_and_car_avoid_manager(ego_vehicle_wp)
 
         if vehicle_state:

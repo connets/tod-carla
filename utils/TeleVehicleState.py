@@ -10,6 +10,7 @@ class ActorState:
         self.transform = transform
         self.bounding_box = bounding_box
 
+    #methods like get_<attribute> will return the attribute value
     def __getattr__(self, method_name, *args):
         m = re.match(r'get_(.*)', method_name)
         if m:
@@ -39,10 +40,14 @@ class OtherVehicleState(ActorState):
 
 
 class OtherPedestrianState(ActorState):
+    def __init__(self, timestamp, _id, transform, bounding_box, velocity):
+        super().__init__(timestamp, _id, transform, bounding_box)
+        self.velocity = velocity
+
     @staticmethod
     def generate_visible_pedestrian(timestamp, pedestrian):
         return OtherPedestrianState(timestamp, pedestrian.id, pedestrian.get_transform(),
-                                    pedestrian.bounding_box)
+                                    pedestrian.bounding_box, pedestrian.get_velocity())
 
 
 class TeleVehicleState(ActorState):
@@ -66,7 +71,7 @@ class TeleVehicleState(ActorState):
 
     @staticmethod
     def generate_vehicle_state(timestamp, vehicle, visible_vehicles, visible_pedestrians):
-        vehicle_state = TeleVehicleState(timestamp, 'vehicle.id', vehicle.carla_actor.bounding_box,
+        vehicle_state = TeleVehicleState(timestamp, vehicle.carla_actor.id, vehicle.carla_actor.bounding_box,
                                          vehicle.carla_actor.get_velocity(), vehicle.carla_actor.get_transform(),
                                          vehicle.carla_actor.get_speed_limit(), vehicle.carla_actor.get_acceleration(),
                                          [OtherVehicleState.generate_visible_vehicle(timestamp, v) for v in

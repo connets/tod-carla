@@ -29,7 +29,8 @@ import carla
 
 ### Use this function to get 2D bounding boxes of visible vehicles to camera using semantic LIDAR
 def auto_annotate_lidar(vehicles, camera, lidar_data, max_dist=100, min_detect=5, show_img=None, json_path=None):
-    filtered_data = filter_lidar(lidar_data, camera, max_dist)
+    #filtered_data = filter_lidar(lidar_data, camera, max_dist) ### Filter out lidar points that are outside camera FOV
+    filtered_data = lidar_data
     if show_img != None:
         show_lidar(filtered_data, camera, show_img)
 

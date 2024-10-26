@@ -49,11 +49,16 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         # for attr_name, attr_value in item[3].items():
         #     bp.set_attribute(attr_name, attr_value)
 
+        camera_transform = carla.Transform(carla.Location(x=1.0 * bound_x, y=0.0 * bound_y, z=2.0 * bound_z),
+                                          carla.Rotation(pitch=-45))
+        #carla.Transform(carla.Location(x=(-2.0 * parent_actor.bounding_box.extent.x)+0.5, y=0.0, z=parent_actor.bounding_box.extent.z), carla.Rotation(pitch=-30.0, yaw=180)),
+        
+
         self.sensor = CarlaClient.instance.world.spawn_actor(
             bp,
-            carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z), carla.Rotation(pitch=8.0)),
+            camera_transform,
             attach_to=parent_actor,
-            attachment_type=carla.AttachmentType.SpringArm
+            attachment_type=carla.AttachmentType.Rigid
         )
 
         # We need to pass the lambda a weak reference to
@@ -81,7 +86,6 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
     @staticmethod
     def _parse_image(weak_self, image):
-        print('camera_sensor callback')
         self = weak_self()
         if not self or (self.image is not None and image.frame < self.image.frame):
             return

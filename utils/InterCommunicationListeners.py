@@ -13,9 +13,12 @@ class InterCommunicationListeners:
             self._managers[manager.__class__] = manager
 
     def askToManager(self, managerClass, functionName, *args, **kwargs):
-        manager = self._managers[managerClass]
-        func = getattr(manager, functionName)
-        return func(*args, **kwargs)
+        try:
+            manager = self._managers[managerClass]
+            func = getattr(manager, functionName)
+            return func(*args, **kwargs)
+        except KeyError:
+            print(f"Manager {managerClass} not found")
     
     # def askToWorldManager(self, functionName, *args, **kwargs):
     #     func = getattr(self._worldManager, functionName)

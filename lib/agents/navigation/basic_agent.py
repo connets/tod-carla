@@ -9,6 +9,8 @@ waypoints and avoiding other vehicles. The agent also responds to traffic lights
 It can also make use of the global route planner to follow a specifed route
 """
 import itertools
+import math
+import sys,os
 
 import carla
 from carla import Transform
@@ -19,6 +21,9 @@ from lib.agents.navigation.global_route_planner import GlobalRoutePlanner
 from lib.agents.tools.misc import (get_speed, is_within_distance,
                                    get_trafficlight_trigger_location,
                                    compute_distance)
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.TeleVehicleState import OtherPedestrianState
 
 
 class BasicAgent(object):
@@ -61,6 +66,7 @@ class BasicAgent(object):
         self._ignore_traffic_lights = False
         self._ignore_stop_signs = False
         self._ignore_vehicles = False
+        self._ignore_pedestrian = False
         self._target_speed = target_speed
         self._sampling_resolution = sampling_resolution  # m
 
@@ -82,6 +88,8 @@ class BasicAgent(object):
             self._ignore_stop_signs = opt_dict['ignore_stop_signs']
         if 'ignore_vehicles' in opt_dict:
             self._ignore_vehicles = opt_dict['ignore_vehicles']
+        if 'ignore_pedestrian' in opt_dict:
+            self._ignore_pedestrian = opt_dict['ignore_pedestrian']
         if 'sampling_resolution' in opt_dict:
             self._sampling_resolution = opt_dict['sampling_resolution']
         if 'base_tlight_threshold' in opt_dict:
@@ -242,8 +250,12 @@ class BasicAgent(object):
         self._ignore_stop_signs = active
 
     def ignore_vehicles(self, active=True):
-        """(De)activates the checks for stop signs"""
+        """(De)activates the checks for vehicles"""
         self._ignore_vehicles = active
+    
+    def ignore_pedestrian(self, active=True):
+        """(De)activates the checks for pedestrian"""
+        self._ignore_pedestrian = active
 
     def lane_change(self, direction, same_lane_time=0, other_lane_time=0, lane_change_time=2):
         """
@@ -318,8 +330,43 @@ class BasicAgent(object):
 
         return (False, None)
 
-    def _vehicle_obstacle_detected(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
+    def _vehicle_obstacle_detected(self, obstacles_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,
                                    lane_offset=0):
+        
+        # if self._ignore_vehicles:
+        #     return (False, None, -1)
+
+        if len(obstacles_list) != 0:
+            ...
+
+        #project obstacles_list to keep track of the movements
+        def project_obstacles(o, circleCount = 10, pointsPerCircle = 24):
+            projected_obstacles_list = []
+            maxVelocity = max(abs(o.velocity.x), abs(o.velocity.y), abs(o.velocity.z)) * 2 # consider base acceleration + 2m/s for the pedestrian
+            distances = [(i * maxVelocity) / (circleCount - 1) for i in range(circleCount)]
+            
+            o_location = o.get_transform().location
+            for distance in distances:
+                for angle in range(0, 360, 15):  #Loop through angles from 0 to 360 degrees
+                    rad = angle * (math.pi / 180)  #Convert angle to radians
+                    pr_location = carla.Location(
+                        x=o_location.x + (distance * math.cos(rad)),
+                        y=o_location.y + (distance * math.sin(rad)),
+                        z=o_location.z
+                    )
+                    pr = OtherPedestrianState(o.get_timestamp(), 'pr', carla.Transform(pr_location, o.get_transform().rotation), o.get_bounding_box(), o.get_velocity())
+                    projected_obstacles_list.append(pr)
+
+            return projected_obstacles_list
+
+        projected_obstacles_list = []
+        for o in obstacles_list:            
+            projected_obstacles_list.append(o)
+            projected_obstacles_list.extend(project_obstacles(o))
+
+
+        
+        
         speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
         d_pr = speed * self.t_pr  # perception-reaction distance
         d_braking = speed ** 2 / (2 * self.u * self.g)  # braking distance
@@ -329,13 +376,14 @@ class BasicAgent(object):
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
                                       int(d_total / self._sampling_resolution))]
 
-        for path_wpt, vehicle in itertools.product(safe_distance_waypoints, vehicle_list):
+        for path_wpt, vehicle in itertools.product(safe_distance_waypoints, projected_obstacles_list):
             vehicle_transform = vehicle.get_transform()
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
             if vehicle_wpt.road_id != path_wpt.road_id: continue
             distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
             if distance <= max_distance:
                 return True, vehicle, distance
+
         return False, None, -1
 
     def _vehicle_obstacle_detected_old(self, vehicle_list=None, max_distance=None, up_angle_th=90, low_angle_th=0,

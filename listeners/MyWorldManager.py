@@ -40,7 +40,7 @@ class MyWorldManager(WorldManager):
         return SimulatorStatus.RUNNING
 
     def after_world_tick(self, timestamp) -> SimulatorStatus:
-        print(f"{timestamp} of {self.sim_time_limit}")
+        #print(f"{timestamp} of {self.sim_time_limit}")
         if timestamp > self.sim_time_limit: return SimulatorStatus.FINISHED_TIME_LIMIT
         
         return SimulatorStatus.RUNNING

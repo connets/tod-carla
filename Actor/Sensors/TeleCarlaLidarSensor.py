@@ -30,8 +30,9 @@ class TeleCarlaLidarSensor(TeleCarlaRenderingSensor):
         lidar_bp.set_attribute('lower_fov', '-40')
         lidar_bp.set_attribute('range', '100')
         lidar_bp.set_attribute('rotation_frequency', '20')
-        lidar_transform = carla.Transform(carla.Location(x=-2.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
-                                          carla.Rotation(pitch=8.0))
+        lidar_transform = carla.Transform(carla.Location(x=1.0 * bound_x, y=+0.0 * bound_y, z=2.0 * bound_z),
+                                          carla.Rotation(pitch=-45))
+
         self.sensor = CarlaClient.instance.world.spawn_actor(
             lidar_bp,
             lidar_transform,

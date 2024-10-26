@@ -36,7 +36,8 @@ class MyAgentManager(AgentManager):
                     'dt': message["carla_configuration"]['carla_timestep'],
                     'ignore_traffic_lights': True,
                     'ignore_stop_signs': True,
-                    'ignore_vehicles': True
+                    'ignore_vehicles': True,
+                    'ignore_pedestrian': False,
                 }
             )
 
@@ -57,14 +58,14 @@ class MyAgentManager(AgentManager):
             simulator_status, instruction = SimulatorStatus.FINISHED_OK, None
             if not self._agents[actor_id].done():
                 simulator_status = SimulatorStatus.RUNNING
-                instruction = self._agents[actor_id].do_action(ObjectStorage.get(status_id))
+                instruction = self._agents[actor_id].do_action(ObjectStorage.get_and_remove(status_id))
             
             #status = self.status.pop(status_id)
             #agent = self._external_active_actors[agent_id]
 
             instruction_id = str(-1) if (simulator_status != SimulatorStatus.RUNNING or instruction is None) else ObjectStorage.put(instruction)
             #self.instructions[instruction_id] = instruction
-            print(f"simulator_status: {simulator_status}, instruction_id: {instruction_id}, instruction {instruction}")
+            #print(f"simulator_status: {simulator_status}, instruction_id: {instruction_id}, instruction {instruction}")
             return simulator_status, {'user_message_type':'INSTRUCTION', 'actor_id':actor_id, 'instruction_id':instruction_id}
         else:
             raise RuntimeError(f"I don\'t know how to handle this message: {message}")
