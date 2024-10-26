@@ -1,0 +1,46 @@
+world: Town10HD_Opt
+new_vehicles:
+- actor_id: Car01
+  actor_type: Vehicle
+  role_name: hero
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+- actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.carlamotors.firetruck
+  origin:
+    x: -26.251423
+    y: 69.949776
+    z: 0.000496
+    pitch: -0.001653
+    yaw: 0.624317
+    roll: -0.000031
+fromOmnet_vehicles: []
+agents:
+- behavior: aggressive
+  sampling_resolution: 0.5
+  time_limit: 50
+  actor_id_to_control: Car01
+  route:
+    time_limit: 300
+    origin:
+      x: 29.855793
+      y: 65.970924
+      z: 0.001882
+      pitch: -0.000731
+      yaw: -179.908478
+      roll: -0.000031
+    destinations:
+    - x: -18.815849
+      y: 65.878159
+      z: 0.002049
+    - x: -41.323059
+      y: 47.269104
+      z: 0.001971

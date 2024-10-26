@@ -1,3 +1,43 @@
+import math
+import re
+
+import carla
+import numpy as np
+
+
+def find_weather_presets():
+    """Method to find weather presets"""
+    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
+
+    def name(x): return ' '.join(m.group(0) for m in rgx.finditer(x))
+
+    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
+    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
+
+
+def get_actor_display_name(actor, truncate=250):
+    """Method to get actor display name"""
+    name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
+    return (name[:truncate - 1] + u'\u2026') if len(name) > truncate else name
+
+
+def get_closest_spawning_points(carla_map, loc):
+    res = []
+    for spawn_point in carla_map.get_spawn_points():
+        if abs(loc.x - spawn_point.location.x) < 5 and abs(loc.y - spawn_point.location.y) < 5:
+            res.append(spawn_point)
+    return res
+
+
+def angle_between(v1: carla.Vector3D, v2: carla.Vector3D):
+    """
+    Return the degrees of the angle between two vector
+    """
+    v1_u = v1.make_unit_vector()
+    v2_u = v2.make_unit_vector()
+    return math.degrees((np.arccos(np.clip(v1_u.dot(v2_u), -1.0, 1.0))))
+
+
 # Copyright (c) # Copyright (c) 2018-2020 CVC.
 #
 # This work is licensed under the terms of the MIT license.
@@ -13,7 +53,6 @@ import random
 import carla
 from lib.agents.navigation.controller import VehiclePIDController
 from lib.agents.tools.misc import draw_waypoints, get_speed
-from src.utils import carla_utils
 
 
 class RoadOption(Enum):
@@ -264,8 +303,8 @@ class LocalPlanner(object):
             velocity_vector = self._last_vehicle_state.get_transform().get_forward_vector()
             location_wp = wp.transform.location
             vector_wp = carla.Vector3D(location_wp.x - vehicle_location.x, location_wp.y - vehicle_location.y, 0)
-            angle = min(carla_utils.angle_between(velocity_vector, vector_wp),
-                        carla_utils.angle_between(vector_wp, velocity_vector))
+            angle = min(angle_between(velocity_vector, vector_wp),
+                        angle_between(vector_wp, velocity_vector))
             return angle
 
             #

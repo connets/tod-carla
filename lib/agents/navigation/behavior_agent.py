@@ -99,7 +99,9 @@ class BehaviorAgent(BasicAgent):
         if self._direction is None:
             self._direction = RoadOption.LANEFOLLOW
 
-        self._look_ahead_steps = int((self._speed_limit) / 10)
+        self._look_ahead_steps = max(0,int((self._speed_limit) / 10))
+
+        print(f"self._look_ahead_steps {self._look_ahead_steps}")
 
         self._incoming_waypoint, self._incoming_direction = self._local_planner.get_incoming_waypoint_and_direction(
             steps=self._look_ahead_steps)
