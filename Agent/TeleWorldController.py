@@ -17,6 +17,7 @@ from lib.agents.navigation.basic_agent import BasicAgent
 from lib.agents.navigation.behavior_agent import BehaviorAgent
 from utils.TeleVehicleControl import TeleVehicleControl
 
+from Agent.MyBehaviorAgent import MyBehaviorAgent
 
 class TeleAdapterController(ABC):
 
@@ -76,7 +77,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         self._destination_locations = destination_locations
         self._opt_dict = opt_dict
         self._player = player
-        self.carla_agent = BehaviorAgent(player.carla_actor, self._sampling_resolution, behavior=self._behavior, opt_dict=self._opt_dict)
+        self.carla_agent = MyBehaviorAgent(player.carla_actor, self._sampling_resolution, behavior=self._behavior, opt_dict=self._opt_dict)
 
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations, start_location=self._start_location)
 
@@ -99,9 +100,8 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         if self.carla_agent.last_vehicle_state is None or self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds:
             self.carla_agent.update_vehicle_state(vehicle_state)
             control = TeleVehicleControl(self._player.carla_actor.get_world().get_snapshot().timestamp, self.carla_agent.run_step(True))
-
-
-
+        
+        print(f"control: {control.vehicle_control}")
         return control
 
     @preconditions('carla_agent')

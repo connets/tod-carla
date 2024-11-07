@@ -75,7 +75,7 @@ class BehaviorAgent(BasicAgent):
 
         #print(f"agent vehicle_state received:\nvehicles: {[v.id for v in vehicle_state.visible_vehicles]}\npedestrian: {[v.id for v in vehicle_state.visible_pedestrians]}\n")
         if len(vehicle_state.visible_pedestrians) > 0:
-            print("debug")
+            print("receive pedestrian in agent")
         for visible_vehicle in vehicle_state.visible_vehicles:
             if visible_vehicle.id not in self._other_vehicles:
                 self._other_vehicles[visible_vehicle.id] = visible_vehicle
@@ -299,6 +299,7 @@ class BehaviorAgent(BasicAgent):
         # 2.1: Pedestrian avoidance behaviors (use visible pedestrains getted from the state)
         walker_state, walker, w_distance = self.pedestrian_avoid_manager(ego_vehicle_wp)
         if walker_state:
+            print("pedestrian detected")
             # Distance is computed from the center of the two cars,
             # we use bounding boxes to calculate the actual distance
             distance = w_distance - max(
@@ -306,7 +307,11 @@ class BehaviorAgent(BasicAgent):
                 self._vehicle_extent.y, self._vehicle_extent.x)
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
+                print("emergency stop")
                 return self.emergency_stop()
+            if distance < self._behavior.braking_distance + 5:
+                print("slow down")
+                return self.slow_down()
 
         # 2.2: Car following behaviors
         
@@ -353,5 +358,18 @@ class BehaviorAgent(BasicAgent):
         control = carla.VehicleControl()
         control.throttle = 0.0
         control.brake = self._max_brake
+        control.hand_brake = False
+        return control
+    
+    def slow_down(self):
+        """
+        Overwrites the throttle a brake values of a control to perform speed reduction.
+        The steering is kept the same to avoid going out of the lane when stopping during turns
+
+            :param speed (carl.VehicleControl): control to be modified
+        """
+        control = carla.VehicleControl()
+        control.throttle = 0.0
+        control.brake = 0.3
         control.hand_brake = False
         return control

@@ -8,7 +8,7 @@ new_vehicles:
   camera:
     width: 1280
     height: 720
-  renderCamera: true
+  renderCamera: false
   collision: true
   lidar: true
 - actor_id: Other01
@@ -16,6 +16,7 @@ new_vehicles:
   role_name: other
   speed_limit: auto
   model: vehicle.carlamotors.firetruck
+  #model: vehicle.tesla.model3
   camera:
     width: 1280
     height: 720
@@ -23,11 +24,11 @@ new_vehicles:
   collision: true
   lidar: true
   origin:
-    x: -22.085384
+    x: -24.085384
     y: 70.283424
     z: -0.003865
     pitch: 0.026931
-    yaw: 180.0
+    yaw: 0.0
     roll: 0.009131
 
 - actor_type: Pedestrian
@@ -45,15 +46,17 @@ new_vehicles:
     x: -30.511932
     y: 66.055473
     z: 1.0
-#    pitch: 0.014364
-#    yaw: -88.313843
-#    roll: 0.041669
+    pitch: 0.014364
+    yaw: -88.313843
+    roll: 0.041669
+
 fromOmnet_vehicles: []
 agents:
-- behavior: normal
+- behavior: aggressive
   sampling_resolution: 0.5
   time_limit: 50
   actor_id_to_control: Car01
+  collision_calculation_method: TTC
   route:
     time_limit: 300
     origin:

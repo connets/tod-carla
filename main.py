@@ -36,7 +36,7 @@ if __name__ == '__main__':
     #start carla server
     CarlaServerHandler()
     CarlaServerHandler.launch_carla_server()
-    time.sleep(5)
+    time.sleep(20)
     #minimal part for co-simulation
     ActorType()
     CarlaClient(host='localhost', port=2000)
@@ -45,6 +45,8 @@ if __name__ == '__main__':
     wm = MyWorldManager(synchronousMode=True, renderingMode=True)
     acm = MyActorManager()
     agm = MyAgentManager()
+
+    print(f"CarlaClient world {CarlaClient.instance.world}")
 
     #intercommunication between listeners, not needed for co-simulation. you can pass more managers to handle other thinks just passing them and use their functions calling
     #InterCommunicationListeners.askToManager(self, managerClass, functionName, *args, **kwargs)

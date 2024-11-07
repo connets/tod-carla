@@ -10,6 +10,16 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/../../pycarlanet/.venv/bin/python"
             }
+        },
+        {
+            "name": "fakeCarla",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/fakeCarla.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/../../pycarlanet/.venv/bin/python"
+            }
         }
     ]
 }

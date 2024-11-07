@@ -5,15 +5,8 @@ import math
 
 import sys,os
 
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.TeleVehicleControl import TeleVehicleControl
-from utils.TeleVehicleState import TeleVehicleState
 
-from Actor.Sensors.TeleCarlaCameraSensor import TeleCarlaCameraSensor
-from Actor.Sensors.TeleCarlaLidarSensor import TeleCarlaLidarSensor
-
-import lib.camera_visibility.carla_vehicle_annotator as cva
 
 class TeleCarlaPedestrian(CarlanetActor):
 

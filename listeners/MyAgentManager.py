@@ -36,8 +36,9 @@ class MyAgentManager(AgentManager):
                     'dt': message["carla_configuration"]['carla_timestep'],
                     'ignore_traffic_lights': True,
                     'ignore_stop_signs': True,
-                    'ignore_vehicles': True,
+                    'ignore_vehicles': False,
                     'ignore_pedestrian': False,
+                    'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT')
                 }
             )
 

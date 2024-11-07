@@ -339,6 +339,17 @@ class BasicAgent(object):
         if len(obstacles_list) != 0:
             ...
 
+
+        #Method                             Inputs                                          Key Outputs                              	            Advantages	                                Limitations
+        #Time-to-Collision (TTC)            Position, velocity	                            Time until potential collision                          Simple and intuitive	                    Assumes constant velocity; no evasive maneuvers
+        #Relative Velocity/Position         Position, velocity, orientation	                Direction of relative motion	                        Fast, works with basic information	        Assumes constant motion, no acceleration
+        #Monte Carlo Simulation	            Position, velocity, acceleration	            Probability of collision from many scenarios	        Handles uncertainty and variability	        Computationally expensive, complex modeling
+        #Dynamic Time-to-Collision (DTTC)	Position, velocity, acceleration	            Updated time-to-collision	                            Considers acceleration and steering	        Still assumes some predictability
+        #Bayesian Inference	                Position, velocity, sensor data	                Real-time collision probability	                        Handles uncertainty, adapts in real time	Requires probabilistic models and computation
+        #Machine Learning	                Sensor data, position, velocity	                Collision probability prediction	                    Can handle complex, real-world scenarios	Needs large data for training
+
+
+
         #project obstacles_list to keep track of the movements
         def project_obstacles(o, circleCount = 10, pointsPerCircle = 24):
             projected_obstacles_list = []

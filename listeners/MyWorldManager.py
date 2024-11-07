@@ -50,6 +50,7 @@ class MyWorldManager(WorldManager):
 
     def simulation_finished(self, status_code):
         InterCommunicationListeners.instance.askToManager(LoggerManager, 'writeFinishStatus', status_code)
+        exit()
         #self.writeFinishStatus(status_code)
 
     def simulation_error(self, e):
