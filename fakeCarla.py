@@ -58,11 +58,11 @@ messages = {
                 'type': 'Vehicle'
             },
             {
-                'actor_id': 'Other02',
-                'position': [-23.085369110107422, 72.28341674804688, 0.0030816267244517803],
-                'rotation': [0.02570882998406887, -179.9999542236328, 0.008719069883227348],
-                'velocity': [-0.00020793481962755322, 0.00017304385255556554, 0.6934877038002014],
-                'type': 'Vehicle'
+                'actor_id': 'EdgeCamera01',
+                'position': [0,0,0],
+                'rotation': [0,0,0],
+                'velocity': [0,0,0],
+                'type': 'EdgeCamera'
             }
         ]
     },
@@ -76,7 +76,7 @@ messages = {
         }
     },
     "COOPERATIVE_UPDATE": {
-        'message_type': 'ACTOR_GENERIC_RESPONSE',
+        'message_type': '_GENERIC_RESPONSE',
         'simulation_status': 0,
         'user_defined': {
             'user_message_type': 'OK'
@@ -121,6 +121,10 @@ if __name__ == '__main__':
 
         k = data['user_defined']['user_message_type']
         response = messages[k]
+
+        if k == "COOPERATIVE_UPDATE":
+            splitted = data['message_type'].split("_")
+            response["message_type"] = splitted[0] + "_GENERIC_RESPONSE"
 
         if k in ["ACTOR_STATUS_UPDATE", "COMPUTE_INSTRUCTION", "COOPERATIVE_STATUS_REQUEST"]:
             response['user_defined']['actor_id'] = data['user_defined']['actor_id']

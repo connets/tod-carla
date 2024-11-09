@@ -27,6 +27,7 @@ class MyAgentManager(AgentManager):
             print(f"create agent {agent}")
             start_position, end_locations, time_limit = self._create_route(agent['route'])
             controller = BehaviorAgentTeleWorldAdapterController(
+                agent['agentId'],
                 InterCommunicationListeners.instance.askToManager(ActorManager, 'get_actor_from_id', agent['actor_id_to_control']),
                 agent['behavior'],
                 agent['sampling_resolution'],
@@ -38,7 +39,8 @@ class MyAgentManager(AgentManager):
                     'ignore_stop_signs': True,
                     'ignore_vehicles': False,
                     'ignore_pedestrian': False,
-                    'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT')
+                    'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
+                    'ignoreIds': agent.get('ignoreIds', [])
                 }
             )
 
@@ -68,6 +70,9 @@ class MyAgentManager(AgentManager):
             #self.instructions[instruction_id] = instruction
             #print(f"simulator_status: {simulator_status}, instruction_id: {instruction_id}, instruction {instruction}")
             return simulator_status, {'user_message_type':'INSTRUCTION', 'actor_id':actor_id, 'instruction_id':instruction_id}
+        elif message['user_message_type'] == 'COOPERATIVE_UPDATE':
+            print(f"receive cooperative update in agent {message}")
+            return SimulatorStatus.RUNNING, {'user_message_type': 'OK'}
         else:
             raise RuntimeError(f"I don\'t know how to handle this message: {message}")
         

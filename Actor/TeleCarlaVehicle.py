@@ -191,8 +191,8 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
         
         print(f"received coop {status_id}")
 
-        if len(state.visible_pedestrians) != 0:
-            print(f"{self._carla_actor.type_id} handle_cooperative_update visible_pedestrians {len(state.visible_pedestrians)}")
+        #if len(state.visible_pedestrians) != 0:
+        #    print(f"{self._carla_actor.type_id} handle_cooperative_update visible_pedestrians {len(state.visible_pedestrians)}")
         
         if state.id not in self.othersStates:
             self.othersStates[state.id] = state

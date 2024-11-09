@@ -11,8 +11,9 @@ from lib.agents.tools.misc import get_speed, positive, is_within_distance, compu
 
 from utils.TeleVehicleState import OtherPedestrianState
 
-
-
+from utils.InterCommunicationListeners import InterCommunicationListeners
+from pycarlanet.listeners import ActorManager
+from pycarlanet import CarlanetActor
 
 class Decision(Enum):
     SLOW_DOWN = 0
@@ -54,6 +55,7 @@ class CollisionCalculationMethod(Enum):
     
     @staticmethod
     def calculate_collision(method, *args, **kwargs) -> Decision:
+        if kwargs['other'].id in kwargs['me'].ignoreIds: return None
         if method == CollisionCalculationMethod.CARLADEFAULT:
             walker_state, walker, distance = CollisionCalculationMethod.carladefault(*args, **kwargs)
             self = kwargs['me']
@@ -152,7 +154,7 @@ class CollisionCalculationMethod(Enum):
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
             if vehicle_wpt.road_id != path_wpt.road_id: continue
             distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
-            print(f"distance with {vehicle} is: {distance}")
+            #print(f"distance with {vehicle} is: {distance}")
             if distance <= max(self._behavior.min_proximity_threshold, self._speed_limit / 3):
                 return True, vehicle, distance
 
@@ -215,36 +217,32 @@ class CollisionCalculationMethod(Enum):
         ttc = -dot_product / relative_velocity_magnitude_squared
         
         # Return TTC (positive value means collision in the future)
+        #print(f"TTC with {other} is: {ttc}")
         return ttc
 
     @staticmethod
     def calculate_rvp():
         # Implementation for RVP method
-        #TODO: choose if slown down, emercy break or null 
         return None
 
     @staticmethod
     def calculate_montecarlo():
         # Implementation for Monte Carlo method
-        #TODO: choose if slown down, emercy break or null 
         return None
 
     @staticmethod
     def calculate_dttc():
         # Implementation for DTTC method
-        #TODO: choose if slown down, emercy break or null 
         return None
 
     @staticmethod
     def calculate_bayesianinference():
         # Implementation for Bayesian Inference method
-        #TODO: choose if slown down, emercy break or null 
         return None
 
     @staticmethod
     def calculate_machinelearning():
         # Implementation for Machine Learning method
-        #TODO: choose if slown down, emercy break or null 
         return None
 
 
@@ -257,7 +255,11 @@ class MyBehaviorAgent(BehaviorAgent):
 
         self.collision_calculation_method = CollisionCalculationMethod.getMethodFromString(opt_dict['collision_calculation_method'])
 
-        print(self.collision_calculation_method)
+        self.ignoreIds = []
+        for e in opt_dict['ignoreIds']:
+            founded = InterCommunicationListeners.instance.askToManager(ActorManager, 'get_actor_from_id', e)
+            if founded is not None and isinstance(founded, CarlanetActor):
+                self.ignoreIds.append(founded.carla_actor.id)                
 
     def run_step(self, debug=False):
         """
@@ -331,11 +333,11 @@ class MyBehaviorAgent(BehaviorAgent):
             if dec is not None:
                 decisions.append(dec)
             print(f"time to collision with {o} is: {dec}")
-        print(decisions)
+        #print(decisions)
         if len(decisions) > 0:
             sorted_decisions = sorted(decisions, key=lambda x: x.value)
             return self.getControlFromDecision(sorted_decisions[-1])
-        print()
+        #print()
         return None
         #TODO: get worst case and apply
 

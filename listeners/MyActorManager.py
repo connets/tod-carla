@@ -23,6 +23,8 @@ from Actor.Sensors.TeleCarlaObstacleSensor import TeleCarlaObstacleSensor
 from Actor.TeleCarlaPedestrian import TeleCarlaPedestrian
 from Actor.Mixin import CooperativeUpdateMixin
 
+from Actor.TeleCarlaEdgeCamera import TeleCarlaEdgeCamera
+
 from utils.InterCommunicationListeners import InterCommunicationListeners
 import utils.LidarUtility as LidarUtility
 #from utils.Hud import HUD
@@ -57,14 +59,18 @@ class MyActorManager(ActorManager):
                     
                     if actor['actor_type'] == 'Pedestrian':
                         self._generatePedestrian(actor=actor,origin=origin)
+                    
+                    if actor['actor_type'] == 'EdgeCamera':
+                        self._generateEdgeCamera(actor=actor,origin=origin)
+                    
                         
         except Exception as error:
             print(f"{self.__class__} omnet_init_completed error: {error}")
         
-    @InstanceExist(CarlaClient)
-    def create_actors_from_omnet(self, actors):
-        print("create_actors_from_omnet")
-        print(actors)
+    #@InstanceExist(CarlaClient)
+    #def create_actors_from_omnet(self, actors):
+        #print("create_actors_from_omnet")
+        #print(actors)
         # for actor in actors:
         #     if actor['actor_type'] not in ActorType.instance.get_available_types():
         #         raise RuntimeError(f"I don\'t know this type {actor['actor_type']}\nActor type {actor['actor_type']} is not available in ActorTypes: {ActorType.instance.get_available_types()}")
@@ -74,7 +80,7 @@ class MyActorManager(ActorManager):
     
     @InstanceExist(CarlaClient)
     def generic_message(self, timestamp, message) -> (SimulatorStatus, dict):
-        print(f"message from omnet: {message['user_message_type']} for actor {message['actor_id']}")
+        #print(f"message from omnet: {message['user_message_type']} for actor {message['actor_id']}")
         #if not 'msg_type' in message: return SimulatorStatus.RUNNING, {'message': 'from carla'}
         if message['user_message_type'] == 'ACTOR_STATUS_UPDATE':
             #check for actor.done() is useful to get all sensor data
@@ -133,7 +139,7 @@ class MyActorManager(ActorManager):
         while any(not actor.done(CarlaClient.instance.world.get_snapshot().timestamp) for actor in self._carlanet_actors.values() if 'done' in actor.__dict__):
                 ...
         actor_id = message['actor_id']
-        if isinstance(self._carlanet_actors[actor_id], TeleCarlaVehicle):
+        if isinstance(self._carlanet_actors[actor_id], TeleCarlaVehicle) or isinstance(self._carlanet_actors[actor_id], TeleCarlaEdgeCamera):
             actor_status = self._carlanet_actors[actor_id].generate_status()
             status_id = ObjectStorage.put(actor_status)
             return SimulatorStatus.RUNNING, {'user_message_type': 'ACTOR_STATUS', 'actor_id': actor_id, 'status_id': status_id}
@@ -180,7 +186,7 @@ class MyActorManager(ActorManager):
             destination = carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])
         #else:
             #destination = CarlaClient.instance.world.get_random_location_from_navigation()[0]
-        print("create TeleCarlaPedestrian")
+        #print("create TeleCarlaPedestrian")
         TeleCarlaPedestrian(carla_actor, 'Pedestrian', destination=destination, max_speed=speed_limit)
         #carlanet_actor = TeleCarlaPedestrian(carla_actor, 'Pedestrian', destination=destination, max_speed=speed_limit)
         #aid = f"{carla_actor.id}" if ('actor_id' not in actor or actor['actor_id'] == '') else actor['actor_id'] #if id is not specified use carla id
@@ -239,11 +245,11 @@ class MyActorManager(ActorManager):
 
             if 'lidar' in actor and actor['lidar']:
                 if carlanet_actor.hero:
-                    print("hero lidar ", carla_actor.id)
+                    #print("hero lidar ", carla_actor.id)
                     lidar_sensor = TeleCarlaLidarSensor(parent_actor=carlanet_actor.carla_actor, position=LidarUtility.SensorPosition.Up)
                     carlanet_actor.attach_sensor(lidar_sensor)
                 else:
-                    print("other lidar ", carla_actor.id)
+                    #print("other lidar ", carla_actor.id)
                     for position in LidarUtility.SensorPosition:
                         lidar_sensor = TeleCarlaLidarSensor(parent_actor=carlanet_actor.carla_actor, position=position)
                         carlanet_actor.attach_sensor(lidar_sensor)
@@ -263,6 +269,13 @@ class MyActorManager(ActorManager):
         print(f"add to actors dictionary: {aid}")
         self._carlanet_actors[aid] = carlanet_actor
 
+
+    @InstanceExist(CarlaClient)
+    def _generateEdgeCamera(self, actor, origin):
+        carlanet_actor = TeleCarlaEdgeCamera(None, 'EdgeCamera')
+        aid = "NoID" if ('actor_id' not in actor or actor['actor_id'] == '') else actor['actor_id'] #if id is not specified use carla id
+        print(f"add to actors dictionary: {aid}")
+        self._carlanet_actors[aid] = carlanet_actor
 
     def _create_display(self, player, camera_width, camera_height, camera_sensor):
         pygame.init()
