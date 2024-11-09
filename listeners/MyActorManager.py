@@ -9,7 +9,7 @@ import carla
 from carla.libcarla import ActorBlueprint
 
 from pycarlanet.utils import InstanceExist, ObjectStorage
-from pycarlanet.listeners import ActorManager
+from pycarlanet.listeners import ActorManager, AgentManager
 from pycarlanet.enum import SimulatorStatus
 from pycarlanet import CarlaClient, ActorType, CarlanetActor
 
@@ -80,11 +80,19 @@ class MyActorManager(ActorManager):
     
     @InstanceExist(CarlaClient)
     def generic_message(self, timestamp, message) -> (SimulatorStatus, dict):
-        #print(f"message from omnet: {message['user_message_type']} for actor {message['actor_id']}")
+        print(f"message from omnet: {message['user_message_type']} for actor {message['actor_id']}")
         #if not 'msg_type' in message: return SimulatorStatus.RUNNING, {'message': 'from carla'}
         if message['user_message_type'] == 'ACTOR_STATUS_UPDATE':
             #check for actor.done() is useful to get all sensor data
             return self._generate_status(message=message)
+        if message['user_message_type'] == 'ACTOR_STATUS_UPDATE_ZERO_DELAY':
+            #check for actor.done() is useful to get all sensor data
+            _, status = self._generate_status(message=message)
+            #ask to agent compute instruction
+            _, instruction = InterCommunicationListeners.instance.askToManager(AgentManager, 'compute_instruction', status)
+            #apply_instruction
+            instruction['user_message_type'] = 'APPLY_INSTRUCTION'
+            return self.generic_message(0, instruction)
         elif message['user_message_type'] == 'APPLY_INSTRUCTION':
             instruction_id = message['instruction_id']
             actor_id = message['actor_id']

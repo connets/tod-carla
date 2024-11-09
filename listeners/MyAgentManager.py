@@ -99,3 +99,11 @@ class MyAgentManager(AgentManager):
             destination_locations = [random.choice(spawn_points).location]
             time_limit = sys.maxsize
         return start_transform, destination_locations, time_limit
+    
+    #InterCommunicationListeners Function    
+    def get_agent_from_actor_id_controlled(self, actor_id):
+        return self._agents[actor_id]
+    
+    def compute_instruction(self, message):
+        message['user_message_type'] = 'COMPUTE_INSTRUCTION'
+        return self.generic_message(0, message=message)

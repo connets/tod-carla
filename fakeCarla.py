@@ -23,6 +23,13 @@ messages = {
             'status_id': '1000'
         }
     },
+    "ACTOR_STATUS_UPDATE_ZERO_DELAY": {
+        'message_type': 'ACTOR_GENERIC_RESPONSE',
+        'simulation_status': 0,
+        'user_defined': {
+            'user_message_type': 'OK'
+        }
+    },
     "COMPUTE_INSTRUCTION": {
         'message_type': 'AGENT_GENERIC_RESPONSE',
         'simulation_status': 0,
