@@ -282,12 +282,12 @@ class MyBehaviorAgent(BehaviorAgent):
             return self.emergency_stop()
 
         # 2.1: Pedestrian avoidance behaviors (use visible pedestrains getted from the state)
-        controlToAppy = self.pedestrian_avoid_manager()
-        if controlToAppy is not None: return controlToAppy
+        #controlToAppy = self.pedestrian_avoid_manager()
+        #if controlToAppy is not None: return controlToAppy
 
         # 2.2: Car following behaviors
-        controlToAppy = self.collision_and_car_avoid_manager()
-        if controlToAppy is not None: return controlToAppy
+        #controlToAppy = self.collision_and_car_avoid_manager()
+        #if controlToAppy is not None: return controlToAppy
 
         # 3: Intersection behavior
         elif self._incoming_waypoint.is_junction and (self._incoming_direction in [RoadOption.LEFT, RoadOption.RIGHT]):
@@ -305,6 +305,23 @@ class MyBehaviorAgent(BehaviorAgent):
             self._local_planner.set_speed(target_speed)
             control = self._local_planner.run_step(debug=debug)
         control.manual_gear_shift = False
+
+        #move here control pedestrian and car avoid to keep the trajectory direction steer instead of stopping in front of me
+
+        # 2.1: Pedestrian avoidance behaviors (use visible pedestrains getted from the state)
+        controlToAppy = self.pedestrian_avoid_manager()
+        if controlToAppy is not None:
+            control.throttle = controlToAppy.throttle
+            control.brake = controlToAppy.brake
+            control.hand_brake = controlToAppy.hand_brake
+
+        # 2.2: Car following behaviors
+        controlToAppy = self.collision_and_car_avoid_manager()
+        if controlToAppy is not None:            
+            control.throttle = controlToAppy.throttle
+            control.brake = controlToAppy.brake
+            control.hand_brake = controlToAppy.hand_brake
+
         return control
     
     def collision_and_car_avoid_manager(self):
@@ -396,9 +413,6 @@ class MyBehaviorAgent(BehaviorAgent):
 
         if len(walker_list) == 0: return None
 
-        ego_vehicle_loc = self._last_vehicle_state.get_location()
-        waypoint = self._map.get_waypoint(ego_vehicle_loc)
-
         decisions = []
         for o in walker_list:
             dec = CollisionCalculationMethod.calculate_collision(self.collision_calculation_method, me=self, other=o)
@@ -409,9 +423,7 @@ class MyBehaviorAgent(BehaviorAgent):
         if len(decisions) > 0:
             sorted_decisions = sorted(decisions, key=lambda x: x.value)
             return self.getControlFromDecision(sorted_decisions[-1])
-        print()
         return None
-        #return walker_state, walker, distance
 
     def slow_down(self):
         """
@@ -438,58 +450,6 @@ class MyBehaviorAgent(BehaviorAgent):
         control.brake = 0.3
         control.hand_brake = False
         return control
-
-    # def _vehicle_obstacle_detected(self, obstacles_list=None, max_distance=None, up_angle_th=90, low_angle_th=0, lane_offset=0):
-    #     print("MyBehaviorAgent _vehicle_obstacle_detected")
-        
-
-    #     #project obstacles_list to keep track of the movements
-    #     def project_obstacles(o, circleCount = 10, pointsPerCircle = 24):
-    #         projected_obstacles_list = []
-    #         maxVelocity = max(abs(o.velocity.x), abs(o.velocity.y), abs(o.velocity.z)) * 2 # consider base acceleration + 2m/s for the pedestrian
-    #         distances = [(i * maxVelocity) / (circleCount - 1) for i in range(circleCount)]
-            
-    #         o_location = o.get_transform().location
-    #         for distance in distances:
-    #             for angle in range(0, 360, 15):  #Loop through angles from 0 to 360 degrees
-    #                 rad = angle * (math.pi / 180)  #Convert angle to radians
-    #                 pr_location = carla.Location(
-    #                     x=o_location.x + (distance * math.cos(rad)),
-    #                     y=o_location.y + (distance * math.sin(rad)),
-    #                     z=o_location.z
-    #                 )
-    #                 pr = OtherPedestrianState(o.get_timestamp(), 'pr', carla.Transform(pr_location, o.get_transform().rotation), o.get_bounding_box(), o.get_velocity())
-    #                 projected_obstacles_list.append(pr)
-
-    #         return projected_obstacles_list
-
-    #     projected_obstacles_list = []
-    #     for o in obstacles_list:            
-    #         projected_obstacles_list.append(o)
-    #         projected_obstacles_list.extend(project_obstacles(o))
-
-
-        
-        
-    #     speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
-    #     d_pr = speed * self.t_pr  # perception-reaction distance
-    #     d_braking = speed ** 2 / (2 * self.u * self.g)  # braking distance
-    #     d_total = max(d_pr + d_braking, 6)
-    #     safe_distance_waypoints = [self._map.get_waypoint(self._last_vehicle_state.get_location(),
-    #                                                       lane_type=carla.LaneType.Any)] + \
-    #                               [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
-    #                                   int(d_total / self._sampling_resolution))]
-
-    #     for path_wpt, vehicle in itertools.product(safe_distance_waypoints, projected_obstacles_list):
-    #         vehicle_transform = vehicle.get_transform()
-    #         vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
-    #         if vehicle_wpt.road_id != path_wpt.road_id: continue
-    #         distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
-    #         print(f"distance with {vehicle} is: {distance}")
-    #         if distance <= max_distance:
-    #             return True, vehicle, distance
-
-    #     return False, None, -1
 
     def getControlFromDecision(self, decision):
         if decision == Decision.SLOW_DOWN:

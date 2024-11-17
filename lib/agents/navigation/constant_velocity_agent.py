@@ -11,7 +11,7 @@ It can also make use of the global route planner to follow a specifed route
 
 import carla
 
-from lib.agents.navigation.basic_agent import BasicAgent
+from lib.agents.navigation.basic_agent_old import BasicAgent
 from lib.agents.tools.misc import get_speed
 
 
@@ -36,7 +36,7 @@ class ConstantVelocityAgent(BasicAgent):
             :param grp_inst: GlobalRoutePlanner instance to avoid the expensive call of getting it.
         """
         super().__init__(vehicle, target_speed, opt_dict=opt_dict, map_inst=map_inst, grp_inst=grp_inst)
-
+        
         self._use_basic_behavior = False  # Whether or not to use the BasicAgent behavior when the constant velocity is down
         self._target_speed = target_speed / 3.6  # [m/s]
         self._current_speed = vehicle.get_velocity().length()  # [m/s]
@@ -54,7 +54,7 @@ class ConstantVelocityAgent(BasicAgent):
 
         self.is_constant_velocity_active = True
         self._set_collision_sensor()
-        self._set_constant_velocity(target_speed)
+        #self._set_constant_velocity(target_speed)
 
     def set_target_speed(self, speed):
         """Changes the target speed of the agent [km/h]"""

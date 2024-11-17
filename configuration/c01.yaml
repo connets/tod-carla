@@ -48,12 +48,19 @@ new_vehicles:
     pitch: 0.014364
     yaw: -88.313843
     roll: 0.041669
-- actor_type: EdgeCamera
-  actor_id: EdgeCamera01
-  origin:
-    x: -30.525885
-    y: 77.371925
-    z: 1.0
+# - actor_type: EdgeCamera
+#   actor_id: EdgeCamera01
+#   origin:
+#     x: -30.525885
+#     y: 77.371925
+#     z: 1.0
+spectator:
+  x: -45.89960861206055
+  y: 58.59647750854492
+  z: 12.791780471801758
+  pitch: -24.433223724365234
+  yaw: 32.220706939697266
+  roll: 5.8140827604802325e-05
 fromOmnet_vehicles: []
 agents:
 - agentId: Agent01

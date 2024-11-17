@@ -20,6 +20,16 @@
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/../../pycarlanet/.venv/bin/python"
             }
+        },
+        {
+            "name": "replay",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/results/gui.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/../../pycarlanet/.venv/bin/python"
+            }
         }
     ]
 }

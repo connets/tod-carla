@@ -1,43 +1,3 @@
-import math
-import re
-
-import carla
-import numpy as np
-
-
-def find_weather_presets():
-    """Method to find weather presets"""
-    rgx = re.compile('.+?(?:(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|$)')
-
-    def name(x): return ' '.join(m.group(0) for m in rgx.finditer(x))
-
-    presets = [x for x in dir(carla.WeatherParameters) if re.match('[A-Z].+', x)]
-    return [(getattr(carla.WeatherParameters, x), name(x)) for x in presets]
-
-
-def get_actor_display_name(actor, truncate=250):
-    """Method to get actor display name"""
-    name = ' '.join(actor.type_id.replace('_', '.').title().split('.')[1:])
-    return (name[:truncate - 1] + u'\u2026') if len(name) > truncate else name
-
-
-def get_closest_spawning_points(carla_map, loc):
-    res = []
-    for spawn_point in carla_map.get_spawn_points():
-        if abs(loc.x - spawn_point.location.x) < 5 and abs(loc.y - spawn_point.location.y) < 5:
-            res.append(spawn_point)
-    return res
-
-
-def angle_between(v1: carla.Vector3D, v2: carla.Vector3D):
-    """
-    Return the degrees of the angle between two vector
-    """
-    v1_u = v1.make_unit_vector()
-    v2_u = v2.make_unit_vector()
-    return math.degrees((np.arccos(np.clip(v1_u.dot(v2_u), -1.0, 1.0))))
-
-
 # Copyright (c) # Copyright (c) 2018-2020 CVC.
 #
 # This work is licensed under the terms of the MIT license.
@@ -51,7 +11,7 @@ import itertools
 import random
 
 import carla
-from lib.agents.navigation.controller import VehiclePIDController
+from lib.agents.navigation.controller_old import VehiclePIDController
 from lib.agents.tools.misc import draw_waypoints, get_speed
 
 
@@ -96,10 +56,8 @@ class LocalPlanner(object):
             offset: distance between the route waypoints and the center of the lane
         :param map_inst: carla.Map instance to avoid the expensive call of getting it.
         """
-        self._last_vehicle_state = None
-
         self._vehicle = vehicle
-        self._world = vehicle.get_world()
+        self._world = self._vehicle.get_world()
         if map_inst:
             if isinstance(map_inst, carla.Map):
                 self._map = map_inst
@@ -121,13 +79,14 @@ class LocalPlanner(object):
         self._dt = 1.0 / 20.0
         self._target_speed = 20.0  # Km/h
         self._sampling_radius = 2.0
-        
+        self._args_lateral_dict = {'K_P': 1.95, 'K_I': 0.05, 'K_D': 0.2, 'dt': self._dt}
+        self._args_longitudinal_dict = {'K_P': 1.0, 'K_I': 0.05, 'K_D': 0, 'dt': self._dt}
         self._max_throt = 0.75
         self._max_brake = 0.3
         self._max_steer = 0.8
         self._offset = 0
-        self._base_min_distance = 0.5
-        self._distance_ratio = 0.3
+        self._base_min_distance = 3.0
+        self._distance_ratio = 0.5
         self._follow_speed_limits = False
 
         # Overload parameters
@@ -157,24 +116,16 @@ class LocalPlanner(object):
             if 'follow_speed_limits' in opt_dict:
                 self._follow_speed_limits = opt_dict['follow_speed_limits']
 
-        self._args_lateral_dict = {'K_P': 1.95, 'K_I': 0.05, 'K_D': 0.2, 'dt': self._dt}
-        self._args_longitudinal_dict = {'K_P': 1.0, 'K_I': 0.05, 'K_D': 0, 'dt': self._dt}
-        self._args_longitudinal_dict = {'K_P': 1.0, 'K_I': 0.05, 'K_D': 0.2, 'dt': self._dt}
-
         # initializing controller
-        self._init_controller(vehicle)
-
-    def update_vehicle_state(self, vehicle_state):
-        self._last_vehicle_state = vehicle_state
-        self._vehicle_controller.update_vehicle_state(vehicle_state)
+        self._init_controller()
 
     def reset_vehicle(self):
         """Reset the ego-vehicle"""
         self._vehicle = None
 
-    def _init_controller(self, vehicle):
+    def _init_controller(self):
         """Controller initialization"""
-        self._vehicle_controller = VehiclePIDController(vehicle,
+        self._vehicle_controller = VehiclePIDController(self._vehicle,
                                                         args_lateral=self._args_lateral_dict,
                                                         args_longitudinal=self._args_longitudinal_dict,
                                                         offset=self._offset,
@@ -183,7 +134,7 @@ class LocalPlanner(object):
                                                         max_steering=self._max_steer)
 
         # Compute the current vehicle waypoint
-        current_waypoint = self._map.get_waypoint(vehicle.get_location())
+        current_waypoint = self._map.get_waypoint(self._vehicle.get_location())
         self.target_waypoint, self.target_road_option = (current_waypoint, RoadOption.LANEFOLLOW)
         self._waypoints_queue.append((self.target_waypoint, self.target_road_option))
 
@@ -266,7 +217,11 @@ class LocalPlanner(object):
 
         self._stop_waypoint_creation = stop_waypoint_creation
 
-    def run_step_old(self, debug=False):
+    def set_offset(self, offset):
+        """Sets an offset for the vehicle"""
+        self._vehicle_controller.set_offset(offset)
+
+    def run_step(self, debug=False):
         """
         Execute one step of local planning which involves running the longitudinal and lateral PID controllers to
         follow the waypoints trajectory.
@@ -319,104 +274,6 @@ class LocalPlanner(object):
             draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], 1.0)
 
         return control
-
-    def run_step(self, debug=False):
-        """
-        Execute one step of local planning which involves running the longitudinal and lateral PID controllers to
-        follow the waypoints trajectory.
-
-        :param debug: boolean flag to activate waypoints debugging
-        :return: control to be applied
-        """
-        if self._follow_speed_limits:
-            self._target_speed = self._last_vehicle_state.get_speed_limit() * 3.6
-
-        # Add more waypoints too few in the horizon
-        if not self._stop_waypoint_creation and len(self._waypoints_queue) < self._min_waypoint_queue_length:
-            self._compute_next_waypoints(k=self._min_waypoint_queue_length)
-
-        # Purge the queue of obsolete waypoints
-        veh_location = self._last_vehicle_state.get_location()
-        vehicle_speed = get_speed(self._last_vehicle_state) / 3.6
-        self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
-        # self._min_distance = 1.5 #TODO fix this parameter
-
-        num_waypoint_removed = 0
-        for i, (waypoint, _) in enumerate(self._waypoints_queue, start=1):
-
-            if len(self._waypoints_queue) - num_waypoint_removed == 1:
-                min_distance = 1  # Don't remove the last waypoint until very close by
-            else:
-                min_distance = self._min_distance
-
-            if veh_location.distance(waypoint.transform.location) < min_distance:
-                num_waypoint_removed = i
-            else:
-                break
-
-        def calc_angle_to_wp(vehicle_location, wp):
-            velocity_vector = self._last_vehicle_state.get_transform().get_forward_vector()
-            location_wp = wp.transform.location
-            vector_wp = carla.Vector3D(location_wp.x - vehicle_location.x, location_wp.y - vehicle_location.y, 0)
-            angle = min(angle_between(velocity_vector, vector_wp),
-                        angle_between(vector_wp, velocity_vector))
-            return angle
-
-            #
-            # vehicle_location = self._last_vehicle_state.get_location()
-            # for i, (wp, _) in enumerate(self._waypoints_queue):
-            #     location_wp = wp.transform.location
-            #     vector_wp = carla.Vector3D(location_wp.x - vehicle_location.x, location_wp.y - vehicle_location.y, 0)
-            #     angle = min(carla_utils.angle_between(velocity_vector, vector_wp),
-            #                 carla_utils.angle_between(vector_wp, velocity_vector))
-            #     print(angle)
-            #     if angle < 45:
-            #         return i, (wp, _)
-            #
-            # return 0, self._waypoints_queue[0]
-
-        if num_waypoint_removed > 0:
-            for _ in range(num_waypoint_removed):
-                self._waypoints_queue.popleft()
-
-        # Get the target waypoint and move using the PID controllers. Stop if no target waypoint
-        if len(self._waypoints_queue) == 0:
-            control = carla.VehicleControl()
-            control.steer = 0.0
-            control.throttle = 0.0
-            control.brake = 1.0
-            control.hand_brake = False
-            control.manual_gear_shift = False
-        else:
-            self.target_waypoint, self.target_road_option = self._waypoints_queue[0]
-            # last wp behind me, it's the last of the firsts wp with a angle > 90
-            last_index_wp_to_remove, _ = functools.reduce(
-                lambda acc, it: (it[0], True) if acc[1] and calc_angle_to_wp(self._last_vehicle_state.get_location(),
-                                                                             it[1]) > 60 else (acc[0], False),
-                enumerate(wp for wp, _ in self._waypoints_queue), (-1, True))
-            # for _ in range(last_index_wp_to_remove + 1):
-            #     self._waypoints_queue.popleft()
-            # First waypoint that I can see
-            first_visible_index_wp = next((i for i, (wp, _) in enumerate(self._waypoints_queue) if
-                                           calc_angle_to_wp(self._last_vehicle_state.get_location(), wp) < 45), 0)
-
-            for _ in range(first_visible_index_wp):
-                self._waypoints_queue.popleft()
-
-            self.target_waypoint, self.target_road_option = self._waypoints_queue[0]
-            control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
-
-        if debug:
-            draw_waypoints(self._world, [self.target_waypoint], 1.0)
-
-        return control
-
-    def get_next_waypoint_and_direction(self, count):
-        if not self._waypoints_queue:
-            return []
-        if len(self._waypoints_queue) >= count:
-            return itertools.islice(self._waypoints_queue, count)
-        return self._waypoints_queue
 
     def get_incoming_waypoint_and_direction(self, steps=3):
         """

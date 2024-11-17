@@ -1,0 +1,104 @@
+world: Town03_Opt
+new_vehicles:
+- actor_id: Car01
+  actor_type: Vehicle
+  role_name: hero
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+- actor_id: Other01
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.carlamotors.firetruck
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+  origin:
+    x: -78.304039
+    y: 141.891159
+    z: 0.008028
+    pitch: 0.133291
+    yaw: -99.488289
+    roll: -0.009918
+- actor_id: Other02
+  actor_type: Vehicle
+  role_name: other
+  model: vehicle.audi.a2
+  collision: true
+  lidar: true
+  origin:
+    # x: -74.436539
+    # y: 153.252441
+    # z: -0.003971
+    # pitch: 0.019329
+    # yaw: -92.212334
+    # roll: 0.007871
+    #Location: Location(x=-56.946972, y=189.568680, z=-0.004780) Rotation(pitch=0.035264, yaw=-146.067856, roll=-0.004517)
+    x: -56.946972
+    y: 189.568680
+    z: 0.4
+    pitch: 0.035264
+    yaw: -146.067856
+    roll: -0.004517
+    #Location: Location(x=-73.239532, y=167.128342, z=-0.002563) Rotation(pitch=0.073144, yaw=-102.826614, roll=0.159079)
+    # x: -73.239532
+    # y: 167.128342
+    # z: -0.002563
+    # pitch: 0.073144
+    # yaw: -102.826614
+    # roll: 0.159079
+  destination:
+    x: -74.101906
+    y: 113.087723
+    z: 0.160955
+    pitch: 0.778990
+    yaw: -90.500603
+    roll: 0.005677
+  startSeconds: 6.5 #8.7
+  targetSpeed: 70
+# - actor_type: EdgeCamera
+#   actor_id: EdgeCamera01
+#   origin:
+#     x: -30.525885
+#     y: 77.371925
+#     z: 1.0
+spectator:
+  x: -108.49785614013672
+  y: 106.84976196289062
+  z: 29.813302993774414
+  pitch: -26.251558303833008
+  yaw: 42.14521408081055
+  roll: 4.283810267224908e-05
+fromOmnet_vehicles: []
+agents:
+- agentId: Agent01
+  behavior: aggressive
+  sampling_resolution: 0.5
+  time_limit: 50
+  actor_id_to_control: Car01
+  collision_calculation_method: TTC
+  ignoreIds: [Other01]
+  route:
+    time_limit: 300
+    origin:
+      x: -84.592331
+      y: 103.810753
+      z: 0.299419
+      pitch: -1.030573
+      yaw: 89.618767
+      roll: 0.004035
+    destinations:
+    - x: -55.951263
+      y: 135.344193
+      z: 0.001792
+      #Location(x=, y=, z=) Rotation(pitch=-0.009221, yaw=-2.570160, roll=-0.003510)
+

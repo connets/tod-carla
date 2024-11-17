@@ -42,7 +42,7 @@ if __name__ == '__main__':
     CarlaClient(host='localhost', port=2000)
 
     #print(f"CarlaClient {CarlaClient.instance.client.get_available_maps()}")
-    wm = MyWorldManager(synchronousMode=True, renderingMode=True)
+    wm = MyWorldManager(synchronousMode=True, renderingMode=False)
     acm = MyActorManager()
     agm = MyAgentManager()
 

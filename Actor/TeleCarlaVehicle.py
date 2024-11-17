@@ -141,10 +141,11 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
             #check who is the generator and decide to add or not, and where Vehicle or pedestrian?
             #trust generator position instead of my calculation of it?
             generator = CarlaClient.instance.world.get_actor(state.id)
+            generatorState = OtherVehicleState.generate_visible_vehicle(0, generator)
             if generator.type_id.startswith('vehicle'):
-                visible_vehicles = generate_union(visible_vehicles, [generator], state.timestamp)
+                visible_vehicles = generate_union(visible_vehicles, [generatorState], state.timestamp)
             elif generator.type_id.startswith('walker.pedestrian'):
-                visible_pedestrians = generate_union(visible_pedestrians, [generator], state.timestamp)
+                visible_pedestrians = generate_union(visible_pedestrians, [generatorState], state.timestamp)
             #add other visible vehicles
             visible_vehicles = generate_union(visible_vehicles, state.visible_vehicles, state.timestamp)
             visible_pedestrians = generate_union(visible_pedestrians, state.visible_pedestrians, state.timestamp)

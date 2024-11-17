@@ -30,9 +30,11 @@ import utils.LidarUtility as LidarUtility
 #from utils.Hud import HUD
 import pygame
 
+from lib.agents.navigation.constant_velocity_agent import ConstantVelocityAgent
 
 class MyActorManager(ActorManager):
     after_tick_callback = []
+    _autoPilotAgents = []
 
     def omnet_init_completed(self, message):
         super().omnet_init_completed(message)
@@ -55,7 +57,7 @@ class MyActorManager(ActorManager):
                         if len(agents) > 0: origin = agents[0]["route"]["origin"]
 
                     if actor['actor_type'] == 'Vehicle':
-                        self._generateVehicle(actor=actor,origin=origin)
+                        self._generateVehicle(actor=actor,origin=origin, message=message)
                     
                     if actor['actor_type'] == 'Pedestrian':
                         self._generatePedestrian(actor=actor,origin=origin)
@@ -116,26 +118,38 @@ class MyActorManager(ActorManager):
     
     @InstanceExist(CarlaClient)
     def before_world_tick(self, timestamp):
-        if len(self._carlanet_actors) == 0: return
+        # if len(self._carlanet_actors) == 0: return
 
-        try:
-            # Get the spectator from the world
-            spectator = CarlaClient.instance.world.get_spectator()
-            # Get the the vehicle
-            #key = next(iter(self._carlanet_actors)
-            car: carla.Actor = self._carlanet_actors['Car01'].carla_actor
-            # Set the camera view on top of vehicle
-            spectator.set_transform(carla.Transform(
-                car.get_transform().location + carla.Location(z=20),
-                carla.Rotation(pitch=-90)
-            ))
+        # try:
+        #     # Get the spectator from the world
+        #     spectator = CarlaClient.instance.world.get_spectator()
+        #     # Get the the vehicle
+        #     #key = next(iter(self._carlanet_actors)
+        #     car: carla.Actor = self._carlanet_actors['Car01'].carla_actor
+        #     # Set the camera view on top of vehicle
+        #     spectator.set_transform(carla.Transform(
+        #         car.get_transform().location + carla.Location(z=20),
+        #         carla.Rotation(pitch=-90)
+        #     ))
             
-        except Exception as error:
-            print(f"actormanager before_world_tick error: {error}")
+        # except Exception as error:
+        #     print(f"actormanager before_world_tick error: {error}")
+        ...
 
+    @InstanceExist(CarlaClient)
     def after_world_tick(self, timestamp):
         for callback in self.after_tick_callback:
             callback(timestamp)
+        for autoPilotAgent in self._autoPilotAgents:
+            if 'startSeconds' in autoPilotAgent and CarlaClient.instance.world.get_snapshot().timestamp.elapsed_seconds >= autoPilotAgent['startSeconds']:
+                control = autoPilotAgent['agent'].run_step()
+                control.manual_gear_shift = False
+                CarlaClient.instance.client.apply_batch_sync([carla.command.ApplyVehicleControl(
+                    autoPilotAgent['carla_actor_id'],
+                    control
+                )])
+
+
 
 
     #InterCommunicationListeners Function    
@@ -202,7 +216,7 @@ class MyActorManager(ActorManager):
         #self._carlanet_actors[aid] = carlanet_actor
 
     @InstanceExist(CarlaClient)
-    def _generateVehicle(self, actor, origin):
+    def _generateVehicle(self, actor, origin, message):
         blueprint: ActorBlueprint = random.choice(CarlaClient.instance.world.get_blueprint_library().filter(actor['model']))
         spawn_points = CarlaClient.instance.world.get_map().get_spawn_points()
         spawn_point = random.choice(spawn_points)
@@ -269,8 +283,43 @@ class MyActorManager(ActorManager):
             print(f"exception during sensors init: {e}")
 
 
-
-        
+        if 'destination' in actor:
+            dest = carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])
+            opt_dict={
+                'dt': message["carla_configuration"]['carla_timestep'],
+                'ignore_traffic_lights': True,
+                'ignore_stop_signs': True,
+                'ignore_vehicles': True,
+                'ignore_pedestrian': True,
+                'collision_calculation_method': 'CARLADEFAULT',
+                'ignoreIds': []
+            }
+            # opt_dict['target_speed'] = target_speed
+            # if 'ignore_traffic_lights' in opt_dict:
+            #     self._ignore_traffic_lights = opt_dict['ignore_traffic_lights']
+            # if 'ignore_stop_signs' in opt_dict:
+            #     self._ignore_stop_signs = opt_dict['ignore_stop_signs']
+            # if 'ignore_vehicles' in opt_dict:
+            #     self._ignore_vehicles = opt_dict['ignore_vehicles']
+            # if 'ignore_pedestrian' in opt_dict:
+            #     self._ignore_pedestrian = opt_dict['ignore_pedestrian']
+            # if 'sampling_resolution' in opt_dict:
+            #     self._sampling_resolution = opt_dict['sampling_resolution']
+            # if 'base_tlight_threshold' in opt_dict:
+            #     self._base_tlight_threshold = opt_dict['base_tlight_threshold']
+            # if 'base_vehicle_threshold' in opt_dict:
+            #     self._base_vehicle_threshold = opt_dict['base_vehicle_threshold']
+            # if 'max_brake' in opt_dict:
+            #     self._max_steering = opt_dict['max_brake']
+            
+            targetSpeed = actor['targetSpeed'] if 'targetSpeed' in actor else 30
+            #print(f"target speed: {targetSpeed}")
+            agent = ConstantVelocityAgent(vehicle=carla_actor, target_speed=targetSpeed, opt_dict=opt_dict)
+            agent.follow_speed_limits(True)
+            #end_waypoint = [CarlaClient.instance.world.get_map().get_waypoint(destination) for destination in [dest]]
+            agent.set_destination(dest)
+            if 'startSeconds' in actor:
+                self._autoPilotAgents.append({'agent':agent, 'carla_actor_id': carla_actor.id, 'startSeconds': actor['startSeconds']})
 
 
         aid = f"{carla_actor.id}" if ('actor_id' not in actor or actor['actor_id'] == '') else actor['actor_id'] #if id is not specified use carla id
