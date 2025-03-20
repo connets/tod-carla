@@ -1,0 +1,6 @@
+zerorpc:
+  host: localhost
+  port: 4242
+carla:
+  host: localhost
+  port: 2000

@@ -24,6 +24,8 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
         self.sensors = []
         self._last_control = None
         self.hero = False
+        self.crashed = False
+        #self.sensor_callback = self.sensor_callback_f
 
         self.othersStates = {}
     
@@ -37,6 +39,11 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
         #self.sensors.add(tele_carla_sensor)
         #print(f"Attaching sensor {tele_carla_sensor} to  {self.carla_actor.id}")
         self.sensors.append(tele_carla_sensor)
+
+    def sensor_callback(self, event):
+        print(f"{self.carla_actor.id} sensor callback: {event}")
+        if self.hero and event["type"]== "collision": self.crashed = True
+
 
 
 
@@ -140,12 +147,16 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
         for _,state in self.othersStates.items():
             #check who is the generator and decide to add or not, and where Vehicle or pedestrian?
             #trust generator position instead of my calculation of it?
-            generator = CarlaClient.instance.world.get_actor(state.id)
-            generatorState = OtherVehicleState.generate_visible_vehicle(0, generator)
-            if generator.type_id.startswith('vehicle'):
-                visible_vehicles = generate_union(visible_vehicles, [generatorState], state.timestamp)
-            elif generator.type_id.startswith('walker.pedestrian'):
-                visible_pedestrians = generate_union(visible_pedestrians, [generatorState], state.timestamp)
+            try:
+                generator = CarlaClient.instance.world.get_actor(state.id)
+                if generator==None: raise Exception("Generator not found in the world")
+                generatorState = OtherVehicleState.generate_visible_vehicle(0, generator)
+                if generator.type_id.startswith('vehicle'):
+                    visible_vehicles = generate_union(visible_vehicles, [generatorState], state.timestamp)
+                elif generator.type_id.startswith('walker.pedestrian'):
+                    visible_pedestrians = generate_union(visible_pedestrians, [generatorState], state.timestamp)
+            except:
+                ...
             #add other visible vehicles
             visible_vehicles = generate_union(visible_vehicles, state.visible_vehicles, state.timestamp)
             visible_pedestrians = generate_union(visible_pedestrians, state.visible_pedestrians, state.timestamp)
@@ -190,7 +201,7 @@ class TeleCarlaVehicle(CarlanetActor, CooperativeUpdateMixin):
         if state.id == self.carla_actor.id:
             return
         
-        print(f"received coop {status_id}")
+        #print(f"received coop {status_id}")
 
         #if len(state.visible_pedestrians) != 0:
         #    print(f"{self._carla_actor.type_id} handle_cooperative_update visible_pedestrians {len(state.visible_pedestrians)}")

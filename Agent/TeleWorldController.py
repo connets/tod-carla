@@ -9,8 +9,8 @@ from pygame.locals import KMOD_CTRL, KMOD_SHIFT, K_0, K_9, K_BACKQUOTE, K_BACKSP
     K_LEFT, K_PERIOD, K_RIGHT, K_SLASH, K_SPACE, K_TAB, K_UP, K_a, K_b, K_c, K_d, K_g, K_h, K_i, K_l, K_m, K_n, K_o, \
     K_p, K_q, K_r, K_s, K_t, K_v, K_w, K_x, K_z, K_MINUS, K_EQUALS
 
-from pycarlanet.utils import preconditions
-
+from pycarlanet.utils import preconditions, ObjectStorage
+from pycarlanet import CarlaClient
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.agents.navigation.basic_agent import BasicAgent
@@ -18,6 +18,8 @@ from lib.agents.navigation.behavior_agent import BehaviorAgent
 from utils.TeleVehicleControl import TeleVehicleControl
 
 from Agent.MyBehaviorAgent import MyBehaviorAgent
+from utils.InterCommunicationListeners import InterCommunicationListeners
+from otherManagers.LoggerManager import LoggerManager
 
 class TeleAdapterController(ABC):
 
@@ -82,6 +84,8 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations, start_location=self._start_location)
 
+        self.othersStates = {}
+
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
@@ -98,8 +102,35 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         #print(self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds)
         control = None
 
+
+        def generate_union(obstacles, otherObjects, otherTimestamp):
+            ids = [o.id for o in obstacles]
+            tMine = CarlaClient.instance.world.get_snapshot().timestamp
+            for obj in otherObjects:
+                #check if the object is already in the list
+                if obj.id in ids: continue
+                #calculate new position based on velocity vector?
+                deltaSeconds = tMine.elapsed_seconds - otherTimestamp.elapsed_seconds
+                obj.timestamp = tMine
+                obj.transform.location = carla.Location(
+                    x=obj.transform.location.x + obj.velocity.x * deltaSeconds,
+                    y=obj.transform.location.y + obj.velocity.y * deltaSeconds,
+                    z=obj.transform.location.z + obj.velocity.z * deltaSeconds
+                )
+                obstacles.append(obj)
+
+            return obstacles
+        
+        #add to vehicle_state recevied also the states of the other agents coop received
+        for _,state in self.othersStates.items():
+            visible_vehicles = generate_union(vehicle_state.visible_vehicles, state.visible_vehicles, state.timestamp)
+            visible_pedestrians = generate_union(vehicle_state.visible_pedestrians, state.visible_pedestrians, state.timestamp)
+            vehicle_state.visible_vehicles = visible_vehicles
+            vehicle_state.visible_pedestrians = visible_pedestrians
+
         if self.carla_agent.last_vehicle_state is None or self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds:
-            self.carla_agent.update_vehicle_state(vehicle_state)
+            state = self.carla_agent.update_vehicle_state(vehicle_state)
+            InterCommunicationListeners.instance.askToManager(LoggerManager, 'saveAgentState', state)
             control = TeleVehicleControl(self._player.carla_actor.get_world().get_snapshot().timestamp, self.carla_agent.run_step(True))
     
         return control
@@ -110,3 +141,13 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     def done(self):
         return self.carla_agent.done()
+
+    def handle_cooperative_update(self, status_id):
+        #print("handle_cooperative_update agent")
+        state = ObjectStorage.get(status_id)
+        if state.id not in self.othersStates:
+            self.othersStates[state.id] = state
+            return
+        if state.timestamp.elapsed_seconds > self.othersStates[state.id].timestamp.elapsed_seconds:
+            self.othersStates[state.id] = state
+            return

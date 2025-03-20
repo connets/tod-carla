@@ -13,8 +13,9 @@ from utils.Carlasupport import get_actor_display_name
 
 class TeleCarlaCollisionSensor(TeleCarlaSensor):
     """ Class for collision sensors"""
-    def __init__(self, parent_actor):
+    def __init__(self, parent_actor, callback=None):
         self.history = []
+        self.callback = callback
         self._attach_to_actor(parent_actor)
 
     @InstanceExist(CarlaClient)
@@ -44,6 +45,8 @@ class TeleCarlaCollisionSensor(TeleCarlaSensor):
         self = weak_self()
         if not self:
             return
+        if self.callback:
+            self.callback({"type": "collision", "data": event})
         actor_type = get_actor_display_name(event.other_actor)
         print("**** ACCIDENT ****", actor_type)
         impulse = event.normal_impulse

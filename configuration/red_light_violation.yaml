@@ -1,0 +1,132 @@
+world: Town03_Opt
+new_vehicles:
+- actor_id: Car01
+  actor_type: Vehicle
+  role_name: hero
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+- actor_id: Other01
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.carlamotors.firetruck
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+  origin:
+    x: -84.511337
+    y: 117.981590
+    z: 0.094235
+    pitch: -0.710353
+    yaw: 90.111328
+    roll: 0.013484
+  #Location(x=-84.511337, y=117.981590, z=0.094235) Rotation(pitch=-0.710353, yaw=90.111328, roll=0.013484)
+- actor_id: Other03
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.carlamotors.firetruck
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+  origin:
+    x: -84.495995
+    y: 106.678871
+    z: 0.247257
+    pitch: -0.952080
+    yaw: 90.089203
+    roll: -0.004150
+  #Location: Location(x=-84.495995, y=106.678871, z=0.247257) Rotation(pitch=-0.952080, yaw=90.089203, roll=-0.004150)
+# - actor_id: Other04
+#   actor_type: Vehicle
+#   role_name: other
+#   speed_limit: auto
+#   model: vehicle.carlamotors.firetruck
+#   camera:
+#     width: 1280
+#     height: 720
+#   renderCamera: false
+#   collision: true
+#   lidar: true
+#   origin:
+#     x: -84.482704
+#     y: 93.408936
+#     z: 0.477750
+#     pitch: -1.026489
+#     yaw: 90.034241
+#     roll: -0.003510
+  #Location: Location(x=-84.482704, y=93.408936, z=0.477750) Rotation(pitch=-1.026489, yaw=90.034241, roll=-0.003510)
+- actor_id: Other02
+  actor_type: Vehicle
+  role_name: other
+  model: vehicle.audi.a2
+  collision: true
+  lidar: true
+    #Location: Location(x=-39.710506, y=127.645981, z=-0.003960) Rotation(pitch=0.019705, yaw=179.247971, roll=-0.001282)
+  origin:
+    x: -39.710506
+    y: 127.645981
+    z: 0.103960
+    pitch: 0.019705
+    yaw: 179.247971
+    roll: -0.001282
+  destination:
+    x: -115.788620
+    y: 129.964874
+    z: 0.104449
+    pitch: 0.073022
+    yaw: 177.200897
+    roll: 0.004567
+    #Location: Location(x=-115.788620, y=129.964874, z=-0.004449) Rotation(pitch=0.073022, yaw=177.200897, roll=0.004567)
+  startSeconds: 2.0 #8.7
+  targetSpeed: 90
+- actor_type: EdgeCamera
+  actor_id: EdgeCamera01
+  origin:
+    x: -88.525885
+    y: 120.371925
+    z: 5.0
+spectator:
+  x: -108.49785614013672
+  y: 106.84976196289062
+  z: 29.813302993774414
+  pitch: -26.251558303833008
+  yaw: 42.14521408081055
+  roll: 4.283810267224908e-05
+fromOmnet_vehicles: []
+agents:
+- agentId: Agent01
+  behavior: aggressive
+  sampling_resolution: 0.5
+  time_limit: 50
+  actor_id_to_control: Car01
+  collision_calculation_method: TTC_WITH_ROUTE
+  ignoreIds: [Other01,Other03]
+  route:
+    time_limit: 300
+    origin:
+      #Location: Location(x=-88.272179, y=100.724365, z=0.348898) Rotation(pitch=-1.047396, yaw=90.093437, roll=-0.004761)
+      x: -88.272179
+      y: 100.724365
+      z: 0.348898
+      pitch: -1.047396
+      yaw: 90.093437
+      roll: -0.004761
+    destinations:
+    #Location: Location(x=, y=, z=-0.002921) Rotation(pitch=-0.090001, yaw=90.098526, roll=-0.000488)
+    - x: -88.390602
+      y: 153.906830
+      z: 0.001792
+

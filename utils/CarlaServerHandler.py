@@ -10,15 +10,11 @@ class CarlaServerHandler:
     _instance = None
     _carla_handler = None
     
-    def __new__(cls):
-        print(f"__new__ {cls}")
+    def __new__(cls, config):
         if cls._instance is None:
             cls._instance = super(CarlaServerHandler, cls).__new__(cls)
-            # read from FoldePath.CONFIGURATION_PATH the file server.json to configure
-            with open(f'{FolderPath.CONFIGURATION_PATH}server.json', 'r') as file:
-                serverConfig = json.load(file)
-                carla_simulator_host = serverConfig['host']
-                carla_simulator_port = serverConfig['port']
+            carla_simulator_host = config['host']
+            carla_simulator_port = config['port']
             # start zerorpc communication to handle carla server runniong on different container
             cls._instance._carla_handler = zerorpc.Client()
             cls._instance._carla_handler.connect(f"tcp://{carla_simulator_host}:{carla_simulator_port}")

@@ -73,9 +73,6 @@ class BehaviorAgent(BasicAgent):
     def update_vehicle_state(self, vehicle_state):
         super().update_vehicle_state(vehicle_state)
 
-        #print(f"agent vehicle_state received:\nvehicles: {[v.id for v in vehicle_state.visible_vehicles]}\npedestrian: {[v.id for v in vehicle_state.visible_pedestrians]}\n")
-        if len(vehicle_state.visible_pedestrians) > 0:
-            print("receive pedestrian in agent")
         for visible_vehicle in vehicle_state.visible_vehicles:
             if visible_vehicle.id not in self._other_vehicles:
                 self._other_vehicles[visible_vehicle.id] = visible_vehicle
@@ -87,6 +84,8 @@ class BehaviorAgent(BasicAgent):
                 self._other_pedestrians[visible_pedestrian.id] = visible_pedestrian
             elif visible_pedestrian.timestamp.elapsed_seconds >= self._other_pedestrians[visible_pedestrian.id].timestamp.elapsed_seconds:
                 self._other_pedestrians[visible_pedestrian.id].update_state(visible_pedestrian)
+
+        return {"vehicles": self._other_vehicles, "pedestrians": self._other_pedestrians}
     
     def _update_information(self):
         """

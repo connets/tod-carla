@@ -11,17 +11,17 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.FolderPath import FolderPath
 from Agent.TeleWorldController import BehaviorAgentTeleWorldAdapterController
 from utils.InterCommunicationListeners import InterCommunicationListeners
-
+import utils.YAMLLoader as YAMLLoader
 class MyAgentManager(AgentManager):
-    #TODO: add list of agents
     _agents: Dict[str, Any] = dict()
 
     def omnet_init_completed(self, message):
         #open user defined configuration file
-        with open(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml", 'r') as file:
-            #data = json.load(file)
-            data = yaml.safe_load(file)
-            agents = data['agents']
+        data = YAMLLoader.load_and_merge_yaml_file(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml")
+        # with open(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml", 'r') as file:
+        #     #data = json.load(file)
+        #     data = yaml.safe_load(file)
+        agents = data['agents']
         
         for agent in agents:
             print(f"create agent {agent}")
@@ -46,8 +46,7 @@ class MyAgentManager(AgentManager):
 
             self._agents[agent['actor_id_to_control']] = controller
 
-
-
+    
 
     def generic_message(self, timestamp, message) -> (SimulatorStatus, dict):
         #if not 'msg_type' in message: return SimulatorStatus.RUNNING, {'message': 'from carla'}
@@ -71,8 +70,17 @@ class MyAgentManager(AgentManager):
             #print(f"simulator_status: {simulator_status}, instruction_id: {instruction_id}, instruction {instruction}")
             return simulator_status, {'user_message_type':'INSTRUCTION', 'actor_id':actor_id, 'instruction_id':instruction_id}
         elif message['user_message_type'] == 'COOPERATIVE_UPDATE':
-            print(f"receive cooperative update in agent {message}")
+            #print(f"receive cooperative update in agent {message}")
+            agent_id = message['actor_id']
+            status_id = message['status_id']
+            key = self._findControllerKey(agent_id)
+
+            if key is None: raise RuntimeError(f"Agent {agent_id} not found in the agent manager")
+            
+            self._agents[key].handle_cooperative_update(status_id=status_id)
+
             return SimulatorStatus.RUNNING, {'user_message_type': 'OK'}
+        
         else:
             raise RuntimeError(f"I don\'t know how to handle this message: {message}")
         
@@ -107,3 +115,8 @@ class MyAgentManager(AgentManager):
     def compute_instruction(self, message):
         message['user_message_type'] = 'COMPUTE_INSTRUCTION'
         return self.generic_message(0, message=message)
+    
+    def _findControllerKey(self, agent_id):
+        for key, value in self._agents.items():
+             if value._agentId == agent_id: return key
+        return None

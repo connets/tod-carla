@@ -11,7 +11,8 @@ from pycarlanet.utils import InstanceExist
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Actor.Sensors.TeleCarlaSensor import TeleCarlaRenderingSensor
-
+from utils.InterCommunicationListeners import InterCommunicationListeners
+from otherManagers.LoggerManager import LoggerManager
 
 class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
 
@@ -22,11 +23,15 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         self.surface = None
         self._output_path = None
         self.image = None
+        self.write_out_path = False
         self._attach_to_actor(parent_actor=parent_actor)
 
     def add_display(self, display, output_path=None):
         self.display = display
         self._output_path = output_path
+
+    def set_write_out_path(self, v):
+        self.write_out_path = v
 
     @InstanceExist(CarlaClient)
     def _attach_to_actor(self, parent_actor):
@@ -50,7 +55,7 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
         #     bp.set_attribute(attr_name, attr_value)
 
         camera_transform = carla.Transform(carla.Location(x=1.0 * bound_x, y=0.0 * bound_y, z=2.0 * bound_z),
-                                          carla.Rotation(pitch=-45))
+                                          carla.Rotation(pitch=-15))
         #carla.Transform(carla.Location(x=(-2.0 * parent_actor.bounding_box.extent.x)+0.5, y=0.0, z=parent_actor.bounding_box.extent.z), carla.Rotation(pitch=-30.0, yaw=180)),
         
 
@@ -99,3 +104,5 @@ class TeleCarlaCameraSensor(TeleCarlaRenderingSensor):
             self.surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
         if self._output_path is not None:
             image.save_to_disk(f'{self._output_path}{image.frame}')
+        if self.write_out_path:
+            InterCommunicationListeners.instance.askToManager(LoggerManager, 'saveRGBCameraImage', image)

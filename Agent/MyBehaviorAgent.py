@@ -30,16 +30,19 @@ class Decision(Enum):
 class CollisionCalculationMethod(Enum):
     CARLADEFAULT = 0  # Carla Default
     TTC = 1  # Time-to-Collision (TTC)
-    RVP = 2  # Relative Velocity/Position
-    MONTECARLO = 3  # Monte Carlo Simulation
-    DTTC = 4  # Dynamic Time-to-Collision (DTTC)
-    BAYESIANINFERENCE = 5  # Bayesian Inference
-    MACHINELEARNING = 6  # Machine Learning
+    TTC_WITH_ROUTE = 2  # Time-to-Collision (TTC) with route    
+    RVP = 3  # Relative Velocity/Position
+    MONTECARLO = 4  # Monte Carlo Simulation
+    DTTC = 5  # Dynamic Time-to-Collision (DTTC)
+    BAYESIANINFERENCE = 6  # Bayesian Inference
+    MACHINELEARNING = 7  # Machine Learning
     
     @staticmethod
     def getMethodFromString(stringType):
         if stringType == "TTC":
             return CollisionCalculationMethod.TTC
+        elif stringType == "TTC_WITH_ROUTE":
+            return CollisionCalculationMethod.TTC_WITH_ROUTE
         elif stringType == "RVP":
             return CollisionCalculationMethod.RVP
         elif stringType == "MONTECARLO":
@@ -55,7 +58,38 @@ class CollisionCalculationMethod(Enum):
     
     @staticmethod
     def calculate_collision(method, *args, **kwargs) -> Decision:
+        #ingore specific actors
         if kwargs['other'].id in kwargs['me'].ignoreIds: return None
+
+        #if other vehicle is stopped use my route to understand if is on my route
+        if abs(kwargs['other'].velocity.x) < 0.2 and abs(kwargs['other'].velocity.y) < 0.2 and abs(kwargs['other'].velocity.z) < 0.2:
+            kwargs['projection'] = False
+            walker_state, walker, distance = CollisionCalculationMethod.carladefault(*args, **kwargs)
+            self = kwargs['me']
+            # walker_state, walker, distance = self._vehicle_obstacle_detected(
+            #     walker_list,
+            #     max(self._behavior.min_proximity_threshold, self._speed_limit / 3),
+            #     up_angle_th=60
+            # )
+
+            if walker_state:
+                # Distance is computed from the center of the two cars,
+                # we use bounding boxes to calculate the actual distance
+                distance = distance - max(
+                    walker.bounding_box.extent.y, walker.bounding_box.extent.x) - max(
+                    self._vehicle_extent.y, self._vehicle_extent.x)
+                # Emergency brake if the car is very close.
+                if distance < self._behavior.braking_distance:
+                    #print("emergency stop")
+                    #return self.emergency_stop()
+                    return Decision.EMERGENCY_BREAK
+                if distance < self._behavior.braking_distance + 5:
+                    #print("slow down")
+                    #return self.slow_down()
+                    return Decision.SLOW_DOWN
+
+            return None
+
         if method == CollisionCalculationMethod.CARLADEFAULT:
             walker_state, walker, distance = CollisionCalculationMethod.carladefault(*args, **kwargs)
             self = kwargs['me']
@@ -86,33 +120,48 @@ class CollisionCalculationMethod(Enum):
 
         if method == CollisionCalculationMethod.TTC:
             val = CollisionCalculationMethod.calculate_ttc(*args, **kwargs)
-            if val <= 0: return None
+            if val <= 0 or val >= 2: return None
             if val > 1 and val < 2:
                 return Decision.SLOW_DOWN
             elif val <= 1 and val >= 0.5:
                 return Decision.BREAK
             elif val < 0.5:
                 return Decision.EMERGENCY_BREAK
-        elif method == CollisionCalculationMethod.RVP:
+            
+        if method == CollisionCalculationMethod.TTC_WITH_ROUTE:
+            val = CollisionCalculationMethod.calculate_ttc_with_route(*args, **kwargs)
+            if val <= 0 or val >= 2: return None
+            if val > 1 and val < 2:
+                return Decision.SLOW_DOWN
+            elif val <= 1 and val >= 0.5:
+                return Decision.BREAK
+            elif val < 0.5:
+                return Decision.EMERGENCY_BREAK
+            
+        if method == CollisionCalculationMethod.RVP:
             val = CollisionCalculationMethod.calculate_rvp(*args, **kwargs)
             return None
-        elif method == CollisionCalculationMethod.MONTECARLO:
+        
+        if method == CollisionCalculationMethod.MONTECARLO:
             val = CollisionCalculationMethod.calculate_montecarlo(*args, **kwargs)
             return None
-        elif method == CollisionCalculationMethod.DTTC:
+        
+        if method == CollisionCalculationMethod.DTTC:
             val = CollisionCalculationMethod.calculate_dttc(*args, **kwargs)
             return None
-        elif method == CollisionCalculationMethod.BAYESIANINFERENCE:
+        
+        if method == CollisionCalculationMethod.BAYESIANINFERENCE:
             val = CollisionCalculationMethod.calculate_bayesianinference(*args, **kwargs)
             return None
-        elif method == CollisionCalculationMethod.MACHINELEARNING:
+        
+        if method == CollisionCalculationMethod.MACHINELEARNING:
             val = CollisionCalculationMethod.calculate_machinelearning(*args, **kwargs)
             return None
-        else:
-            raise ValueError("Invalid collision calculation method")
+        
+        raise ValueError("Invalid collision calculation method")
         
     @staticmethod
-    def carladefault(me, other):
+    def carladefault(me, other, projection = True):
         self = me
         # Implementation for carla default
         #project obstacles_list to keep track of the movements
@@ -137,7 +186,7 @@ class CollisionCalculationMethod(Enum):
 
         projected_obstacles_list = []
         projected_obstacles_list.append(other)
-        projected_obstacles_list.extend(project_obstacles(other))
+        if projection: projected_obstacles_list.extend(project_obstacles(other))
         
         
         speed = get_speed(self._last_vehicle_state) / 3.6  # m/s
@@ -221,6 +270,126 @@ class CollisionCalculationMethod(Enum):
         return ttc
 
     @staticmethod
+    def calculate_ttc_with_route(me, other, time_step=0.2, max_time=5.0):
+        """
+        Calculate the Time-to-Collision (TTC) between the observer and the object, 
+        considering the route of the vehicle.
+        
+        Parameters:
+        - me: the vehicle object (your vehicle)
+        - other: the other vehicle object (the object you're calculating TTC with)
+        - route_func: a function that returns the vehicle's position and velocity along its route as a function of time
+        - time_step: time increment in seconds to check positions along the route
+        - max_time: maximum time to check for collision (this prevents infinite loops)
+        
+        Returns:
+        - ttc: Time to collision in seconds (positive value means collision in the future)
+        """
+        def route_func(current_position, velocity, t, route_points):
+            """
+            Calculates the position and velocity of the agent at time t based on a list of waypoints (route).
+            
+            Parameters:
+            - current_position: my current position
+            - velocity: current my current velocity
+            - t: time in seconds
+            - route_points: List of waypoints, where each waypoint is a dictionary {'x': x, 'y': y, 'z': z}
+            
+            Returns:
+            - future_position: the position of the vehicle at time t (numpy array)
+            - future_velocity: the velocity of the vehicle at time t (numpy array)
+            """
+            
+            # Total distance the agent will travel in time 't'
+            distance_to_move = np.linalg.norm(velocity) * t  # Distance = speed * time
+
+            route_points = [np.array([point['x'], point['y'], point['z']]) for point in route_points]
+            
+            # find_closest_point, Find the current segment in the route
+            ## Calculate the distance from the current position to each waypoint
+            distances = [np.linalg.norm(point - current_position) for point in route_points]
+            ## Return the index of the closest waypoint
+            closest_point_idx = np.argmin(distances)
+            
+            # Start at the closest waypoint and move towards the next waypoints
+            remaining_distance = distance_to_move
+            current_position_segment = route_points[closest_point_idx]
+            
+            # Iterate over the route to estimate the future position
+            for i in range(closest_point_idx, len(route_points) - 1):
+                next_position_segment = route_points[i + 1]
+                
+                # Calculate the direction and distance to the next waypoint
+                segment_direction = next_position_segment - current_position_segment
+                segment_distance = np.linalg.norm(segment_direction)
+                
+                if remaining_distance < segment_distance:
+                    # If remaining distance is less than the segment distance, move along this segment
+                    direction_normalized = segment_direction / segment_distance
+                    future_position = current_position_segment + direction_normalized * remaining_distance
+                    return future_position, velocity
+                
+                # Otherwise, move the full distance to the next waypoint and update remaining distance
+                remaining_distance -= segment_distance
+                current_position_segment = next_position_segment
+            
+            # If we run out of route segments, return the last waypoint's position
+            return route_points[-1], velocity
+
+        # Get the initial position and velocity of your vehicle
+        position_me = np.array([
+            me._last_vehicle_state.get_transform().location.x,
+            me._last_vehicle_state.get_transform().location.y,
+            me._last_vehicle_state.get_transform().location.z
+        ])
+        velocity_me = np.array([
+            me._last_vehicle_state.get_velocity().x,
+            me._last_vehicle_state.get_velocity().y,
+            me._last_vehicle_state.get_velocity().z
+        ])
+        
+        # Get the position and velocity of the other vehicle
+        position_other = np.array([
+            other.get_transform().location.x,
+            other.get_transform().location.y,
+            other.get_transform().location.z
+        ])
+        velocity_other = np.array([
+            other.get_velocity().x,
+            other.get_velocity().y,
+            other.get_velocity().z
+        ])
+        
+        # For each time step, get the future position of your vehicle based on the route function
+        for t in np.arange(0, max_time, time_step):
+            # Get future position and velocity of your vehicle at time t along the route
+            future_position_me, future_velocity_me = route_func(current_position=position_me, velocity=velocity_me, t=t, route_points=me._waypoints)
+            
+            # Calculate the relative position and relative velocity at time t
+            relative_position = position_other - future_position_me
+            relative_velocity = velocity_other - future_velocity_me
+            
+            # Calculate the dot product of relative position and relative velocity
+            dot_product = np.dot(relative_position, relative_velocity)
+            
+            # Calculate the squared magnitude of the relative velocity
+            relative_velocity_magnitude_squared = np.dot(relative_velocity, relative_velocity)
+            
+            # Avoid division by zero (if relative velocity is zero, no collision will occur)
+            if relative_velocity_magnitude_squared == 0:
+                return float('inf')  # No collision if objects are moving together with same velocity
+            
+            # Calculate TTC at this time step
+            ttc = -dot_product / relative_velocity_magnitude_squared
+            
+            # If TTC is positive and within the current time step, return it
+            if ttc > 0:
+                return ttc
+
+        # If no collision within max_time, return inf
+        return float('inf')
+
+    @staticmethod
     def calculate_rvp():
         # Implementation for RVP method
         return None
@@ -244,8 +413,6 @@ class CollisionCalculationMethod(Enum):
     def calculate_machinelearning():
         # Implementation for Machine Learning method
         return None
-
-
 
 
 class MyBehaviorAgent(BehaviorAgent):
@@ -349,7 +516,8 @@ class MyBehaviorAgent(BehaviorAgent):
             dec = CollisionCalculationMethod.calculate_collision(self.collision_calculation_method, me=self, other=o)
             if dec is not None:
                 decisions.append(dec)
-            print(f"time to collision with {o} is: {dec}")
+            #print(o)
+            #print(f"time to collision with {o} is: {dec}")
         #print(decisions)
         if len(decisions) > 0:
             sorted_decisions = sorted(decisions, key=lambda x: x.value)
@@ -418,8 +586,8 @@ class MyBehaviorAgent(BehaviorAgent):
             dec = CollisionCalculationMethod.calculate_collision(self.collision_calculation_method, me=self, other=o)
             if dec is not None:
                 decisions.append(dec)
-            print(f"time to collision with {o} is: {dec}")
-        print(decisions)
+            #print(f"time to collision with {o} is: {dec}")
+        #print(decisions)
         if len(decisions) > 0:
             sorted_decisions = sorted(decisions, key=lambda x: x.value)
             return self.getControlFromDecision(sorted_decisions[-1])
@@ -453,12 +621,16 @@ class MyBehaviorAgent(BehaviorAgent):
 
     def getControlFromDecision(self, decision):
         if decision == Decision.SLOW_DOWN:
-            print("slown down")
+            #print("slown down")
             return self.slow_down()
         elif decision == Decision.BREAK:
-            print("slow stop")
+            #print("slow stop")
             return self.slow_stop()
         elif decision == Decision.EMERGENCY_BREAK:
-            print("emergency stop")
+            #print("emergency stop")
             return self.emergency_stop()
 
+    def set_destinations(self, *end_locations, start_location=None):
+        waypoints = super().set_destinations(*end_locations, start_location=start_location)
+        self._waypoints = waypoints
+        return waypoints

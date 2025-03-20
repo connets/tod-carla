@@ -1,0 +1,9 @@
+super: file1.yaml
+new_vehicles:
+- actor_id: Other02
+#  startSeconds: 6.5
+#  targetSpeed: 65
+agents:
+- agentId: Agent01
+  behavior: aggressive
+  collision_calculation_method: TTC_WITH_ROUTE

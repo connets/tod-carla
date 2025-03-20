@@ -1,0 +1,14 @@
+super: file2.yaml
+new_vehicles:
+- actor_id: Other02
+#  startSeconds: 6.5
+#  targetSpeed: 65
+- actor_type: EdgeCamera
+  actor_id: EdgeCamera01
+  origin:
+    x: -30.525885
+    y: 77.371925
+    z: 1.0
+agents:
+- agentId: Agent01
+  collision_calculation_method: TTC

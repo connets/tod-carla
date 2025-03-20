@@ -4,7 +4,7 @@ import os
 import traceback
 import yaml
 
-from pycarlanet.listeners import WorldManager
+from pycarlanet.listeners import WorldManager, ActorManager
 from pycarlanet.enum import SimulatorStatus, CarlaMaplayers
 from pycarlanet import CarlaClient
 from pycarlanet.utils import InstanceExist
@@ -15,17 +15,20 @@ from utils.FolderPath import FolderPath
 from utils.CarlaServerHandler import CarlaServerHandler
 from utils.InterCommunicationListeners import InterCommunicationListeners
 from otherManagers.LoggerManager import LoggerManager
+import utils.YAMLLoader as YAMLLoader
 
-class MyWorldManager(WorldManager):
+class MyWorldManager(WorldManager):    
     @InstanceExist(CarlaClient)
     def omnet_init_completed(self, message) -> SimulatorStatus:
         #define folder for results as run_id
         FolderPath.RESULTS_PATH += f"{message['run_id']}/"
         #open user defined configuration file
-        with open(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml", 'r') as file:
-                #data = json.load(file)
-                data = yaml.safe_load(file)
-                worldName = data['world']
+        data = YAMLLoader.load_and_merge_yaml_file(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml")
+        InterCommunicationListeners.instance.askToManager(LoggerManager, 'writeYAMLconfig', data)
+        # with open(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml", 'r') as file:
+        #         #data = json.load(file)
+        #         data = yaml.safe_load(file)
+        worldName = data['world']
                 
         super().omnet_init_completed(message=message)
         super().load_world(worldName=worldName,layer_to_unload=[CarlaMaplayers.Buildings, CarlaMaplayers.ParkedVehicles, CarlaMaplayers.Foliage]) #[x for x in CarlaMaplayers]
@@ -72,7 +75,12 @@ class MyWorldManager(WorldManager):
 
     def after_world_tick(self, timestamp) -> SimulatorStatus:
         #print(f"{timestamp} of {self.sim_time_limit}")
-        if timestamp > self.sim_time_limit: return SimulatorStatus.FINISHED_TIME_LIMIT
+        #if InterCommunicationListeners.instance.askToManager(ActorManager, 'check_hero_crash'):
+        #    return SimulatorStatus.FINISHED_OK
+        if InterCommunicationListeners.instance.askToManager(ActorManager, 'check_hero_destination_reached'):
+            return SimulatorStatus.FINISHED_OK
+        if timestamp > self.sim_time_limit:
+            return SimulatorStatus.FINISHED_TIME_LIMIT
         
         return SimulatorStatus.RUNNING
 

@@ -10,6 +10,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class TeleCarlaPedestrian(CarlanetActor):
 
+    control = None
+
     def __init__(self, carla_actor: carla.Actor, actor_type: str, destination=None, max_speed=None):
         super().__init__(carla_actor, actor_type)
         self._destination = destination
@@ -24,11 +26,15 @@ class TeleCarlaPedestrian(CarlanetActor):
         control = carla.WalkerControl()
         control.speed = self._max_speed
         control.direction.x, control.direction.y, control.direction.z = self._find_direction_vector(self.carla_actor.get_location(), self._destination)
+        self.control = control
         # control.direction.x = 0
         # control.direction.y = -1
         # control.direction.z = 0
-        self.carla_actor.apply_control(control)
 
+    def start_moving(self):
+        #print("start_moving", self.control)
+        if self.control is not None:
+            self.carla_actor.apply_control(self.control)
 
     def _find_direction_vector(self, location_a, location_b):
         # Calculate the direction vector components
