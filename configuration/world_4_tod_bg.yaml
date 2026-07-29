@@ -1,8 +1,8 @@
 # =============================================================================
-#  Scena world_4 nel formato unico di questo branch, per lo scenario
-#  tod-omnet/simulations/v2/datagram_tod.ini, config DatagramTOD
-#  (config_name: world_4_tod). Solo l'ego: la variante con traffico di
-#  background e' world_4_tod_bg.yaml, usata da DatagramTOD-Bg.
+#  Scena world_4 CON traffico di background, per la config DatagramTOD-Bg di
+#  tod-omnet/simulations/v2/datagram_tod.ini (config_name: world_4_tod_bg).
+#  La variante senza traffico e' world_4_tod.yaml: le due devono restare
+#  allineate sull'ego.
 #
 #  Sostituisce lo schema a file separati del vecchio branch, dove la stessa scena
 #  stava spezzata in:
@@ -39,6 +39,59 @@ new_vehicles:
   collision: true
   lidar: true
 
+# --- Traffico di background: non teleoperati, ma UE sulla rete -----------------
+#     role_name NON hero: hero seleziona l'ego per follow-cam e fine corsa.
+#     route_loop: rifanno il giro invece di parcheggiarsi a meta' simulazione e
+#     smettere di caricare le celle.
+- actor_id: Bg01
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 258.395355, y: -183.572708, z: 1.02, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 259.013123, y: -293.757507, z: 1.100745 }
+  - { x: 296.572693, y: -250.211304, z: 1.100745 }
+  - { x:  88.945229, y: -173.694717, z: 1.100745 }
+  - { x: 184.734619, y: -307.638458, z: 1.100745 }
+  - { x: 258.395355, y: -183.572708, z: 1.100745 }   # chiude l'anello
+
+- actor_id: Bg02
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 206.213470, y: -353.686371, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 382.428375, y: -201.179031, z: 1.5 }
+  - { x: 274.565491, y: -172.466232, z: 1.5 }
+  - { x: 282.403534, y: -118.301315, z: 1.5 }
+  - { x: 269.098175, y: -310.922577, z: 1.5 }
+  - { x: 206.213470, y: -353.686371, z: 1.5 }        # chiude l'anello
+
+- actor_id: Bg03
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 202.491364, y: -184.649872, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 204.909958, y: -293.558289, z: 1.5 }
+  - { x:  57.957600, y: -185.121506, z: 1.5 }
+  - { x: 156.723206, y: -367.900024, z: 1.5 }
+  - { x: 222.964325, y: -367.386780, z: 1.5 }
+  - { x: 385.769928, y: -209.061325, z: 1.5 }
+  - { x: 202.491364, y: -184.649872, z: 1.5 }        # chiude l'anello
+
 # Lo spettatore segue l'ego: il percorso e' lungo e da una posa fissa uscirebbe
 # dall'inquadratura dopo pochi secondi.
 spectator:
@@ -56,7 +109,8 @@ agents:
   time_limit: 300
   actor_id_to_control: Car01
   collision_calculation_method: CARLADEFAULT
-  ignoreIds: []
+  # i veicoli di background non contano come ostacoli da evitare attivamente
+  ignoreIds: [Bg01, Bg02, Bg03]
 
   # Perdita parziale: sopra questa frazione il teleoperatore ordina la frenata.
   loss_ratio_threshold: 0.5
