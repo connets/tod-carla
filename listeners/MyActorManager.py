@@ -39,6 +39,10 @@ class MyActorManager(ActorManager):
     _autoPilotAgents = []
     _firstsimStep = None
     _crashTime = None
+    # Dead-man's switch: last simulated instant at which each teleoperated actor
+    # actually applied an instruction, and whether we already reported it as lost.
+    _last_instruction_time = dict()
+    _link_lost = dict()
 
     def omnet_init_completed(self, message):
         super().omnet_init_completed(message)
@@ -109,7 +113,9 @@ class MyActorManager(ActorManager):
             instruction_id = message['instruction_id']
             actor_id = message['actor_id']
             if isinstance(self._carlanet_actors[actor_id], TeleCarlaVehicle):
-                if instruction_id != str(-1): self._carlanet_actors[actor_id].apply_instruction(ObjectStorage.get_and_remove(instruction_id))
+                if instruction_id != str(-1):
+                    self._carlanet_actors[actor_id].apply_instruction(ObjectStorage.get_and_remove(instruction_id))
+                    self._rearm_control_link(actor_id)
                 return SimulatorStatus.RUNNING, {'user_message_type': 'OK'}
             else:
                 raise RuntimeError(f"I can\'t manage this type of message ({message['user_message_type']}) on actor {actor_id} of type {self._carlanet_actors[actor_id].__class__}")
@@ -131,6 +137,7 @@ class MyActorManager(ActorManager):
         now = CarlaClient.instance.world.get_snapshot().timestamp.elapsed_seconds
         if self._firstsimStep is None:
             self._firstsimStep = now
+        self._check_control_link(now)
         for autoPilotAgent in self._autoPilotAgents:
             if 'startSeconds' in autoPilotAgent and now >= self._firstsimStep + autoPilotAgent['startSeconds']:
                 if autoPilotAgent['type'] == 'v':
@@ -193,7 +200,54 @@ class MyActorManager(ActorManager):
                 if actor.carla_actor.get_location().distance(last) < 2:
                     return True
         return False
-    
+
+    def _rearm_control_link(self, actor_id):
+        """
+        An instruction was actually applied, so the teleoperator is alive: reset the
+        silence timer of the dead-man's switch for this actor.
+        """
+        now = CarlaClient.instance.world.get_snapshot().timestamp.elapsed_seconds
+        self._last_instruction_time[actor_id] = now
+        if self._link_lost.pop(actor_id, False):
+            print(f"[dead-man] {actor_id}: canale di controllo ripristinato a t={now:.3f}s")
+
+    @InstanceExist(CarlaClient)
+    def _check_control_link(self, now):
+        """
+        Dead-man's switch. The loss_ratio threshold covers PARTIAL loss: a status still
+        reaches the teleoperator, it computes an instruction, and that instruction says
+        "brake". If instead the control channel drops entirely (congestion, coverage,
+        gNB lost) no instruction arrives at all and CARLA keeps applying the LAST one
+        received: the vehicle would carry on at constant speed and steering until it
+        leaves the road. Here the vehicle notices on its own and puts itself in safety.
+
+        This lives in the actor manager, not in the co-simulation glue: it is an on-board
+        function of the car, and it must keep running even while the network is silent.
+        """
+        for actor_id in InterCommunicationListeners.instance.askToManager(AgentManager, 'get_teleoperated_actor_ids'):
+            actor = self._carlanet_actors.get(actor_id)
+            if not isinstance(actor, TeleCarlaVehicle):
+                continue
+
+            controller = InterCommunicationListeners.instance.askToManager(AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
+
+            # first instruction not arrived yet: start counting from now
+            last = self._last_instruction_time.setdefault(actor_id, now)
+            silence = now - last
+            if silence < controller.control_timeout:
+                continue
+
+            if not self._link_lost.get(actor_id, False):
+                self._link_lost[actor_id] = True
+                print(f"[dead-man] {actor_id}: nessuna istruzione da {silence:.3f}s "
+                      f"a t={now:.3f}s -> manovra a rischio minimo")
+
+            # re-applied at every step: the braking has to be held
+            instruction = controller.minimum_risk_maneuver()
+            if instruction is not None:
+                actor.apply_instruction(instruction)
+
+
     #others functions
     def _generate_status(self,message):
         while any(not actor.done(CarlaClient.instance.world.get_snapshot().timestamp) for actor in self._carlanet_actors.values() if 'done' in actor.__dict__):

@@ -30,6 +30,16 @@ class TeleAdapterController(ABC):
     def do_action(self, vehicle_state, loss_ratio=0.0):
         ...
 
+    def minimum_risk_maneuver(self):
+        """
+        Minimum risk maneuver decided by the car when the control channel does not
+        receive instruction for more than the limit imposed by the yaml.
+
+        If this method is not implemented yet, return None and the car executes the
+        last received instruction.
+        """
+        return None
+
     @abstractmethod
     def done(self):
         ...
@@ -77,7 +87,7 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     def __init__(self, agentId, player, behavior, sampling_resolution, start_location, destination_locations, opt_dict={},
-                 loss_ratio_threshold=0.5):
+                 loss_ratio_threshold=0.5, control_timeout=0.5):
         super().__init__()
         self._behavior = behavior
         self._sampling_resolution = sampling_resolution
@@ -92,6 +102,11 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
         # Limit of loss packet over which the actor does the minimum risk action
         self._loss_ratio_threshold = loss_ratio_threshold
+
+        # Dead-man's switch: seconds of silence on the control channel after which
+        # the vehicle performs the minimum risk maneuver on its own. Read by the
+        # actor manager, which is the one watching the clock.
+        self.control_timeout = control_timeout
 
         self.othersStates = {}
 
@@ -155,6 +170,15 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
             control = TeleVehicleControl(timestamp, vehicle_control)
 
         return control
+
+    @preconditions('carla_agent')
+    def minimum_risk_maneuver(self):
+        """
+        Emergency break executed by the car when the control channel does not
+        receive any more instruction for at least the time given in the yaml
+        """
+        timestamp = self._player.carla_actor.get_world().get_snapshot().timestamp
+        return TeleVehicleControl(timestamp, self.carla_agent.emergency_stop())
 
     @preconditions('carla_agent')
     def get_trajectory(self):

@@ -42,7 +42,8 @@ class MyAgentManager(AgentManager):
                     'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
                     'ignoreIds': agent.get('ignoreIds', [])
                 },
-                loss_ratio_threshold=agent.get('loss_ratio_threshold', 0.5)
+                loss_ratio_threshold=agent.get('loss_ratio_threshold', 0.5),
+                control_timeout=agent.get('control_timeout', 0.5)
             )
 
             self._agents[agent['actor_id_to_control']] = controller
@@ -112,10 +113,17 @@ class MyAgentManager(AgentManager):
             time_limit = sys.maxsize
         return start_transform, destination_locations, time_limit
     
-    #InterCommunicationListeners Function    
+    #InterCommunicationListeners Function
     def get_agent_from_actor_id_controlled(self, actor_id):
         return self._agents[actor_id]
-    
+
+    def get_teleoperated_actor_ids(self):
+        """
+        Actors whose control comes from the network, so the ones the actor manager
+        has to watch with the dead-man's switch.
+        """
+        return list(self._agents.keys())
+
     def compute_instruction(self, message):
         message['user_message_type'] = 'COMPUTE_INSTRUCTION'
         return self.generic_message(0, message=message)
