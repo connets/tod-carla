@@ -14,6 +14,7 @@ from utils.InterCommunicationListeners import InterCommunicationListeners
 import utils.YAMLLoader as YAMLLoader
 class MyAgentManager(AgentManager):
     _agents: Dict[str, Any] = dict()
+    _route_loop: Dict[str, bool] = dict()
 
     def omnet_init_completed(self, message):
         #open user defined configuration file
@@ -47,6 +48,10 @@ class MyAgentManager(AgentManager):
             )
 
             self._agents[agent['actor_id_to_control']] = controller
+            # Route loop: when true, reaching the last destination restarts the whole
+            # route instead of ending the simulation, so the ego keeps driving until
+            # the sim_time_limit.
+            self._route_loop[agent['actor_id_to_control']] = agent.get('route_loop', False)
 
     
 
@@ -62,10 +67,17 @@ class MyAgentManager(AgentManager):
             # the zero-delay path), hence the default.
             loss_ratio = message.get('loss_ratio', 0.0)
 
+            controller = self._agents[actor_id]
+
+            # Route completed: with route_loop the ego restarts the same destinations
+            # from where it is now instead of ending the simulation.
+            if controller.done() and self._route_loop.get(actor_id, False):
+                controller.restart_route()
+
             simulator_status, instruction = SimulatorStatus.FINISHED_OK, None
-            if not self._agents[actor_id].done():
+            if not controller.done():
                 simulator_status = SimulatorStatus.RUNNING
-                instruction = self._agents[actor_id].do_action(ObjectStorage.get_and_remove(status_id), loss_ratio)
+                instruction = controller.do_action(ObjectStorage.get_and_remove(status_id), loss_ratio)
             
             #status = self.status.pop(status_id)
             #agent = self._external_active_actors[agent_id]
@@ -123,6 +135,9 @@ class MyAgentManager(AgentManager):
         has to watch with the dead-man's switch.
         """
         return list(self._agents.keys())
+
+    def is_route_looping(self, actor_id):
+        return self._route_loop.get(actor_id, False)
 
     def compute_instruction(self, message):
         message['user_message_type'] = 'COMPUTE_INSTRUCTION'

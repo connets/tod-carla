@@ -184,6 +184,17 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
     def get_trajectory(self):
         return self._waypoints
 
+    @preconditions('carla_agent')
+    def restart_route(self):
+        """
+        Route loop: the ego vehicle does not stop when the route is finished,
+        instead it restarts all the old destinations starting from the current one
+        """
+        current = self._player.carla_actor.get_location()
+        self._waypoints = self.carla_agent.set_destinations(*self._destination_locations,
+                                                            start_location=current)
+        return self._waypoints
+
     def done(self):
         return self.carla_agent.done()
 

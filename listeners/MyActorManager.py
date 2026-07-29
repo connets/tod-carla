@@ -194,6 +194,10 @@ class MyActorManager(ActorManager):
     def check_hero_destination_reached(self):
         for actor_id, actor in self._carlanet_actors.items():
             if isinstance(actor, TeleCarlaVehicle) and actor.hero:
+                # With route_loop the ego restarts the route instead of finishing,
+                # so arriving at the last destination must not end the simulation.
+                if InterCommunicationListeners.instance.askToManager(AgentManager, 'is_route_looping', actor_id):
+                    continue
                 #ask to agent compute instruction
                 agent = InterCommunicationListeners.instance.askToManager(AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
                 last = agent._destination_locations[-1]
