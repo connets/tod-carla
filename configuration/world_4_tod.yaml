@@ -1,0 +1,129 @@
+# =============================================================================
+#  Scena world_4 nel formato unico di questo branch, per lo scenario
+#  tod-omnet/simulations/v2/datagram_tod.ini (config_name: world_4_tod).
+#
+#  Sostituisce lo schema a file separati del vecchio branch, dove la stessa scena
+#  stava spezzata in:
+#     configuration/world/world_4.yaml
+#     configuration/route/city_trip_world_4.yaml       (ego)
+#     configuration/actor/simple_vehicle.yaml          (ego)
+#     configuration/agent/simple_agent.yaml            (ego)
+#     configuration/route/city_world_4_bg_{0,1,2}.yaml (background)
+#     configuration/actor/simple_vehicle_bg_{0,1,2}.yaml
+#  Tutte le coordinate sono riprese da quei file, quindi sono punti gia' validi
+#  su Town04_Opt.
+#
+#  NOTA sul cambio di modello: su questo branch gli attori li crea CARLA da
+#  new_vehicles e OMNeT li rispecchia dinamicamente in VectorVehicle[i]. Il
+#  vecchio datagram_tod.ini usava invece un ego STATICO in OMNeT annunciato in
+#  moving_actors, che qui non funziona piu': ActorManager.create_actors_from_omnet
+#  ha corpo vuoto, quindi quegli attori venivano ignorati in silenzio.
+#  Di conseguenza l'ordine di new_vehicles determina l'indice di VectorVehicle:
+#  Car01 -> VectorVehicle[0], che e' il veicolo eroe configurato nell'ini.
+# =============================================================================
+world: Town04_Opt
+
+new_vehicles:
+
+# --- Ego teleoperato: VectorVehicle[0] lato OMNeT ------------------------------
+- actor_id: Car01
+  actor_type: Vehicle
+  role_name: hero
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+
+# --- Traffico di background: non teleoperati, ma UE sulla rete -----------------
+#     role_name NON hero: hero seleziona l'ego per follow-cam e fine corsa.
+#     route_loop: rifanno il giro invece di parcheggiarsi a meta' simulazione e
+#     smettere di caricare le celle.
+- actor_id: Bg01
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 258.395355, y: -183.572708, z: 1.02, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 259.013123, y: -293.757507, z: 1.100745 }
+  - { x: 296.572693, y: -250.211304, z: 1.100745 }
+  - { x:  88.945229, y: -173.694717, z: 1.100745 }
+  - { x: 184.734619, y: -307.638458, z: 1.100745 }
+  - { x: 258.395355, y: -183.572708, z: 1.100745 }   # chiude l'anello
+
+- actor_id: Bg02
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 206.213470, y: -353.686371, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 382.428375, y: -201.179031, z: 1.5 }
+  - { x: 274.565491, y: -172.466232, z: 1.5 }
+  - { x: 282.403534, y: -118.301315, z: 1.5 }
+  - { x: 269.098175, y: -310.922577, z: 1.5 }
+  - { x: 206.213470, y: -353.686371, z: 1.5 }        # chiude l'anello
+
+- actor_id: Bg03
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  origin: { x: 202.491364, y: -184.649872, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
+  destinations:
+  - { x: 204.909958, y: -293.558289, z: 1.5 }
+  - { x:  57.957600, y: -185.121506, z: 1.5 }
+  - { x: 156.723206, y: -367.900024, z: 1.5 }
+  - { x: 222.964325, y: -367.386780, z: 1.5 }
+  - { x: 385.769928, y: -209.061325, z: 1.5 }
+  - { x: 202.491364, y: -184.649872, z: 1.5 }        # chiude l'anello
+
+# Lo spettatore segue l'ego: il percorso e' lungo e da una posa fissa uscirebbe
+# dall'inquadratura dopo pochi secondi.
+spectator:
+  follow: Car01
+  follow_distance: 8.0
+  follow_height: 4.0
+  follow_pitch: -12.0
+
+fromOmnet_vehicles: []
+
+agents:
+- agentId: Agent01
+  behavior: custom
+  sampling_resolution: 0.5
+  time_limit: 300
+  actor_id_to_control: Car01
+  collision_calculation_method: CARLADEFAULT
+  # i veicoli di background non contano come ostacoli da evitare attivamente
+  ignoreIds: [Bg01, Bg02, Bg03]
+
+  # Perdita parziale: sopra questa frazione il teleoperatore ordina la frenata.
+  loss_ratio_threshold: 0.5
+  # Silenzio massimo sul canale di controllo prima della manovra a rischio minimo.
+  control_timeout: 0.5
+  # Piu' giri fino al sim_time_limit invece di fermarsi a fine percorso.
+  route_loop: true
+
+  route:
+    time_limit: 300
+    origin: { x: 13.2, y: -318.7, z: 0.02, pitch: 0.002, yaw: 127.15, roll: 0.0 }
+    destinations:
+    - { x: -381.180145, y:  -1.711176, z: -0.003695 }
+    - { x: -346.184967, y:  30.422617, z:  0.061665 }
+    - { x: -320.524475, y:  33.792713, z:  0.321811 }
+    - { x: -262.067322, y:  37.264809, z:  1.834885 }
+    - { x:  241.204666, y: -246.428802, z: 0.004718 }
