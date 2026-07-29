@@ -27,7 +27,7 @@ class TeleAdapterController(ABC):
         self._tele_vehicle_state = None
 
     @abstractmethod
-    def do_action(self, vehicle_state, loss_ratio=0.0):
+    def do_action(self, vehicle_state, loss_ratio=0.0, quality_level=0):
         ...
 
     def minimum_risk_maneuver(self):
@@ -67,8 +67,10 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
         self._player = player
         self.carla_agent = BasicAgent(player.carla_actor) #player.model is the carla.Vehicle wrapped in player that is a TeleCarlaVehicle
         self._loss_ratio_threshold = loss_ratio_threshold
+        self.current_quality_level = 0
 
-    def do_action(self, vehicle_state=None, loss_ratio=0.0):
+    def do_action(self, vehicle_state=None, loss_ratio=0.0, quality_level=0):
+        self.current_quality_level = quality_level
         if vehicle_state is not None:
             self.carla_agent.update_vehicle_state(vehicle_state)
 
@@ -108,15 +110,25 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         # actor manager, which is the one watching the clock.
         self.control_timeout = control_timeout
 
+        # Camera quality level of the frame this instruction is being computed on.
+        # 0 = full resolution; higher means the car shrank the frame because the
+        # instruction RTT was growing, so the operator is seeing less detail.
+        # Kept as state so the driving policy can take it into account.
+        self.current_quality_level = 0
+
         self.othersStates = {}
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
     @preconditions('carla_agent')
-    def do_action(self, vehicle_state, loss_ratio=0.0):
+    def do_action(self, vehicle_state, loss_ratio=0.0, quality_level=0):
         #if pygame.get_init() and any(self._quit(e) for e in pygame.event.get()):
         #    return None
+
+        if quality_level != self.current_quality_level:
+            print(f"[quality] livello camera {self.current_quality_level} -> {quality_level}")
+        self.current_quality_level = quality_level
 
         #print("self._agents[actor_id].do_action")
         #print("self.carla_agent.last_vehicle_state: ", self.carla_agent.last_vehicle_state)

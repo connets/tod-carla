@@ -66,6 +66,10 @@ class MyAgentManager(AgentManager):
             # frame. Absent when the request does not come from the network (e.g.
             # the zero-delay path), hence the default.
             loss_ratio = message.get('loss_ratio', 0.0)
+            # Camera quality level this frame was produced at: 0 is full resolution,
+            # higher means the car cut the frame down because the instruction RTT
+            # was growing. Tells the agent how well it could actually see.
+            quality_level = message.get('quality_level', 0)
 
             controller = self._agents[actor_id]
 
@@ -77,7 +81,7 @@ class MyAgentManager(AgentManager):
             simulator_status, instruction = SimulatorStatus.FINISHED_OK, None
             if not controller.done():
                 simulator_status = SimulatorStatus.RUNNING
-                instruction = controller.do_action(ObjectStorage.get_and_remove(status_id), loss_ratio)
+                instruction = controller.do_action(ObjectStorage.get_and_remove(status_id), loss_ratio, quality_level)
             
             #status = self.status.pop(status_id)
             #agent = self._external_active_actors[agent_id]
