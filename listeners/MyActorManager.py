@@ -141,6 +141,13 @@ class MyActorManager(ActorManager):
         for autoPilotAgent in self._autoPilotAgents:
             if 'startSeconds' in autoPilotAgent and now >= self._firstsimStep + autoPilotAgent['startSeconds']:
                 if autoPilotAgent['type'] == 'v':
+                    # Route loop: background traffic restarts its own route from where
+                    # it is, so it does not park itself halfway through the simulation
+                    # and stop loading the cells.
+                    if autoPilotAgent.get('route_loop') and autoPilotAgent['agent'].done():
+                        autoPilotAgent['agent'].set_destinations(
+                            *autoPilotAgent['destinations'],
+                            start_location=autoPilotAgent['carla_actor'].get_location())
                     control = autoPilotAgent['agent'].run_step()
                     control.manual_gear_shift = False
                     CarlaClient.instance.client.apply_batch_sync([carla.command.ApplyVehicleControl(
@@ -388,8 +395,13 @@ class MyActorManager(ActorManager):
                 print(f"exception during sensors init: {e}")
 
 
-            if 'destination' in actor:
-                dest = carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])
+            if 'destination' in actor or 'destinations' in actor:
+                # 'destination' (single) is the original form; 'destinations' is a list
+                # and is what background traffic uses to cover a long route.
+                if 'destinations' in actor:
+                    dests = [carla.Location(x=d['x'], y=d['y'], z=d['z']) for d in actor['destinations']]
+                else:
+                    dests = [carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])]
                 opt_dict={
                     'dt': message["carla_configuration"]['carla_timestep'],
                     'ignore_traffic_lights': True,
@@ -422,9 +434,22 @@ class MyActorManager(ActorManager):
                 agent = ConstantVelocityAgent(vehicle=carla_actor, target_speed=targetSpeed, opt_dict=opt_dict)
                 agent.follow_speed_limits(True)
                 #end_waypoint = [CarlaClient.instance.world.get_map().get_waypoint(destination) for destination in [dest]]
-                agent.set_destination(dest)
-                if 'startSeconds' in actor:
-                    self._autoPilotAgents.append({'type':'v', 'agent':agent, 'carla_actor_id': carla_actor.id, 'startSeconds': actor['startSeconds']})
+                if len(dests) == 1:
+                    agent.set_destination(dests[0])
+                else:
+                    agent.set_destinations(*dests)
+                # 'destinations' implies the vehicle is meant to drive, so it does not
+                # need an explicit startSeconds to be scheduled.
+                if 'startSeconds' in actor or 'destinations' in actor:
+                    self._autoPilotAgents.append({
+                        'type': 'v',
+                        'agent': agent,
+                        'carla_actor_id': carla_actor.id,
+                        'carla_actor': carla_actor,
+                        'startSeconds': actor.get('startSeconds', 0),
+                        'destinations': dests,
+                        'route_loop': actor.get('route_loop', False)
+                    })
 
 
             aid = f"{carla_actor.id}" if ('actor_id' not in actor or actor['actor_id'] == '') else actor['actor_id'] #if id is not specified use carla id
