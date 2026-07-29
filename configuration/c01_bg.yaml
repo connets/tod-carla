@@ -1,0 +1,107 @@
+# =============================================================================
+#  Variante di c01 che usa le opzioni aggiunte sul branch dev_vannini.
+#
+#  Tutte le coordinate sono riprese da c01.yaml, quindi sono punti gia' validi
+#  su Town10HD_Opt: il file e' eseguibile cosi' com'e'.
+#
+#  Chiavi nuove rispetto a c01.yaml:
+#    agents[].loss_ratio_threshold  soglia di perdita parziale oltre la quale il
+#                                   teleoperatore ordina la frenata d'emergenza
+#    agents[].control_timeout       secondi di silenzio sul canale di controllo
+#                                   dopo i quali l'auto frena da sola
+#    agents[].route_loop            a fine percorso riparte invece di terminare
+#    new_vehicles[].destinations    lista di destinazioni per il traffico di
+#                                   background (al posto del singolo destination)
+#    new_vehicles[].route_loop      il veicolo di background rifa' il giro
+#    spectator.follow               aggancia lo spettatore a un attore
+# =============================================================================
+world: Town10HD_Opt
+
+new_vehicles:
+- actor_id: Car01
+  actor_type: Vehicle
+  role_name: hero
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  camera:
+    width: 1280
+    height: 720
+  renderCamera: false
+  collision: true
+  lidar: true
+
+# Traffico di background: attori CARLA passivi sulla rete (non teleoperati), che
+# pero' restano UE per OMNeT e caricano le stesse celle dell'ego.
+- actor_id: Bg01
+  actor_type: Vehicle
+  role_name: other      # NON hero: hero seleziona l'ego per follow-cam e fine corsa
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true      # rifa' il giro invece di parcheggiarsi a meta' simulazione
+  origin:
+    x: -24.085384
+    y: 70.283424
+    z: -0.003865
+    pitch: 0.026931
+    yaw: 0.0
+    roll: 0.009131
+  destinations:
+  - x: -41.323059
+    y: 47.269104
+    z: 0.001971
+  - x: -18.815849
+    y: 65.878159
+    z: 0.002049
+  # ritorno all'origine: chiude l'anello
+  - x: -24.085384
+    y: 70.283424
+    z: 0.002049
+
+spectator:
+  follow: Car01         # segue l'ego invece di restare su una posa fissa
+  follow_distance: 8.0  # metri dietro al veicolo
+  follow_height: 4.0    # metri sopra
+  follow_pitch: -12.0   # inclinazione verso il basso
+
+fromOmnet_vehicles: []
+
+agents:
+- agentId: Agent01
+  behavior: aggressive
+  sampling_resolution: 0.5
+  time_limit: 50
+  actor_id_to_control: Car01
+  collision_calculation_method: TTC
+  ignoreIds: [Bg01]
+
+  # Perdita parziale: sopra questa frazione di pacchetti persi sul frame il
+  # teleoperatore ordina una frenata d'emergenza (potrebbe essere qualunque
+  # altra istruzione, per esempio un rallentamento).
+  loss_ratio_threshold: 0.5
+
+  # Massimo numero di secondi senza ricevere un'istruzione dal teleoperatore.
+  # Scaduto questo tempo l'auto esegue da sola la manovra a rischio minimo.
+  control_timeout: 0.5
+
+  # A fine percorso riparte dalle stesse destinazioni invece di chiudere la
+  # simulazione: serve per arrivare al sim_time_limit facendo piu' giri.
+  route_loop: true
+
+  route:
+    time_limit: 300
+    origin:
+      x: -12.158696174621582
+      y: 66.13933563232422
+      z: 0.0020429992582648993
+      pitch: 0.00016392453107982874
+      yaw: 179.766357421875
+      roll: -6.103515261202119e-05
+    destinations:
+    - x: -18.815849
+      y: 65.878159
+      z: 0.002049
+    - x: -41.323059
+      y: 47.269104
+      z: 0.001971
