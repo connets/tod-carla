@@ -31,7 +31,8 @@ class MyWorldManager(WorldManager):
     @InstanceExist(CarlaClient)
     def omnet_init_completed(self, message) -> SimulatorStatus:
         #define folder for results as run_id
-        FolderPath.RESULTS_PATH += f"{message['run_id']}/"
+        # the ':' of the timestamp are not valid characters in Windows paths
+        FolderPath.RESULTS_PATH += f"{str(message['run_id']).replace(':', '-')}/"
         #open user defined configuration file
         data = YAMLLoader.load_and_merge_yaml_file(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml")
         InterCommunicationListeners.instance.askToManager(LoggerManager, 'writeYAMLconfig', data)
