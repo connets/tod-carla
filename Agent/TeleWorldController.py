@@ -27,7 +27,7 @@ class TeleAdapterController(ABC):
         self._tele_vehicle_state = None
 
     @abstractmethod
-    def do_action(self, vehicle_state):
+    def do_action(self, vehicle_state, loss_ratio=0.0):
         ...
 
     @abstractmethod
@@ -51,17 +51,22 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
     def get_trajectory(self):
         return []
 
-    def __init__(self, player):
-        
+    def __init__(self, player, loss_ratio_threshold=0.5):
+
         super().__init__()
         self._player = player
         self.carla_agent = BasicAgent(player.carla_actor) #player.model is the carla.Vehicle wrapped in player that is a TeleCarlaVehicle
+        self._loss_ratio_threshold = loss_ratio_threshold
 
-    def do_action(self, vehicle_state=None):
+    def do_action(self, vehicle_state=None, loss_ratio=0.0):
         if vehicle_state is not None:
             self.carla_agent.update_vehicle_state(vehicle_state)
 
-        control = self.carla_agent.run_step()
+        # if loss_ratio is over the threshold the vehicle does an emergency stop
+        if loss_ratio >= self._loss_ratio_threshold:
+            control = self.carla_agent.add_emergency_stop(carla.VehicleControl())
+        else:
+            control = self.carla_agent.run_step()
         control.manual_gear_shift = False
         return control
 
@@ -71,7 +76,8 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
 
 class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
-    def __init__(self, agentId, player, behavior, sampling_resolution, start_location, destination_locations, opt_dict={}):
+    def __init__(self, agentId, player, behavior, sampling_resolution, start_location, destination_locations, opt_dict={},
+                 loss_ratio_threshold=0.5):
         super().__init__()
         self._behavior = behavior
         self._sampling_resolution = sampling_resolution
@@ -84,13 +90,16 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations, start_location=self._start_location)
 
+        # Limit of loss packet over which the actor does the minimum risk action
+        self._loss_ratio_threshold = loss_ratio_threshold
+
         self.othersStates = {}
 
     def _quit(self, event):
         return event.type == pygame.QUIT or (event.type == pygame.KEYUP and self._is_quit_shortcut(event.key))
 
     @preconditions('carla_agent')
-    def do_action(self, vehicle_state):
+    def do_action(self, vehicle_state, loss_ratio=0.0):
         #if pygame.get_init() and any(self._quit(e) for e in pygame.event.get()):
         #    return None
 
@@ -131,8 +140,20 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         if self.carla_agent.last_vehicle_state is None or self.carla_agent.last_vehicle_state.timestamp.elapsed_seconds < vehicle_state.timestamp.elapsed_seconds:
             state = self.carla_agent.update_vehicle_state(vehicle_state)
             InterCommunicationListeners.instance.askToManager(LoggerManager, 'saveAgentState', state)
-            control = TeleVehicleControl(self._player.carla_actor.get_world().get_snapshot().timestamp, self.carla_agent.run_step(True))
-    
+            timestamp = self._player.carla_actor.get_world().get_snapshot().timestamp
+
+            """
+            If the loss ratio is above the threshold the car applies an emergency
+            stop.
+            Drastic decision that could be changed
+            """
+            if loss_ratio >= self._loss_ratio_threshold:
+                print(f"[loss_ratio] {loss_ratio:.3f} >= soglia {self._loss_ratio_threshold}: emergency stop")
+                vehicle_control = self.carla_agent.emergency_stop()
+            else:
+                vehicle_control = self.carla_agent.run_step(True)
+            control = TeleVehicleControl(timestamp, vehicle_control)
+
         return control
 
     @preconditions('carla_agent')

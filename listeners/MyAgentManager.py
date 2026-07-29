@@ -41,7 +41,8 @@ class MyAgentManager(AgentManager):
                     'ignore_pedestrian': False,
                     'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
                     'ignoreIds': agent.get('ignoreIds', [])
-                }
+                },
+                loss_ratio_threshold=agent.get('loss_ratio_threshold', 0.5)
             )
 
             self._agents[agent['actor_id_to_control']] = controller
@@ -55,12 +56,15 @@ class MyAgentManager(AgentManager):
             #agent_id = message['agent_id']
             actor_id = message['actor_id']
             status_id = message['status_id']
-
+            # Partial loss measured by TODAgentApp over the sensor streams of this
+            # frame. Absent when the request does not come from the network (e.g.
+            # the zero-delay path), hence the default.
+            loss_ratio = message.get('loss_ratio', 0.0)
 
             simulator_status, instruction = SimulatorStatus.FINISHED_OK, None
             if not self._agents[actor_id].done():
                 simulator_status = SimulatorStatus.RUNNING
-                instruction = self._agents[actor_id].do_action(ObjectStorage.get_and_remove(status_id))
+                instruction = self._agents[actor_id].do_action(ObjectStorage.get_and_remove(status_id), loss_ratio)
             
             #status = self.status.pop(status_id)
             #agent = self._external_active_actors[agent_id]
