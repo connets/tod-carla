@@ -19,12 +19,9 @@ class HUD(object):
     """Class for HUD text"""
 
     def __init__(self, player, clock, display, telemetry=None):
-        """Constructor method.
-
-        telemetry: callable opzionale che restituisce un dict con le grandezze
-        della teleguida (loss_ratio, quality_level, link_lost, visible). Sta fuori
-        da questa classe perche' vivono nel controller lato agente, e l'HUD non
-        deve dipendere dai listener.
+        """
+        telemetry: optional callable returning the teleoperation data to show, as a dict
+        with loss_ratio, quality_level, link_lost and visible ([(distance, label), ...]).
         """
         self.display = display
         self._telemetry = telemetry
@@ -50,22 +47,25 @@ class HUD(object):
 
     def on_world_tick(self, timestamp):
         """Gets informations from the world at every tick"""
+        self._update_clock(timestamp)
+
+    def _update_clock(self, timestamp):
+        """timestamp is a carla.Timestamp or, in co-simulation, the elapsed seconds as a float."""
         self._server_clock.tick()
         self.server_fps = self._server_clock.get_fps()
-        # 'frame_count' non esiste su carla.Timestamp (il campo e' 'frame'), e in
-        # co-simulazione after_world_tick passa un float: accetta entrambi.
         self.frame = getattr(timestamp, 'frame', self.frame)
         self.simulation_time = getattr(timestamp, 'elapsed_seconds', timestamp)
+
+    def _read_telemetry(self):
+        """Teleoperation data; an error here must never stop the rendering."""
+        try:
+            return self._telemetry() if self._telemetry else {}
+        except Exception:
+            return {}
 
     def tick(self, timestamp):
-        self._server_clock.tick()
-        self.server_fps = self._server_clock.get_fps()
-        # 'frame_count' non esiste su carla.Timestamp (il campo e' 'frame'), e in
-        # co-simulazione after_world_tick passa un float: accetta entrambi.
-        self.frame = getattr(timestamp, 'frame', self.frame)
-        self.simulation_time = getattr(timestamp, 'elapsed_seconds', timestamp)
-
         """HUD method for every tick"""
+        self._update_clock(timestamp)
         self._notifications.tick(self.player, self.clock)
         if not self._show_info:
             return
@@ -81,12 +81,7 @@ class HUD(object):
         # max_col = max(1.0, max(collision))
         # collision = [x / max_col for x in collision]
         # vehicles = world.world.get_actors().filter('vehicle.*')
-        # Telemetria della teleguida: e' opzionale e non deve MAI far cadere il
-        # rendering, quindi ogni errore viene assorbito.
-        try:
-            tele = self._telemetry() if self._telemetry else {}
-        except Exception:
-            tele = {}
+        tele = self._read_telemetry()
         vehicles = tele.get('visible') or []
 
         self._info_text = [
@@ -124,10 +119,7 @@ class HUD(object):
             '',
             "Visti dall'operatore:% 5d" % len(vehicles)]
 
-        # 'vehicles' arriva gia' pronto dalla telemetria come lista di (distanza, nome):
-        # sono i veicoli che il teleoperatore VEDE nell'ultimo stato ricevuto, non quelli
-        # realmente presenti nel mondo. E' l'informazione giusta per questo HUD, e non
-        # costa una RPC per frame (che e' il modo in cui si pianta il server CARLA).
+        # vehicles seen by the operator in the last state, not the ones in the world
         for distance, label in sorted(vehicles)[:8]:
             self._info_text.append('% 4dm %s' % (distance, label))
 

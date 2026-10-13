@@ -1,15 +1,9 @@
 import yaml
 
 def load_yaml(file_path):
-    """Load a YAML file and return its content as a dictionary."""
-    # encoding esplicito: senza, Python usa quello di default della piattaforma, che su
-    # Windows e' cp1252. Un solo carattere non-ASCII in un file di configurazione (anche
-    # solo in un commento: una lettera accentata, un simbolo) fa fallire l'INIT con
-    # UnicodeDecodeError 'charmap' codec can't decode byte ... I file YAML sono UTF-8.
-    file = open(file_path, 'r', encoding='utf-8')
-    result = yaml.safe_load(file)
-    file.close()
-    return result
+    """Load a YAML file (UTF-8 on every platform, not the locale default) and return its content as a dictionary."""
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return yaml.safe_load(file)
 
 
 def load_and_merge_yaml_file(file_path):

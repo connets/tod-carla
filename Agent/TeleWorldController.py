@@ -25,20 +25,30 @@ class TeleAdapterController(ABC):
 
     def __init__(self):
         self._tele_vehicle_state = None
+        # last values reported by the network, shown by the HUD
+        self.current_loss_ratio = 0.0
+        self.current_quality_level = 0
 
     @abstractmethod
     def do_action(self, vehicle_state, loss_ratio=0.0, quality_level=0):
+        """
+        Computes the control for the received vehicle state.
+
+        loss_ratio is the sensor loss measured by the network on the frame,
+        quality_level the camera quality level the frame was produced at.
+        """
         ...
 
     def minimum_risk_maneuver(self):
         """
-        Minimum risk maneuver decided by the car when the control channel does not
-        receive instruction for more than the limit imposed by the yaml.
-
-        If this method is not implemented yet, return None and the car executes the
-        last received instruction.
+        Control applied by the car on its own when no instruction arrives for longer
+        than control_timeout. None means: keep applying the last instruction.
         """
         return None
+
+    def _record_link_quality(self, loss_ratio, quality_level):
+        self.current_loss_ratio = loss_ratio
+        self.current_quality_level = quality_level
 
     @abstractmethod
     def done(self):
@@ -67,18 +77,12 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
         self._player = player
         self.carla_agent = BasicAgent(player.carla_actor) #player.model is the carla.Vehicle wrapped in player that is a TeleCarlaVehicle
         self._loss_ratio_threshold = loss_ratio_threshold
-        self.current_quality_level = 0
-        # Ultima perdita comunicata dall'agente: serve all'HUD, che gira
-        # lato CARLA e non ha accesso alle statistiche di OMNeT.
-        self.current_loss_ratio = 0.0
 
     def do_action(self, vehicle_state=None, loss_ratio=0.0, quality_level=0):
-        self.current_quality_level = quality_level
-        self.current_loss_ratio = loss_ratio
+        self._record_link_quality(loss_ratio, quality_level)
         if vehicle_state is not None:
             self.carla_agent.update_vehicle_state(vehicle_state)
 
-        # if loss_ratio is over the threshold the vehicle does an emergency stop
         if loss_ratio >= self._loss_ratio_threshold:
             control = self.carla_agent.add_emergency_stop(carla.VehicleControl())
         else:
@@ -106,22 +110,10 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations, start_location=self._start_location)
 
-        # Limit of loss packet over which the actor does the minimum risk action
+        # sensor loss at or above which the operator orders an emergency stop
         self._loss_ratio_threshold = loss_ratio_threshold
-
-        # Dead-man's switch: seconds of silence on the control channel after which
-        # the vehicle performs the minimum risk maneuver on its own. Read by the
-        # actor manager, which is the one watching the clock.
+        # seconds without instructions before the car performs the minimum risk maneuver
         self.control_timeout = control_timeout
-
-        # Camera quality level of the frame this instruction is being computed on.
-        # 0 = full resolution; higher means the car shrank the frame because the
-        # instruction RTT was growing, so the operator is seeing less detail.
-        # Kept as state so the driving policy can take it into account.
-        self.current_quality_level = 0
-        # Ultima perdita comunicata dall'agente: serve all'HUD, che gira
-        # lato CARLA e non ha accesso alle statistiche di OMNeT.
-        self.current_loss_ratio = 0.0
 
         self.othersStates = {}
 
@@ -135,8 +127,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
         if quality_level != self.current_quality_level:
             print(f"[quality] livello camera {self.current_quality_level} -> {quality_level}")
-        self.current_quality_level = quality_level
-        self.current_loss_ratio = loss_ratio
+        self._record_link_quality(loss_ratio, quality_level)
 
         #print("self._agents[actor_id].do_action")
         #print("self.carla_agent.last_vehicle_state: ", self.carla_agent.last_vehicle_state)
@@ -177,11 +168,6 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
             InterCommunicationListeners.instance.askToManager(LoggerManager, 'saveAgentState', state)
             timestamp = self._player.carla_actor.get_world().get_snapshot().timestamp
 
-            """
-            If the loss ratio is above the threshold the car applies an emergency
-            stop.
-            Drastic decision that could be changed
-            """
             if loss_ratio >= self._loss_ratio_threshold:
                 print(f"[loss_ratio] {loss_ratio:.3f} >= soglia {self._loss_ratio_threshold}: emergency stop")
                 vehicle_control = self.carla_agent.emergency_stop()
@@ -193,10 +179,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     @preconditions('carla_agent')
     def minimum_risk_maneuver(self):
-        """
-        Emergency break executed by the car when the control channel does not
-        receive any more instruction for at least the time given in the yaml
-        """
+        """Emergency stop, timestamped with the current world snapshot."""
         timestamp = self._player.carla_actor.get_world().get_snapshot().timestamp
         return TeleVehicleControl(timestamp, self.carla_agent.emergency_stop())
 
@@ -206,10 +189,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
 
     @preconditions('carla_agent')
     def restart_route(self):
-        """
-        Route loop: the ego vehicle does not stop when the route is finished,
-        instead it restarts all the old destinations starting from the current one
-        """
+        """Plans the same destinations again, starting from the current location (route loop)."""
         current = self._player.carla_actor.get_location()
         self._waypoints = self.carla_agent.set_destinations(*self._destination_locations,
                                                             start_location=current)

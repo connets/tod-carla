@@ -27,17 +27,8 @@ class MyAgentManager(AgentManager):
         for agent in agents:
             print(f"create agent {agent}")
             start_position, end_locations, time_limit = self._create_route(agent['route'])
-            # Soglia di frenata d'emergenza, sweepabile dall'ini. ATTENZIONE: arriva come
-            # STRINGA. extraInitParams e' una cValueMap e nella conversione a json i valori
-            # numerici si perdono (arrivano come ''), mentre le stringhe sopravvivono: per
-            # questo nell'ini il valore va scritto fra apici, '${lrt=0.5}'. Se manca o non
-            # e' convertibile si ricade sul yaml, e infine su 0.5.
-            lrt = message['user_defined'].get('loss_ratio_threshold', '')
-            try:
-                lrt = float(lrt)
-            except (TypeError, ValueError):
-                lrt = agent.get('loss_ratio_threshold', 0.5)
-            print(f"loss_ratio_threshold in uso per {agent['actor_id_to_control']}: {lrt}")
+            loss_ratio_threshold = self._loss_ratio_threshold(message, agent)
+            print(f"loss_ratio_threshold in uso per {agent['actor_id_to_control']}: {loss_ratio_threshold}")
 
             controller = BehaviorAgentTeleWorldAdapterController(
                 agent['agentId'],
@@ -46,41 +37,43 @@ class MyAgentManager(AgentManager):
                 agent['sampling_resolution'],
                 start_position.location,
                 end_locations,
-                opt_dict={
-                    # dt del PID: NON il tick del mondo. Il local planner viene invocato
-                    # una volta per ISTRUZIONE, cioe' ogni statusUpdateInterval di
-                    # TODCarApp (33 ms di default), non ogni carla_timestep (10 ms).
-                    # Passando 0.01 il termine derivativo (controller.py:156,
-                    # _de = delta_errore / dt) risultava sovrastimato di 3,3x: con
-                    # K_D=0.2 il guadagno effettivo diventava ~0,66 e lo sterzo
-                    # oscillava (l'auto "drifta"). NB il default di CARLA e' 1/20 s,
-                    # cioe' il planner si aspetta il PERIODO DI CONTROLLO.
-                    # DEVE combaciare con
-                    # *.VectorVehicle[0].app[0].todCarApp.statusUpdateInterval nell'ini.
-                    'dt': agent.get('control_period', 0.033),
-                    # Semafori e stop: erano cablati a True, quindi l'ego li ignorava
-                    # SEMPRE (traffic_light_manager() restituiva sempre falso e il ramo
-                    # di frenata in MyBehaviorAgent.run_step era irraggiungibile). Ora
-                    # sono chiavi del yaml, con default True per non cambiare sotto banco
-                    # gli scenari gia' girati.
-                    'ignore_traffic_lights': agent.get('ignore_traffic_lights', True),
-                    'ignore_stop_signs': agent.get('ignore_stop_signs', True),
-                    'ignore_vehicles': False,
-                    'ignore_pedestrian': False,
-                    'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
-                    'ignoreIds': agent.get('ignoreIds', [])
-                },
-                loss_ratio_threshold=lrt,
+                opt_dict=self._driving_options(agent),
+                loss_ratio_threshold=loss_ratio_threshold,
                 control_timeout=agent.get('control_timeout', 0.5)
             )
 
             self._agents[agent['actor_id_to_control']] = controller
-            # Route loop: when true, reaching the last destination restarts the whole
-            # route instead of ending the simulation, so the ego keeps driving until
-            # the sim_time_limit.
             self._route_loop[agent['actor_id_to_control']] = agent.get('route_loop', False)
 
-    
+    @staticmethod
+    def _loss_ratio_threshold(message, agent):
+        """
+        Emergency-stop threshold: from the ini (extraInitParams) when present, so that it
+        can be swept, otherwise from the yaml, otherwise 0.5. The ini value arrives as a
+        string, because numbers do not survive the conversion of extraInitParams to json.
+        """
+        try:
+            return float(message['user_defined'].get('loss_ratio_threshold', ''))
+        except (TypeError, ValueError):
+            return agent.get('loss_ratio_threshold', 0.5)
+
+    @staticmethod
+    def _driving_options(agent):
+        """
+        Options of the behavior agent. 'dt' is the control period, i.e. how often an
+        instruction is computed (todCarApp.statusUpdateInterval in the ini), not the
+        world tick: the PID derivative term depends on it.
+        """
+        return {
+            'dt': agent.get('control_period', 0.033),
+            'ignore_traffic_lights': agent.get('ignore_traffic_lights', True),
+            'ignore_stop_signs': agent.get('ignore_stop_signs', True),
+            'ignore_vehicles': False,
+            'ignore_pedestrian': False,
+            'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
+            'ignoreIds': agent.get('ignoreIds', [])
+        }
+
 
     def generic_message(self, timestamp, message) -> (SimulatorStatus, dict):
         #if not 'msg_type' in message: return SimulatorStatus.RUNNING, {'message': 'from carla'}
@@ -89,19 +82,12 @@ class MyAgentManager(AgentManager):
             #agent_id = message['agent_id']
             actor_id = message['actor_id']
             status_id = message['status_id']
-            # Partial loss measured by TODAgentApp over the sensor streams of this
-            # frame. Absent when the request does not come from the network (e.g.
-            # the zero-delay path), hence the default.
+            # absent when the request does not come from the network (zero-delay path)
             loss_ratio = message.get('loss_ratio', 0.0)
-            # Camera quality level this frame was produced at: 0 is full resolution,
-            # higher means the car cut the frame down because the instruction RTT
-            # was growing. Tells the agent how well it could actually see.
             quality_level = message.get('quality_level', 0)
 
             controller = self._agents[actor_id]
 
-            # Route completed: with route_loop the ego restarts the same destinations
-            # from where it is now instead of ending the simulation.
             if controller.done() and self._route_loop.get(actor_id, False):
                 controller.restart_route()
 
@@ -161,10 +147,7 @@ class MyAgentManager(AgentManager):
         return self._agents[actor_id]
 
     def get_teleoperated_actor_ids(self):
-        """
-        Actors whose control comes from the network, so the ones the actor manager
-        has to watch with the dead-man's switch.
-        """
+        """Actors controlled through the network, watched by the dead-man's switch."""
         return list(self._agents.keys())
 
     def is_route_looping(self, actor_id):
