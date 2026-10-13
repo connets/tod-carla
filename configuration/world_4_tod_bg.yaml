@@ -95,6 +95,92 @@ new_vehicles:
   - { x: 385.769928, y: -209.061325, z: 1.5 }
   - { x: 202.491364, y: -184.649872, z: 1.5 }        # chiude l'anello
 
+# --- Traffico aggiuntivo: Bg04..Bg08 ------------------------------------------
+#  Differenza da Bg01..Bg03: qui NON c'e' 'origin'. _generateVehicle spawna sempre
+#  su random.choice(map.get_spawn_points()) e applica 'origin' solo dopo, come
+#  ApplyTransform (MyActorManager.py:327-345): omettendolo si tiene la posa di
+#  spawn di CARLA, che e' garantita valida su strada. Inventare x/y/yaw a mano
+#  rischia invece di piazzare l'auto controsenso o contro un guard-rail.
+#  Partono quindi sparsi per Town04 e confluiscono nell'area dell'ego seguendo le
+#  loro destinazioni, che sono punti gia' validi ripresi dalle route esistenti.
+#
+#  ATTENZIONE: ogni actor_id qui DEVE avere il suo VectorTraffic[n].mobility.carla_id in
+#  datagram_tod.ini, e numTrafficVehicles va tenuto allineato: un attore riportato
+#  da CARLA senza modulo statico corrispondente viene creato dinamicamente da
+#  OMNeT durante l'init, e questo rompe la mesh X2.
+#
+#  Il modello e' lo stesso dei Bg esistenti perche' e' l'unico gia' provato in
+#  questo scenario: 'model' finisce in blueprint_library().filter(...) e un nome
+#  inesistente farebbe fallire random.choice su lista vuota. Per varieta' visiva
+#  si puo' allargare il filtro (es. vehicle.audi.*), verificando che esista.
+
+- actor_id: Bg04
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  destinations:
+  - { x:   13.200000, y: -318.700000, z: 1.5 }
+  - { x: -381.180145, y:   -1.711176, z: 1.5 }
+  - { x:   13.200000, y: -318.700000, z: 1.5 }   # gamba lunga sud-est <-> nord-ovest
+
+- actor_id: Bg05
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  destinations:
+  - { x: -381.180145, y:   -1.711176, z: 1.5 }
+  - { x:   13.200000, y: -318.700000, z: 1.5 }
+  - { x: -381.180145, y:   -1.711176, z: 1.5 }   # stessa gamba, senso opposto
+
+- actor_id: Bg06
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  destinations:
+  - { x: -262.067322, y:   37.264809, z: 1.5 }
+  - { x:  241.204666, y: -246.428802, z: 1.5 }
+  - { x: -262.067322, y:   37.264809, z: 1.5 }   # gamba lunga nord-ovest <-> sud-est
+
+- actor_id: Bg07
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  destinations:
+  - { x:  241.204666, y: -246.428802, z: 1.5 }
+  - { x: -262.067322, y:   37.264809, z: 1.5 }
+  - { x:  241.204666, y: -246.428802, z: 1.5 }   # stessa gamba, senso opposto
+
+- actor_id: Bg08
+  actor_type: Vehicle
+  role_name: other
+  speed_limit: auto
+  model: vehicle.tesla.model3
+  collision: false
+  targetSpeed: 30
+  route_loop: true
+  destinations:
+  - { x: -381.180145, y:   -1.711176, z: 1.5 }
+  - { x: -346.184967, y:   30.422617, z: 1.5 }
+  - { x: -320.524475, y:   33.792713, z: 1.5 }
+  - { x: -262.067322, y:   37.264809, z: 1.5 }
+  - { x: -381.180145, y:   -1.711176, z: 1.5 }   # anello stretto attorno a gnb1, dove l'ego sosta di piu'
+
 # Lo spettatore segue l'ego: il percorso e' lungo e da una posa fissa uscirebbe
 # dall'inquadratura dopo pochi secondi.
 spectator:
@@ -112,8 +198,16 @@ agents:
   time_limit: 300
   actor_id_to_control: Car01
   collision_calculation_method: CARLADEFAULT
-  # i veicoli di background non contano come ostacoli da evitare attivamente
-  ignoreIds: [Bg01, Bg02, Bg03]
+  # ignoreIds elenca gli attori che l'ego NON deve considerare ostacoli: la decisione
+  # di collisione restituisce None per loro (MyBehaviorAgent.py:62), quindi ci passa
+  # attraverso. Serviva quando i Bg giravano in un'altra zona della mappa; ora che
+  # Bg04..Bg08 percorrono lo stesso corridoio dell'ego la lista va vuota, altrimenti
+  # l'ego li investe. E' diventato sicuro con la correzione del x3.6 sul limite di
+  # velocita': le soglie di prossimita' sono tornate a 10-30 m invece di ~108, quindi
+  # l'ego reagisce a chi ha davvero davanti senza frenare per veicoli lontani.
+  # Per tornare a trattarli come puro carico di rete, invisibile alla guida:
+  #   ignoreIds: [Bg01, Bg02, Bg03, Bg04, Bg05, Bg06, Bg07, Bg08]
+  ignoreIds: []
 
   # Perdita parziale: sopra questa frazione il teleoperatore ordina la frenata.
   loss_ratio_threshold: 0.5
