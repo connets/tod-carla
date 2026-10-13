@@ -35,7 +35,10 @@ new_vehicles:
   camera:
     width: 1280
     height: 720
-  renderCamera: false
+  # Apre la finestra pygame con la vista camera dell'ego piu' l'HUD della
+  # teleguida (perdita, livello qualita', stato del canale, veicoli visti).
+  # Costa CPU/GPU a ogni tick: per le campagne di misura rimettilo a false.
+  renderCamera: true
   collision: true
   lidar: true
 

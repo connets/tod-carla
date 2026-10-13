@@ -29,7 +29,7 @@ from Actor.SLDisturbing import SLDisturbing
 from utils.InterCommunicationListeners import InterCommunicationListeners
 import utils.LidarUtility as LidarUtility
 import utils.YAMLLoader as YAMLLoader
-#from utils.Hud import HUD
+from utils.Hud import HUD
 import pygame
 
 from lib.agents.navigation.constant_velocity_agent import ConstantVelocityAgent
@@ -370,11 +370,14 @@ class MyActorManager(ActorManager):
                     carlanet_actor.attach_sensor(camera_sensor)
 
                     if actor["renderCamera"]:
+                        # carla_actor e non carlanet_actor: l'HUD chiama get_transform/
+                        # get_velocity/get_control/type_id, che TeleCarlaVehicle non delega.
                         self._create_display(
-                            carlanet_actor,
+                            carlanet_actor.carla_actor,
                             actor['camera']['width'],
                             actor['camera']['height'],
-                            camera_sensor
+                            camera_sensor,
+                            actor_id=actor.get('actor_id')
                         )
 
                 if 'lidar' in actor and actor['lidar']:
@@ -487,22 +490,58 @@ class MyActorManager(ActorManager):
     
 
 
-    def _create_display(self, player, camera_width, camera_height, camera_sensor):
+    def _create_display(self, player, camera_width, camera_height, camera_sensor, actor_id=None):
         pygame.init()
         pygame.font.init()
         display = pygame.display.set_mode((camera_width, camera_height), pygame.HWSURFACE | pygame.DOUBLEBUF)
         # display.fill((0, 0, 0))
         pygame.display.flip()
 
-        #hud = HUD(player, self.clock, display)
+        clock = pygame.time.Clock()
+
+        def telemetry():
+            """Grandezze della teleguida per l'HUD.
+
+            Vivono nel controller lato agente, non qui: l'HUD le legge tramite questa
+            callback invece di importarsi mezzo progetto. Tutto difensivo, perche' un
+            veicolo senza agente (i background) non ha controller e
+            get_agent_from_actor_id_controlled solleverebbe KeyError; e un errore qui
+            non deve fermare il rendering.
+            """
+            data = {'link_lost': bool(self._link_lost.get(actor_id, False))}
+            try:
+                controller = InterCommunicationListeners.instance.askToManager(
+                    AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
+            except Exception:
+                return data
+            if controller is None:
+                return data
+            data['loss_ratio'] = getattr(controller, 'current_loss_ratio', None)
+            data['quality_level'] = getattr(controller, 'current_quality_level', None)
+            # Veicoli VISTI dall'operatore nell'ultimo stato ricevuto: e' l'informazione
+            # giusta per una teleguida, e non costa una RPC a CARLA per frame (che e' il
+            # modo in cui si pianta il server).
+            state = getattr(getattr(controller, 'carla_agent', None), 'last_vehicle_state', None)
+            if state is not None:
+                try:
+                    here = state.get_location()
+                    data['visible'] = [(here.distance(v.get_location()), 'veicolo %s' % v.id)
+                                       for v in getattr(state, 'visible_vehicles', [])]
+                except Exception:
+                    pass
+            return data
+
+        hud = HUD(player, clock, display, telemetry=telemetry)
         camera_sensor.add_display(display)
 
-        def render(_):
-            camera_sensor.render()
-            #hud.render()
+        def render(timestamp):
+            # pump degli eventi: senza, Windows marca la finestra come "non risponde".
+            pygame.event.pump()
+            clock.tick()
+            hud.tick(timestamp)
+            camera_sensor.render()   # immagine della camera come sfondo
+            hud.render()             # pannello informativo sopra
             pygame.display.flip()
-        
-        #every tick call render function of camerasensor that render on display the captured camera iamge
+
+        # every tick call render function of camerasensor that render on display the captured camera image
         self.after_tick_callback.append(render)
-        #self.tele_world.add_tick_callback(render)
-        #self.tele_world.add_tick_callback(hud.tick)

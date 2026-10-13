@@ -68,9 +68,13 @@ class BasicAgentTeleWorldAdapterController(TeleAdapterController):
         self.carla_agent = BasicAgent(player.carla_actor) #player.model is the carla.Vehicle wrapped in player that is a TeleCarlaVehicle
         self._loss_ratio_threshold = loss_ratio_threshold
         self.current_quality_level = 0
+        # Ultima perdita comunicata dall'agente: serve all'HUD, che gira
+        # lato CARLA e non ha accesso alle statistiche di OMNeT.
+        self.current_loss_ratio = 0.0
 
     def do_action(self, vehicle_state=None, loss_ratio=0.0, quality_level=0):
         self.current_quality_level = quality_level
+        self.current_loss_ratio = loss_ratio
         if vehicle_state is not None:
             self.carla_agent.update_vehicle_state(vehicle_state)
 
@@ -115,6 +119,9 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         # instruction RTT was growing, so the operator is seeing less detail.
         # Kept as state so the driving policy can take it into account.
         self.current_quality_level = 0
+        # Ultima perdita comunicata dall'agente: serve all'HUD, che gira
+        # lato CARLA e non ha accesso alle statistiche di OMNeT.
+        self.current_loss_ratio = 0.0
 
         self.othersStates = {}
 
@@ -129,6 +136,7 @@ class BehaviorAgentTeleWorldAdapterController(TeleAdapterController):
         if quality_level != self.current_quality_level:
             print(f"[quality] livello camera {self.current_quality_level} -> {quality_level}")
         self.current_quality_level = quality_level
+        self.current_loss_ratio = loss_ratio
 
         #print("self._agents[actor_id].do_action")
         #print("self.carla_agent.last_vehicle_state: ", self.carla_agent.last_vehicle_state)

@@ -5,14 +5,29 @@ import os
 import carla
 import pygame
 
-from Carlasupport import get_actor_display_name
+from utils.Carlasupport import get_actor_display_name
+
+def _fmt_pct(v):
+    return 'n/d' if v is None else '%.1f %%' % (100.0 * v)
+
+
+def _fmt_level(v):
+    return 'n/d' if v is None else 'liv. %d' % v
+
 
 class HUD(object):
     """Class for HUD text"""
 
-    def __init__(self, player, clock, display):
-        """Constructor method"""
+    def __init__(self, player, clock, display, telemetry=None):
+        """Constructor method.
+
+        telemetry: callable opzionale che restituisce un dict con le grandezze
+        della teleguida (loss_ratio, quality_level, link_lost, visible). Sta fuori
+        da questa classe perche' vivono nel controller lato agente, e l'HUD non
+        deve dipendere dai listener.
+        """
         self.display = display
+        self._telemetry = telemetry
         self.dim = (display.get_width(), display.get_height())
         self.player = player
         self.clock = clock
@@ -37,14 +52,18 @@ class HUD(object):
         """Gets informations from the world at every tick"""
         self._server_clock.tick()
         self.server_fps = self._server_clock.get_fps()
-        self.frame = timestamp.frame_count
-        self.simulation_time = timestamp.elapsed_seconds
+        # 'frame_count' non esiste su carla.Timestamp (il campo e' 'frame'), e in
+        # co-simulazione after_world_tick passa un float: accetta entrambi.
+        self.frame = getattr(timestamp, 'frame', self.frame)
+        self.simulation_time = getattr(timestamp, 'elapsed_seconds', timestamp)
 
     def tick(self, timestamp):
         self._server_clock.tick()
         self.server_fps = self._server_clock.get_fps()
-        self.frame = timestamp.frame_count
-        self.simulation_time = timestamp.elapsed_seconds
+        # 'frame_count' non esiste su carla.Timestamp (il campo e' 'frame'), e in
+        # co-simulazione after_world_tick passa un float: accetta entrambi.
+        self.frame = getattr(timestamp, 'frame', self.frame)
+        self.simulation_time = getattr(timestamp, 'elapsed_seconds', timestamp)
 
         """HUD method for every tick"""
         self._notifications.tick(self.player, self.clock)
@@ -62,7 +81,13 @@ class HUD(object):
         # max_col = max(1.0, max(collision))
         # collision = [x / max_col for x in collision]
         # vehicles = world.world.get_actors().filter('vehicle.*')
-        vehicles = []
+        # Telemetria della teleguida: e' opzionale e non deve MAI far cadere il
+        # rendering, quindi ogni errore viene assorbito.
+        try:
+            tele = self._telemetry() if self._telemetry else {}
+        except Exception:
+            tele = {}
+        vehicles = tele.get('visible') or []
 
         self._info_text = [
             'Server:  % 16.0f FPS' % self.server_fps,
@@ -76,6 +101,11 @@ class HUD(object):
             'Location:% 20s' % ('(% 5.1f, % 5.1f)' % (transform.location.x, transform.location.y)),
             # 'GNSS:% 24s' % ('(% 2.6f, % 3.6f)' % (sim_world.gnss_sensor.lat, sim_world.gnss_sensor.lon)),
             'Height:  % 18.0f m' % transform.location.z,
+            '',
+            '--- Teleguida ---',
+            'Perdita:% 18s' % _fmt_pct(tele.get('loss_ratio')),
+            'Qualita camera:% 11s' % _fmt_level(tele.get('quality_level')),
+            'Canale:% 19s' % ('PERSO' if tele.get('link_lost') else 'ok'),
             '']
         if isinstance(control, carla.VehicleControl):
             self._info_text += [
@@ -92,25 +122,14 @@ class HUD(object):
                 ('Jump:', control.jump)]
         self._info_text += [
             '',
-            'Collision:',
-            # collision,
-            '',
-            'Number of vehicles: % 8d' % len(vehicles)]
+            "Visti dall'operatore:% 5d" % len(vehicles)]
 
-        if len(vehicles) > 1:
-            self._info_text += ['Nearby vehicles:']
-
-        def dist(l):
-            return math.sqrt((l.x - transform.location.x)**2 + (l.y - transform.location.y)
-                             ** 2 + (l.z - transform.location.z)**2)
-        # vehicles = [(dist(x.get_location()), x) for x in vehicles if x.id != player.id]
-        vehicles = []
-
-        for dist, vehicle in sorted(vehicles):
-            if dist > 200.0:
-                break
-            vehicle_type = get_actor_display_name(vehicle, truncate=22)
-            self._info_text.append('% 4dm %s' % (dist, vehicle_type))
+        # 'vehicles' arriva gia' pronto dalla telemetria come lista di (distanza, nome):
+        # sono i veicoli che il teleoperatore VEDE nell'ultimo stato ricevuto, non quelli
+        # realmente presenti nel mondo. E' l'informazione giusta per questo HUD, e non
+        # costa una RPC per frame (che e' il modo in cui si pianta il server CARLA).
+        for distance, label in sorted(vehicles)[:8]:
+            self._info_text.append('% 4dm %s' % (distance, label))
 
     def toggle_info(self):
         """Toggle info on or off"""
