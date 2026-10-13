@@ -27,6 +27,18 @@ class MyAgentManager(AgentManager):
         for agent in agents:
             print(f"create agent {agent}")
             start_position, end_locations, time_limit = self._create_route(agent['route'])
+            # Soglia di frenata d'emergenza, sweepabile dall'ini. ATTENZIONE: arriva come
+            # STRINGA. extraInitParams e' una cValueMap e nella conversione a json i valori
+            # numerici si perdono (arrivano come ''), mentre le stringhe sopravvivono: per
+            # questo nell'ini il valore va scritto fra apici, '${lrt=0.5}'. Se manca o non
+            # e' convertibile si ricade sul yaml, e infine su 0.5.
+            lrt = message['user_defined'].get('loss_ratio_threshold', '')
+            try:
+                lrt = float(lrt)
+            except (TypeError, ValueError):
+                lrt = agent.get('loss_ratio_threshold', 0.5)
+            print(f"loss_ratio_threshold in uso per {agent['actor_id_to_control']}: {lrt}")
+
             controller = BehaviorAgentTeleWorldAdapterController(
                 agent['agentId'],
                 InterCommunicationListeners.instance.askToManager(ActorManager, 'get_actor_from_id', agent['actor_id_to_control']),
@@ -35,15 +47,30 @@ class MyAgentManager(AgentManager):
                 start_position.location,
                 end_locations,
                 opt_dict={
-                    'dt': message["carla_configuration"]['carla_timestep'],
-                    'ignore_traffic_lights': True,
-                    'ignore_stop_signs': True,
+                    # dt del PID: NON il tick del mondo. Il local planner viene invocato
+                    # una volta per ISTRUZIONE, cioe' ogni statusUpdateInterval di
+                    # TODCarApp (33 ms di default), non ogni carla_timestep (10 ms).
+                    # Passando 0.01 il termine derivativo (controller.py:156,
+                    # _de = delta_errore / dt) risultava sovrastimato di 3,3x: con
+                    # K_D=0.2 il guadagno effettivo diventava ~0,66 e lo sterzo
+                    # oscillava (l'auto "drifta"). NB il default di CARLA e' 1/20 s,
+                    # cioe' il planner si aspetta il PERIODO DI CONTROLLO.
+                    # DEVE combaciare con
+                    # *.VectorVehicle[0].app[0].todCarApp.statusUpdateInterval nell'ini.
+                    'dt': agent.get('control_period', 0.033),
+                    # Semafori e stop: erano cablati a True, quindi l'ego li ignorava
+                    # SEMPRE (traffic_light_manager() restituiva sempre falso e il ramo
+                    # di frenata in MyBehaviorAgent.run_step era irraggiungibile). Ora
+                    # sono chiavi del yaml, con default True per non cambiare sotto banco
+                    # gli scenari gia' girati.
+                    'ignore_traffic_lights': agent.get('ignore_traffic_lights', True),
+                    'ignore_stop_signs': agent.get('ignore_stop_signs', True),
                     'ignore_vehicles': False,
                     'ignore_pedestrian': False,
                     'collision_calculation_method': agent.get('collision_calculation_method', 'CARLADEFAULT'),
                     'ignoreIds': agent.get('ignoreIds', [])
                 },
-                loss_ratio_threshold=agent.get('loss_ratio_threshold', 0.5),
+                loss_ratio_threshold=lrt,
                 control_timeout=agent.get('control_timeout', 0.5)
             )
 

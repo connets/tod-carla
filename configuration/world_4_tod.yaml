@@ -65,6 +65,20 @@ agents:
   # Piu' giri fino al sim_time_limit invece di fermarsi a fine percorso.
   route_loop: true
 
+  # Periodo con cui il PID laterale viene effettivamente invocato: una volta per
+  # istruzione, quindi DEVE combaciare con
+  # *.VectorVehicle[0].app[0].todCarApp.statusUpdateInterval nell'ini (0.033s).
+  # Non e' il carla_timestep: con 0.01 la derivata dell'errore viene sovrastimata
+  # di 3,3x e lo sterzo serpeggia.
+  control_period: 0.033
+
+  # L'ego rispetta semafori e stop. Il default del codice e' true (li ignora), per
+  # non alterare gli scenari storici; qui li accendiamo di proposito.
+  # NB: al rosso l'ego resta fermo e la scena non cambia, quindi il carico offerto
+  # in salita cala. Se confronti numeri di perdita fra run, tieni questa uguale.
+  ignore_traffic_lights: false
+  ignore_stop_signs: false
+
   route:
     time_limit: 300
     origin: { x: 13.2, y: -318.7, z: 0.02, pitch: 0.002, yaw: 127.15, roll: 0.0 }
