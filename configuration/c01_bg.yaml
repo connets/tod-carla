@@ -1,19 +1,8 @@
 # =============================================================================
-#  Variante di c01 che usa le opzioni aggiunte sul branch dev_vannini.
-#
-#  Tutte le coordinate sono riprese da c01.yaml, quindi sono punti gia' validi
-#  su Town10HD_Opt: il file e' eseguibile cosi' com'e'.
-#
-#  Chiavi nuove rispetto a c01.yaml:
-#    agents[].loss_ratio_threshold  soglia di perdita parziale oltre la quale il
-#                                   teleoperatore ordina la frenata d'emergenza
-#    agents[].control_timeout       secondi di silenzio sul canale di controllo
-#                                   dopo i quali l'auto frena da sola
-#    agents[].route_loop            a fine percorso riparte invece di terminare
-#    new_vehicles[].destinations    lista di destinazioni per il traffico di
-#                                   background (al posto del singolo destination)
-#    new_vehicles[].route_loop      il veicolo di background rifa' il giro
-#    spectator.follow               aggancia lo spettatore a un attore
+#  c01 with the options added on dev_vannini (same coordinates, Town10HD_Opt):
+#    agents[].loss_ratio_threshold, control_timeout, route_loop
+#    new_vehicles[].destinations, route_loop
+#    spectator.follow
 # =============================================================================
 world: Town10HD_Opt
 
@@ -30,16 +19,15 @@ new_vehicles:
   collision: true
   lidar: true
 
-# Traffico di background: attori CARLA passivi sulla rete (non teleoperati), che
-# pero' restano UE per OMNeT e caricano le stesse celle dell'ego.
+# background traffic: not teleoperated, but a 5G UE in OMNeT
 - actor_id: Bg01
   actor_type: Vehicle
-  role_name: other      # NON hero: hero seleziona l'ego per follow-cam e fine corsa
+  role_name: other      # not hero: hero marks the ego
   speed_limit: auto
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
-  route_loop: true      # rifa' il giro invece di parcheggiarsi a meta' simulazione
+  route_loop: true
   origin:
     x: -24.085384
     y: 70.283424
@@ -54,16 +42,16 @@ new_vehicles:
   - x: -18.815849
     y: 65.878159
     z: 0.002049
-  # ritorno all'origine: chiude l'anello
+  # back to the origin: closes the loop
   - x: -24.085384
     y: 70.283424
     z: 0.002049
 
 spectator:
-  follow: Car01         # segue l'ego invece di restare su una posa fissa
-  follow_distance: 8.0  # metri dietro al veicolo
-  follow_height: 4.0    # metri sopra
-  follow_pitch: -12.0   # inclinazione verso il basso
+  follow: Car01         # chase camera instead of a fixed pose
+  follow_distance: 8.0  # metres behind
+  follow_height: 4.0    # metres above
+  follow_pitch: -12.0
 
 fromOmnet_vehicles: []
 
@@ -76,18 +64,9 @@ agents:
   collision_calculation_method: TTC
   ignoreIds: [Bg01]
 
-  # Perdita parziale: sopra questa frazione di pacchetti persi sul frame il
-  # teleoperatore ordina una frenata d'emergenza (potrebbe essere qualunque
-  # altra istruzione, per esempio un rallentamento).
-  loss_ratio_threshold: 0.5
-
-  # Massimo numero di secondi senza ricevere un'istruzione dal teleoperatore.
-  # Scaduto questo tempo l'auto esegue da sola la manovra a rischio minimo.
-  control_timeout: 0.5
-
-  # A fine percorso riparte dalle stesse destinazioni invece di chiudere la
-  # simulazione: serve per arrivare al sim_time_limit facendo piu' giri.
-  route_loop: true
+  loss_ratio_threshold: 0.5   # sensor loss that triggers the emergency stop
+  control_timeout: 0.5        # seconds without instructions before the minimum risk maneuver
+  route_loop: true            # restart the route instead of ending the simulation
 
   route:
     time_limit: 300

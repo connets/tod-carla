@@ -1,32 +1,14 @@
 # =============================================================================
-#  Scena world_4 nel formato unico di questo branch, per lo scenario
-#  tod-omnet/simulations/v2/datagram_tod.ini, config DatagramTOD
-#  (config_name: world_4_tod). Solo l'ego: la variante con traffico di
-#  background e' world_4_tod_bg.yaml, usata da DatagramTOD-Bg.
+#  Town04 scene of DatagramTOD (tod-omnet/simulations/v2/datagram_tod.ini),
+#  ego only; world_4_tod_bg.yaml adds the background traffic.
 #
-#  Sostituisce lo schema a file separati del vecchio branch, dove la stessa scena
-#  stava spezzata in:
-#     configuration/world/world_4.yaml
-#     configuration/route/city_trip_world_4.yaml       (ego)
-#     configuration/actor/simple_vehicle.yaml          (ego)
-#     configuration/agent/simple_agent.yaml            (ego)
-#     configuration/route/city_world_4_bg_{0,1,2}.yaml (background)
-#     configuration/actor/simple_vehicle_bg_{0,1,2}.yaml
-#  Tutte le coordinate sono riprese da quei file, quindi sono punti gia' validi
-#  su Town04_Opt.
-#
-#  ACCOPPIAMENTO CON L'INI: gli actor_id qui sotto devono combaciare con i
-#  mobility.carla_id dichiarati in datagram_tod.ini (Car01 -> VectorVehicle[0],
-#  Bg01..Bg03 -> VectorTraffic[0..2]). CARLA crea gli attori da new_vehicles;
-#  OMNeT li ha gia' come moduli statici e li riconosce per id, quindi non ne crea
-#  nessuno a runtime. Un attore qui senza il suo carla_id nell'ini verrebbe creato
-#  dinamicamente da OMNeT, e se accade durante l'init rompe la mesh X2.
+#  Every actor_id must match a mobility.carla_id in datagram_tod.ini.
 # =============================================================================
 world: Town04_Opt
 
 new_vehicles:
 
-# --- Ego teleoperato: VectorVehicle[0] lato OMNeT ------------------------------
+# --- Teleoperated ego (VectorVehicle[0]) ---------------------------------------
 - actor_id: Car01
   actor_type: Vehicle
   role_name: hero
@@ -35,15 +17,10 @@ new_vehicles:
   camera:
     width: 1280
     height: 720
-  # Apre la finestra pygame con la vista camera dell'ego piu' l'HUD della
-  # teleguida (perdita, livello qualita', stato del canale, veicoli visti).
-  # Costa CPU/GPU a ogni tick: per le campagne di misura rimettilo a false.
-  renderCamera: true
+  renderCamera: true      # camera window with the HUD; false for measurement campaigns
   collision: true
   lidar: true
 
-# Lo spettatore segue l'ego: il percorso e' lungo e da una posa fissa uscirebbe
-# dall'inquadratura dopo pochi secondi.
 spectator:
   follow: Car01
   follow_distance: 8.0
@@ -61,24 +38,12 @@ agents:
   collision_calculation_method: CARLADEFAULT
   ignoreIds: []
 
-  # Perdita parziale: sopra questa frazione il teleoperatore ordina la frenata.
-  loss_ratio_threshold: 0.5
-  # Silenzio massimo sul canale di controllo prima della manovra a rischio minimo.
-  control_timeout: 0.5
-  # Piu' giri fino al sim_time_limit invece di fermarsi a fine percorso.
-  route_loop: true
+  loss_ratio_threshold: 0.5   # sensor loss that triggers the emergency stop (the ini can override it)
+  control_timeout: 0.5        # seconds without instructions before the minimum risk maneuver
+  route_loop: true            # restart the route instead of ending the simulation
+  control_period: 0.033       # must equal todCarApp.statusUpdateInterval in the ini
 
-  # Periodo con cui il PID laterale viene effettivamente invocato: una volta per
-  # istruzione, quindi DEVE combaciare con
-  # *.VectorVehicle[0].app[0].todCarApp.statusUpdateInterval nell'ini (0.033s).
-  # Non e' il carla_timestep: con 0.01 la derivata dell'errore viene sovrastimata
-  # di 3,3x e lo sterzo serpeggia.
-  control_period: 0.033
-
-  # L'ego rispetta semafori e stop. Il default del codice e' true (li ignora), per
-  # non alterare gli scenari storici; qui li accendiamo di proposito.
-  # NB: al rosso l'ego resta fermo e la scena non cambia, quindi il carico offerto
-  # in salita cala. Se confronti numeri di perdita fra run, tieni questa uguale.
+  # respecting traffic lights stops the ego and lowers the offered load: keep it equal across compared runs
   ignore_traffic_lights: false
   ignore_stop_signs: false
 
