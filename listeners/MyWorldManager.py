@@ -15,23 +15,16 @@ from utils.FolderPath import FolderPath
 from utils.CarlaServerHandler import CarlaServerHandler
 from utils.InterCommunicationListeners import InterCommunicationListeners
 from otherManagers.LoggerManager import LoggerManager
+from utils.SpectatorFollower import SpectatorFollower
 import utils.YAMLLoader as YAMLLoader
 
 class MyWorldManager(WorldManager):
-    # Static spectator pose from the yaml, None when the yaml does not set one.
-    _spectator = None
-    # Follow-cam: actor the spectator is chained to, and how it sits behind it.
-    _follow_actor_id = None
-    _follow_distance = 8.0
-    _follow_height = 4.0
-    _follow_pitch = -12.0
-    _follow_logged = False
-    _follow_err_logged = False
+    _spectator = None            # fixed spectator pose from the yaml
+    _spectator_follower = None   # chase camera, when the yaml sets 'follow'
 
     @InstanceExist(CarlaClient)
     def omnet_init_completed(self, message) -> SimulatorStatus:
-        #define folder for results as run_id
-        # the ':' of the timestamp are not valid characters in Windows paths
+        #define folder for results as run_id (':' is not valid in Windows paths)
         FolderPath.RESULTS_PATH += f"{str(message['run_id']).replace(':', '-')}/"
         #open user defined configuration file
         data = YAMLLoader.load_and_merge_yaml_file(f"{FolderPath.CONFIGURATION_PATH}{message['user_defined']['config_name']}.yaml")
@@ -47,13 +40,8 @@ class MyWorldManager(WorldManager):
 
         if 'spectator' in data:
             spectator_conf = data['spectator']
-            # 'follow' chains the spectator to an actor instead of pinning it to a
-            # fixed pose: useful to actually watch the ego drive a long route.
             if 'follow' in spectator_conf:
-                self._follow_actor_id = spectator_conf['follow']
-                self._follow_distance = spectator_conf.get('follow_distance', self._follow_distance)
-                self._follow_height = spectator_conf.get('follow_height', self._follow_height)
-                self._follow_pitch = spectator_conf.get('follow_pitch', self._follow_pitch)
+                self._spectator_follower = SpectatorFollower.from_config(spectator_conf)
             else:
                 self._spectator = carla.Transform(
                     carla.Location(
@@ -87,7 +75,7 @@ class MyWorldManager(WorldManager):
     
     @InstanceExist(CarlaClient)
     def before_world_tick(self, timestamp):
-        if self._follow_actor_id is not None:
+        if self._spectator_follower is not None:
             self._update_spectator_follow()
         elif self._spectator:
             # Get the spectator from the world
@@ -97,28 +85,9 @@ class MyWorldManager(WorldManager):
 
     @InstanceExist(CarlaClient)
     def _update_spectator_follow(self):
-        """
-        Keeps the spectator a few metres behind the followed actor, looking slightly
-        down at it. Guarded because the actor may not be spawned yet during the very
-        first ticks, and a failure here must not take the simulation down.
-        """
-        try:
-            actor = InterCommunicationListeners.instance.askToManager(
-                ActorManager, 'get_actor_from_id', self._follow_actor_id)
-            transform = actor.carla_actor.get_transform()
-            forward = transform.get_forward_vector()
-            CarlaClient.instance.world.get_spectator().set_transform(carla.Transform(
-                carla.Location(x=transform.location.x - self._follow_distance * forward.x,
-                               y=transform.location.y - self._follow_distance * forward.y,
-                               z=transform.location.z + self._follow_height),
-                carla.Rotation(pitch=self._follow_pitch, yaw=transform.rotation.yaw)))
-            if not self._follow_logged:
-                print(f"[follow] spettatore agganciato a {self._follow_actor_id}")
-                self._follow_logged = True
-        except Exception as e:
-            if not self._follow_err_logged:
-                print(f"[follow] errore: {e!r}")
-                self._follow_err_logged = True
+        self._spectator_follower.update(
+            CarlaClient.instance.world,
+            lambda actor_id: InterCommunicationListeners.instance.askToManager(ActorManager, 'get_actor_from_id', actor_id))
 
     def after_world_tick(self, timestamp) -> SimulatorStatus:
         #print(f"{timestamp} of {self.sim_time_limit}")

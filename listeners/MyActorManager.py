@@ -29,6 +29,7 @@ from Actor.SLDisturbing import SLDisturbing
 from utils.InterCommunicationListeners import InterCommunicationListeners
 import utils.LidarUtility as LidarUtility
 import utils.YAMLLoader as YAMLLoader
+from utils.ControlLinkWatchdog import ControlLinkWatchdog
 from utils.Hud import HUD
 import pygame
 
@@ -39,10 +40,7 @@ class MyActorManager(ActorManager):
     _autoPilotAgents = []
     _firstsimStep = None
     _crashTime = None
-    # Dead-man's switch: last simulated instant at which each teleoperated actor
-    # actually applied an instruction, and whether we already reported it as lost.
-    _last_instruction_time = dict()
-    _link_lost = dict()
+    _control_link = ControlLinkWatchdog()
 
     def omnet_init_completed(self, message):
         super().omnet_init_completed(message)
@@ -141,9 +139,6 @@ class MyActorManager(ActorManager):
         for autoPilotAgent in self._autoPilotAgents:
             if 'startSeconds' in autoPilotAgent and now >= self._firstsimStep + autoPilotAgent['startSeconds']:
                 if autoPilotAgent['type'] == 'v':
-                    # Route loop: background traffic restarts its own route from where
-                    # it is, so it does not park itself halfway through the simulation
-                    # and stop loading the cells.
                     if autoPilotAgent.get('route_loop') and autoPilotAgent['agent'].done():
                         autoPilotAgent['agent'].set_destinations(
                             *autoPilotAgent['destinations'],
@@ -201,8 +196,7 @@ class MyActorManager(ActorManager):
     def check_hero_destination_reached(self):
         for actor_id, actor in self._carlanet_actors.items():
             if isinstance(actor, TeleCarlaVehicle) and actor.hero:
-                # With route_loop the ego restarts the route instead of finishing,
-                # so arriving at the last destination must not end the simulation.
+                # with route_loop the last destination does not end the simulation
                 if InterCommunicationListeners.instance.askToManager(AgentManager, 'is_route_looping', actor_id):
                     continue
                 #ask to agent compute instruction
@@ -213,50 +207,19 @@ class MyActorManager(ActorManager):
         return False
 
     def _rearm_control_link(self, actor_id):
-        """
-        An instruction was actually applied, so the teleoperator is alive: reset the
-        silence timer of the dead-man's switch for this actor.
-        """
         now = CarlaClient.instance.world.get_snapshot().timestamp.elapsed_seconds
-        self._last_instruction_time[actor_id] = now
-        if self._link_lost.pop(actor_id, False):
-            print(f"[dead-man] {actor_id}: canale di controllo ripristinato a t={now:.3f}s")
+        self._control_link.rearm(actor_id, now)
 
     @InstanceExist(CarlaClient)
     def _check_control_link(self, now):
-        """
-        Dead-man's switch. The loss_ratio threshold covers PARTIAL loss: a status still
-        reaches the teleoperator, it computes an instruction, and that instruction says
-        "brake". If instead the control channel drops entirely (congestion, coverage,
-        gNB lost) no instruction arrives at all and CARLA keeps applying the LAST one
-        received: the vehicle would carry on at constant speed and steering until it
-        leaves the road. Here the vehicle notices on its own and puts itself in safety.
-
-        This lives in the actor manager, not in the co-simulation glue: it is an on-board
-        function of the car, and it must keep running even while the network is silent.
-        """
+        """Dead-man's switch over the teleoperated vehicles (see ControlLinkWatchdog)."""
         for actor_id in InterCommunicationListeners.instance.askToManager(AgentManager, 'get_teleoperated_actor_ids'):
             actor = self._carlanet_actors.get(actor_id)
             if not isinstance(actor, TeleCarlaVehicle):
                 continue
 
             controller = InterCommunicationListeners.instance.askToManager(AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
-
-            # first instruction not arrived yet: start counting from now
-            last = self._last_instruction_time.setdefault(actor_id, now)
-            silence = now - last
-            if silence < controller.control_timeout:
-                continue
-
-            if not self._link_lost.get(actor_id, False):
-                self._link_lost[actor_id] = True
-                print(f"[dead-man] {actor_id}: nessuna istruzione da {silence:.3f}s "
-                      f"a t={now:.3f}s -> manovra a rischio minimo")
-
-            # re-applied at every step: the braking has to be held
-            instruction = controller.minimum_risk_maneuver()
-            if instruction is not None:
-                actor.apply_instruction(instruction)
+            self._control_link.check(actor_id, actor, controller, now)
 
 
     #others functions
@@ -370,8 +333,7 @@ class MyActorManager(ActorManager):
                     carlanet_actor.attach_sensor(camera_sensor)
 
                     if actor["renderCamera"]:
-                        # carla_actor e non carlanet_actor: l'HUD chiama get_transform/
-                        # get_velocity/get_control/type_id, che TeleCarlaVehicle non delega.
+                        # the HUD needs the carla.Vehicle API, which TeleCarlaVehicle does not delegate
                         self._create_display(
                             carlanet_actor.carla_actor,
                             actor['camera']['width'],
@@ -399,60 +361,7 @@ class MyActorManager(ActorManager):
 
 
             if 'destination' in actor or 'destinations' in actor:
-                # 'destination' (single) is the original form; 'destinations' is a list
-                # and is what background traffic uses to cover a long route.
-                if 'destinations' in actor:
-                    dests = [carla.Location(x=d['x'], y=d['y'], z=d['z']) for d in actor['destinations']]
-                else:
-                    dests = [carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])]
-                opt_dict={
-                    'dt': message["carla_configuration"]['carla_timestep'],
-                    'ignore_traffic_lights': True,
-                    'ignore_stop_signs': True,
-                    'ignore_vehicles': True,
-                    'ignore_pedestrian': True,
-                    'collision_calculation_method': 'CARLADEFAULT',
-                    'ignoreIds': []
-                }
-                # opt_dict['target_speed'] = target_speed
-                # if 'ignore_traffic_lights' in opt_dict:
-                #     self._ignore_traffic_lights = opt_dict['ignore_traffic_lights']
-                # if 'ignore_stop_signs' in opt_dict:
-                #     self._ignore_stop_signs = opt_dict['ignore_stop_signs']
-                # if 'ignore_vehicles' in opt_dict:
-                #     self._ignore_vehicles = opt_dict['ignore_vehicles']
-                # if 'ignore_pedestrian' in opt_dict:
-                #     self._ignore_pedestrian = opt_dict['ignore_pedestrian']
-                # if 'sampling_resolution' in opt_dict:
-                #     self._sampling_resolution = opt_dict['sampling_resolution']
-                # if 'base_tlight_threshold' in opt_dict:
-                #     self._base_tlight_threshold = opt_dict['base_tlight_threshold']
-                # if 'base_vehicle_threshold' in opt_dict:
-                #     self._base_vehicle_threshold = opt_dict['base_vehicle_threshold']
-                # if 'max_brake' in opt_dict:
-                #     self._max_steering = opt_dict['max_brake']
-                
-                targetSpeed = actor['targetSpeed'] if 'targetSpeed' in actor else 30
-                #print(f"target speed: {targetSpeed}")
-                agent = ConstantVelocityAgent(vehicle=carla_actor, target_speed=targetSpeed, opt_dict=opt_dict)
-                agent.follow_speed_limits(True)
-                #end_waypoint = [CarlaClient.instance.world.get_map().get_waypoint(destination) for destination in [dest]]
-                if len(dests) == 1:
-                    agent.set_destination(dests[0])
-                else:
-                    agent.set_destinations(*dests)
-                # 'destinations' implies the vehicle is meant to drive, so it does not
-                # need an explicit startSeconds to be scheduled.
-                if 'startSeconds' in actor or 'destinations' in actor:
-                    self._autoPilotAgents.append({
-                        'type': 'v',
-                        'agent': agent,
-                        'carla_actor_id': carla_actor.id,
-                        'carla_actor': carla_actor,
-                        'startSeconds': actor.get('startSeconds', 0),
-                        'destinations': dests,
-                        'route_loop': actor.get('route_loop', False)
-                    })
+                self._create_autopilot(actor, carla_actor, message)
 
 
             aid = f"{carla_actor.id}" if ('actor_id' not in actor or actor['actor_id'] == '') else actor['actor_id'] #if id is not specified use carla id
@@ -462,6 +371,44 @@ class MyActorManager(ActorManager):
             print(f"Error: {error}")
             raise error
 
+
+    def _create_autopilot(self, actor, carla_actor, message):
+        """
+        Drives a non-teleoperated vehicle along its 'destination' or 'destinations'.
+        A vehicle with 'destinations' starts even without startSeconds and, with
+        route_loop, restarts its route when it is done (see before_world_tick).
+        """
+        if 'destinations' in actor:
+            destinations = [carla.Location(x=d['x'], y=d['y'], z=d['z']) for d in actor['destinations']]
+        else:
+            destinations = [carla.Location(x=actor['destination']['x'], y=actor['destination']['y'], z=actor['destination']['z'])]
+
+        opt_dict = {
+            'dt': message["carla_configuration"]['carla_timestep'],
+            'ignore_traffic_lights': True,
+            'ignore_stop_signs': True,
+            'ignore_vehicles': True,
+            'ignore_pedestrian': True,
+            'collision_calculation_method': 'CARLADEFAULT',
+            'ignoreIds': []
+        }
+        agent = ConstantVelocityAgent(vehicle=carla_actor, target_speed=actor.get('targetSpeed', 30), opt_dict=opt_dict)
+        agent.follow_speed_limits(True)
+        if len(destinations) == 1:
+            agent.set_destination(destinations[0])
+        else:
+            agent.set_destinations(*destinations)
+
+        if 'startSeconds' in actor or 'destinations' in actor:
+            self._autoPilotAgents.append({
+                'type': 'v',
+                'agent': agent,
+                'carla_actor_id': carla_actor.id,
+                'carla_actor': carla_actor,
+                'startSeconds': actor.get('startSeconds', 0),
+                'destinations': destinations,
+                'route_loop': actor.get('route_loop', False)
+            })
 
     @InstanceExist(CarlaClient)
     def _generateEdgeCamera(self, actor, origin):
@@ -494,54 +441,45 @@ class MyActorManager(ActorManager):
         pygame.init()
         pygame.font.init()
         display = pygame.display.set_mode((camera_width, camera_height), pygame.HWSURFACE | pygame.DOUBLEBUF)
-        # display.fill((0, 0, 0))
         pygame.display.flip()
 
         clock = pygame.time.Clock()
-
-        def telemetry():
-            """Grandezze della teleguida per l'HUD.
-
-            Vivono nel controller lato agente, non qui: l'HUD le legge tramite questa
-            callback invece di importarsi mezzo progetto. Tutto difensivo, perche' un
-            veicolo senza agente (i background) non ha controller e
-            get_agent_from_actor_id_controlled solleverebbe KeyError; e un errore qui
-            non deve fermare il rendering.
-            """
-            data = {'link_lost': bool(self._link_lost.get(actor_id, False))}
-            try:
-                controller = InterCommunicationListeners.instance.askToManager(
-                    AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
-            except Exception:
-                return data
-            if controller is None:
-                return data
-            data['loss_ratio'] = getattr(controller, 'current_loss_ratio', None)
-            data['quality_level'] = getattr(controller, 'current_quality_level', None)
-            # Veicoli VISTI dall'operatore nell'ultimo stato ricevuto: e' l'informazione
-            # giusta per una teleguida, e non costa una RPC a CARLA per frame (che e' il
-            # modo in cui si pianta il server).
-            state = getattr(getattr(controller, 'carla_agent', None), 'last_vehicle_state', None)
-            if state is not None:
-                try:
-                    here = state.get_location()
-                    data['visible'] = [(here.distance(v.get_location()), 'veicolo %s' % v.id)
-                                       for v in getattr(state, 'visible_vehicles', [])]
-                except Exception:
-                    pass
-            return data
-
-        hud = HUD(player, clock, display, telemetry=telemetry)
+        hud = HUD(player, clock, display, telemetry=lambda: self._hud_telemetry(actor_id))
         camera_sensor.add_display(display)
 
         def render(timestamp):
-            # pump degli eventi: senza, Windows marca la finestra come "non risponde".
-            pygame.event.pump()
+            pygame.event.pump()   # otherwise Windows marks the window as not responding
             clock.tick()
             hud.tick(timestamp)
-            camera_sensor.render()   # immagine della camera come sfondo
-            hud.render()             # pannello informativo sopra
+            camera_sensor.render()
+            hud.render()
             pygame.display.flip()
 
         # every tick call render function of camerasensor that render on display the captured camera image
         self.after_tick_callback.append(render)
+
+    def _hud_telemetry(self, actor_id):
+        """
+        Teleoperation data shown by the HUD: link state, last loss ratio and quality
+        level, and the vehicles the operator saw in the last state. Vehicles without
+        an agent only report the link state; errors never stop the rendering.
+        """
+        data = {'link_lost': self._control_link.is_link_lost(actor_id)}
+        try:
+            controller = InterCommunicationListeners.instance.askToManager(
+                AgentManager, 'get_agent_from_actor_id_controlled', actor_id)
+        except Exception:
+            return data
+        if controller is None:
+            return data
+        data['loss_ratio'] = getattr(controller, 'current_loss_ratio', None)
+        data['quality_level'] = getattr(controller, 'current_quality_level', None)
+        state = getattr(getattr(controller, 'carla_agent', None), 'last_vehicle_state', None)
+        if state is not None:
+            try:
+                here = state.get_location()
+                data['visible'] = [(here.distance(v.get_location()), 'veicolo %s' % v.id)
+                                   for v in getattr(state, 'visible_vehicles', [])]
+            except Exception:
+                pass
+        return data
