@@ -36,7 +36,15 @@ class LoggerManager:
     @InstanceExist(CarlaClient)
     def saveRGBCameraImage(self, image: carla.Image):
         #save carla.Image to disk
-        image.save_to_disk(f'{FolderPath.RESULTS_PATH}RGBCamera/F_{image.frame}')
+        # === TEST BISEZIONE (temporaneo, da RIPRISTINARE) ===
+        # save_to_disk codifica un PNG 1280x720 in modo SINCRONO dentro la callback del
+        # sensore (~646 KB x ~30/s = ~20 MB/s). In modalita' sincrona, se la consegna dei
+        # sensori va in arretrato il server si blocca: sospetto per il piantone di CARLA
+        # dopo ~11,5 s. Disattivato per verificare. Se e' la causa, la correzione vera NON
+        # e' togliere il salvataggio ma spostarlo fuori dalla callback (coda + thread
+        # scrittore) o abbassare il rate della camera.
+        #image.save_to_disk(f'{FolderPath.RESULTS_PATH}RGBCamera/F_{image.frame}')
+        pass
         #image.save_to_disk(f'{FolderPath.RESULTS_PATH}RGBCamera/T_{CarlaClient.instance.world.get_snapshot().timestamp.frame}')
     
     @InstanceExist(CarlaClient)
