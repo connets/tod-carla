@@ -85,6 +85,12 @@ class BehaviorAgent(BasicAgent):
             elif visible_pedestrian.timestamp.elapsed_seconds >= self._other_pedestrians[visible_pedestrian.id].timestamp.elapsed_seconds:
                 self._other_pedestrians[visible_pedestrian.id].update_state(visible_pedestrian)
 
+        now = vehicle_state.timestamp.elapsed_seconds
+        self._other_vehicles = {i: v for i, v in self._other_vehicles.items()
+                                if now - v.timestamp.elapsed_seconds <= 1.0}
+        self._other_pedestrians = {i: p for i, p in self._other_pedestrians.items()
+                                   if now - p.timestamp.elapsed_seconds <= 1.0}
+
         return {"vehicles": self._other_vehicles, "pedestrians": self._other_pedestrians}
     
     def _update_information(self):
