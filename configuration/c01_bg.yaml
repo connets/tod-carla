@@ -27,6 +27,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   origin:
     x: -24.085384

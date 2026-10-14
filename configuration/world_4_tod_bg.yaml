@@ -22,7 +22,8 @@ new_vehicles:
   lidar: true
 
 # --- Background traffic: not teleoperated, but 5G UEs in OMNeT ------------------
-#     role_name must not be hero (it marks the ego)
+#     role_name must not be hero (it marks the ego); restart_time: seconds before
+#     driving again after a collision
 - actor_id: Bg01
   actor_type: Vehicle
   role_name: other
@@ -30,6 +31,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   origin: { x: 258.395355, y: -183.572708, z: 1.02, pitch: 0.0, yaw: -90.0, roll: 0.0 }
   destinations:
@@ -46,6 +50,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   origin: { x: 206.213470, y: -353.686371, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
   destinations:
@@ -62,6 +69,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   origin: { x: 202.491364, y: -184.649872, z: 1.5, pitch: 0.0, yaw: -90.0, roll: 0.0 }
   destinations:
@@ -81,6 +91,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   destinations:
   - { x:   13.200000, y: -318.700000, z: 1.5 }
@@ -94,6 +107,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   destinations:
   - { x: -381.180145, y:   -1.711176, z: 1.5 }
@@ -107,6 +123,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   destinations:
   - { x: -262.067322, y:   37.264809, z: 1.5 }
@@ -120,6 +139,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   destinations:
   - { x:  241.204666, y: -246.428802, z: 1.5 }
@@ -133,6 +155,9 @@ new_vehicles:
   model: vehicle.tesla.model3
   collision: false
   targetSpeed: 30
+  ignore_vehicles: false
+  ignore_traffic_lights: false
+  restart_time: 2.0
   route_loop: true
   destinations:
   - { x: -381.180145, y:   -1.711176, z: 1.5 }
