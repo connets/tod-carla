@@ -77,7 +77,9 @@ class MyActorManager(ActorManager):
                     
                         
         except Exception as error:
+            # an actor missing from CARLA breaks the scenario: stop here instead of running without it
             print(f"{self.__class__} omnet_init_completed error: {error}")
+            raise
         
 
 
@@ -287,12 +289,7 @@ class MyActorManager(ActorManager):
     def _generateVehicle(self, actor, origin, message):
         try:
             blueprint: ActorBlueprint = random.choice(CarlaClient.instance.world.get_blueprint_library().filter(actor['model']))
-            spawn_points = CarlaClient.instance.world.get_map().get_spawn_points()
-            spawn_point = random.choice(spawn_points)
-            response = CarlaClient.instance.client.apply_batch_sync(
-                [carla.command.SpawnActor(blueprint, spawn_point)],
-                False
-            )[0]
+            response = self._spawn_on_free_point(blueprint)
 
             
             #set start position (getted from start origin of agent route or origin in vehicle specification) otherwise it start from the random spown_point
@@ -372,11 +369,31 @@ class MyActorManager(ActorManager):
             raise error
 
 
+    @InstanceExist(CarlaClient)
+    def _spawn_on_free_point(self, blueprint):
+        """
+        Spawns the vehicle on a random spawn point; if that point is occupied, tries the
+        others in turn instead of failing.
+        """
+        spawn_points = CarlaClient.instance.world.get_map().get_spawn_points()
+        first = random.choice(spawn_points)
+        for spawn_point in [first] + [p for p in spawn_points if p is not first]:
+            response = CarlaClient.instance.client.apply_batch_sync(
+                [carla.command.SpawnActor(blueprint, spawn_point)],
+                False
+            )[0]
+            if not response.error:
+                return response
+        raise RuntimeError(f"no free spawn point for {blueprint.id}: {response.error}")
+
     def _create_autopilot(self, actor, carla_actor, message):
         """
         Drives a non-teleoperated vehicle along its 'destination' or 'destinations'.
         A vehicle with 'destinations' starts even without startSeconds and, with
         route_loop, restarts its route when it is done (see before_world_tick).
+
+        Optional yaml keys: ignore_traffic_lights and ignore_vehicles (default true),
+        restart_time, seconds before driving again after a collision (default: never).
         """
         if 'destinations' in actor:
             destinations = [carla.Location(x=d['x'], y=d['y'], z=d['z']) for d in actor['destinations']]
@@ -385,12 +402,13 @@ class MyActorManager(ActorManager):
 
         opt_dict = {
             'dt': message["carla_configuration"]['carla_timestep'],
-            'ignore_traffic_lights': True,
+            'ignore_traffic_lights': actor.get('ignore_traffic_lights', True),
             'ignore_stop_signs': True,
-            'ignore_vehicles': True,
+            'ignore_vehicles': actor.get('ignore_vehicles', True),
             'ignore_pedestrian': True,
             'collision_calculation_method': 'CARLADEFAULT',
-            'ignoreIds': []
+            'ignoreIds': [],
+            'restart_time': actor.get('restart_time', float('inf'))
         }
         agent = ConstantVelocityAgent(vehicle=carla_actor, target_speed=actor.get('targetSpeed', 30), opt_dict=opt_dict)
         agent.follow_speed_limits(True)
