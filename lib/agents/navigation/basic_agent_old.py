@@ -164,6 +164,29 @@ class BasicAgent(object):
         route_trace = self.trace_route(start_waypoint, end_waypoint)
         self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
 
+    def set_destinations(self, *end_locations, start_location=None):
+        """
+        Like set_destination, but chains the route through several destinations:
+        start -> end_locations[0] -> end_locations[1] -> ...
+
+            :param end_locations (carla.Location): destinations, in driving order
+            :param start_location (carla.Location): starting location of the route
+        """
+        if not start_location:
+            start_location = self._local_planner.target_waypoint.transform.location
+            clean_queue = True
+        else:
+            clean_queue = False
+
+        route_trace = []
+        waypoint = self._map.get_waypoint(start_location)
+        for end_location in end_locations:
+            end_waypoint = self._map.get_waypoint(end_location)
+            route_trace.extend(self.trace_route(waypoint, end_waypoint))
+            waypoint = end_waypoint
+
+        self._local_planner.set_global_plan(route_trace, clean_queue=clean_queue)
+
     def set_global_plan(self, plan, stop_waypoint_creation=True, clean_queue=True):
         """
         Adds a specific plan to the agent.

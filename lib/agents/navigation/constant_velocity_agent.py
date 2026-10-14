@@ -99,8 +99,9 @@ class ConstantVelocityAgent(BasicAgent):
         max_vehicle_distance = self._base_vehicle_threshold + vehicle_speed
         affected_by_vehicle, adversary, _ = self._vehicle_obstacle_detected(vehicle_list, max_vehicle_distance)
         if affected_by_vehicle:
-            vehicle_velocity = self._vehicle.get_velocity()
-            hazard_speed = vehicle_velocity.dot(adversary.get_velocity()) / vehicle_velocity.length()
+            # speed of the adversary along our direction (the velocity is zero when we are stopped)
+            forward = self._vehicle.get_transform().get_forward_vector()
+            hazard_speed = max(0.0, forward.dot(adversary.get_velocity()))
             hazard_detected = True
 
         # Check if the vehicle is affected by a red traffic light
