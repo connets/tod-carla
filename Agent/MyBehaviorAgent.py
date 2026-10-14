@@ -198,10 +198,15 @@ class CollisionCalculationMethod(Enum):
                                   [w_d[0] for w_d in self._local_planner.get_next_waypoint_and_direction(
                                       int(d_total / self._sampling_resolution))]
 
+        ego_transform = self._last_vehicle_state.get_transform()
+        to_other_vector = other.get_transform().location - ego_transform.location
+        if ego_transform.get_forward_vector().dot(to_other_vector) <= 0:
+            return False, None, -1
+
         for path_wpt, vehicle in itertools.product(safe_distance_waypoints, projected_obstacles_list):
             vehicle_transform = vehicle.get_transform()
             vehicle_wpt = self._map.get_waypoint(vehicle_transform.location, lane_type=carla.LaneType.Any)
-            if vehicle_wpt.road_id != path_wpt.road_id: continue
+            if vehicle_wpt.road_id != path_wpt.road_id or vehicle_wpt.lane_id != path_wpt.lane_id: continue
             distance = compute_distance(vehicle_transform.location, path_wpt.transform.location)
             #print(f"distance with {vehicle} is: {distance}")
             if distance <= max(self._behavior.min_proximity_threshold, self._speed_limit / 3):
