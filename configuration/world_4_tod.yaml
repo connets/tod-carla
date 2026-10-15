@@ -17,7 +17,7 @@ new_vehicles:
   camera:
     width: 1280
     height: 720
-  renderCamera: true      # camera window with the HUD; false for measurement campaigns
+  renderCamera: false      # camera window with the HUD; false for measurement campaigns
   collision: true
   lidar: true
 
